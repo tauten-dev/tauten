@@ -79,11 +79,10 @@ impl ExceptionVisitor {
         if !(path.is_ident("allow") || path.is_ident("expect")) {
             return;
         }
-        for lint in attr_tokens(attr).split(',') {
-            let lint = lint.trim();
-            if !lint.is_empty() && !lint.starts_with("reason") {
+        for lint in attr_lints(attr) {
+            {
                 self.found.push(LintException {
-                    lint: lint.to_owned(),
+                    lint,
                     at: hit(attr.pound_token.span),
                     crate_level,
                     allow: path.is_ident("allow"),
@@ -104,6 +103,30 @@ fn attr_tokens(attr: &syn::Attribute) -> String {
         syn::Meta::List(list) => list.tokens.to_string().replace(' ', ""),
         syn::Meta::Path(_) | syn::Meta::NameValue(_) => String::new(),
     }
+}
+
+/// Lint paths named in `allow(..)`/`expect(..)`, skipping `reason = ".."`.
+/// Parsed as attribute syntax, so commas inside the reason string are not
+/// separators.
+fn attr_lints(attr: &syn::Attribute) -> Vec<String> {
+    let Ok(metas) = attr.parse_args_with(
+        syn::punctuated::Punctuated::<syn::Meta, syn::Token![,]>::parse_terminated,
+    ) else {
+        return Vec::new();
+    };
+    metas
+        .iter()
+        .filter_map(|meta| match meta {
+            syn::Meta::Path(path) => Some(
+                path.segments
+                    .iter()
+                    .map(|s| s.ident.to_string())
+                    .collect::<Vec<_>>()
+                    .join("::"),
+            ),
+            syn::Meta::List(_) | syn::Meta::NameValue(_) => None,
+        })
+        .collect()
 }
 
 /// Find calls that mint authority (`Authority::acquire`). Returns `None` if
@@ -249,6 +272,25 @@ mod tests {
         let cfg = crate_attrs("#![cfg_attr(not(test), no_std)]\n").expect("parses");
         assert!(cfg.no_std);
         assert!(!crate_attrs("pub fn f() {}").expect("parses").no_std);
+    }
+
+    #[test]
+    fn exception_lints_ignore_commas_in_the_reason() {
+        let src = "#![allow(clippy::a, dead_code, reason = \"x, y z\")]\n\
+                   #[expect(clippy::b, reason = \"p, q\")]\nfn f() {}\n";
+        let found = lint_exceptions(src).expect("parses");
+        let lints: Vec<(&str, bool, bool)> = found
+            .iter()
+            .map(|e| (e.lint.as_str(), e.crate_level, e.allow))
+            .collect();
+        assert_eq!(
+            lints,
+            vec![
+                ("clippy::a", true, true),
+                ("dead_code", true, true),
+                ("clippy::b", false, false)
+            ]
+        );
     }
 
     #[test]
