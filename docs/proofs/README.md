@@ -123,3 +123,18 @@ runs on pushes and pull requests that touch
 2. logs in to ghcr.io with the job's `GITHUB_TOKEN` (`packages: read`);
 3. pulls the pinned image;
 4. runs the same Compose service.
+
+## Timings (2026-11-18, local)
+
+Measured on the 32-CPU WSL2 host while a benchmark was running, so the host
+was loaded (load average about 15 to 19).
+
+| Run | Extract | Drift | `lake build` + audit | 9 mutants | Total |
+|---|---|---|---|---|---|
+| Cold container (`docker compose … run --rm proofs`) | 27 s (includes Charon's sysroot setup) | <1 s | 10 s | 74 s | 111 s (112 s wall time) |
+| Warm (same container, second run) | 1 s | <1 s | 2 s | 72 s | 75 s |
+
+Each mutant re-extracts the kernel and rebuilds the theorems, which takes
+about 8 s. The time on a GitHub runner, including pulling the image, has
+not been measured: the workflow has not run yet. The plan's kill criterion
+is 30 minutes warm.
