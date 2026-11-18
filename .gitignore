@@ -2,3 +2,4 @@
 /fixtures/*/target
 *.swp
 /bench/results
+/proofs/.lake
