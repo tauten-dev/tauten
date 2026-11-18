@@ -465,9 +465,14 @@ dependencies = [
  "serde",
  "serde_json",
  "syn",
+ "tauten-check-kernel",
  "thiserror",
  "toml",
 ]
+
+[[package]]
+name = "tauten-check-kernel"
+version = "0.0.1"
 
 [[package]]
 name = "tauten-macros"

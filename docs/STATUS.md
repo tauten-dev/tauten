@@ -17,7 +17,9 @@ published; nothing has been measured with a real agent.
 | M1 | `init` (proposes tiers; `--write` adds them and `AGENTS.tauten.md`) | **exercised** (manually) | scratch two-crate workspace, 2026-11-18; no automated test yet |
 | M2 | `tauten`: `Authority`, `Clock`/`SystemClock`/`ManualClock`, `Env`, `dir` (feature `fs`, cap-std) | **exercised** | doc tests; `crates/tauten/tests/ui/forged_authority.rs`; fixture `rej-authority-alias` |
 | M2 | `tauten-macros`: `#[newtype]`, `#[refined]`, `#[requires]`, `#[ensures]` with `old()` | **exercised** | `crates/tauten/tests/behaviour.rs` (runtime), 6 trybuild compile-fail tests |
-| M3 | Proof tier (Aeneas/Lean template from writfold) | not started | |
+| P0 | Proof plan probe: Charon/Aeneas on tauten-shaped code | **exercised** (local, 32 CPUs) | `docs/proofs/probe.md`; probe retired in P1 (kept at `2885ee1`) |
+| P1 | `tauten-check-kernel` (tier order, severity, lint exceptions); `tauten-check` calls it; 13 Lean theorems over the extraction; axiom + coverage audit; drift check; 9 mutants; `proofs.yml` workflow | **exercised locally**; CI workflow not yet run | `docs/proofs/README.md`; `docker compose -f compose.proofs.yaml run --rm proofs` passes. The GitHub runner time is not measured yet. Every claim is broken by at least one mutant |
+| M3 | Proof tier for users (Aeneas/Lean template from writfold) | not started | |
 | M4 | Benchmark harness: host, 4 dev tasks, runner, analysis, admission gate | **exercised with built-in agents only** | `bench/README.md` (validation table); `scripts/bench-validate` in the gate |
 | M4 | Pilot with a real agent | **blocked on owner** (model budget, model choice) | |
 | M5 | Repo (public), CI gate, tag-driven release via crates.io trusted publishing (no stored token) | **exercised** | 0.0.1 of all four crates published 2026-11-18 by `release.yml` after the gate passed; trusted publishing first used at the next release |

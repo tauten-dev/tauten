@@ -12,4 +12,5 @@ repository = "https://github.com/tauten-dev/tauten"
 homepage = "https://tauten.dev"
 
 [workspace.dependencies]
+tauten-check-kernel = { path = "crates/tauten-check-kernel", version = "0.0.1" }
 tauten-check = { path = "crates/tauten-check", version = "0.0.1" }

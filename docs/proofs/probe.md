@@ -1,6 +1,14 @@
 # P0 probe: Charon/Aeneas on tauten-shaped code
 
 2026-11-18. Milestone P0 of `docs/PROOF-PLAN.md`. Everything below was run.
+
+> **Retired in P1.** The probe crate (`proofs/probe`), its theorems
+> (`proofs/Probe`), `proofs/probe.sh` and `Extracted/TautenProbe.lean` were
+> removed when the gate moved to `crates/tauten-check-kernel`
+> (`docs/proofs/README.md`). The probe needs crates.io for
+> `tauten-macros`'s dependencies and would have doubled the gate for no
+> new claim. The files remain at commit `2885ee1`. Its constructor
+> enumeration returns with the macro instances in P3.
 The only machine was a local 32-CPU WSL2 host. No GitHub runner was used.
 
 ## Toolchain (writfold's pins, unchanged)

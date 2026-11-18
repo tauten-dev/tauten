@@ -1,0 +1,34 @@
+[package]
+name = "tauten-check-kernel"
+description = "The decisions of the tauten checker (tier order, severity, lint exceptions) in plain no_std Rust, translated to Lean 4 by Charon/Aeneas and proved."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+
+[package.metadata.tauten]
+tier = "kernel"
+
+# No dependencies by construction: the proofs gate translates this crate
+# offline, and everything it depends on would be trusted.
+[dependencies]
+
+# Read by Charon when the proofs gate translates this crate
+# (proofs/extract.sh). Functions are named one by one so that the derives on
+# the enums, which the shell uses, are never translated.
+[package.metadata.charon]
+start_from = [
+    "tauten_check_kernel::tiers::rank",
+    "tauten_check_kernel::tiers::may_depend_on",
+    "tauten_check_kernel::severity::is_blocking",
+    "tauten_check_kernel::severity::severity",
+    "tauten_check_kernel::exception::permitted",
+    "tauten_check_kernel::exception::excuse",
+]
+
+# Stated locally, not inherited: the proofs gate translates this crate in a
+# shadow workspace that carries no `workspace.lints`.
+[lints.rust]
+unsafe_code = "forbid"
