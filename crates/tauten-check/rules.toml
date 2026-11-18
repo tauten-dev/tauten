@@ -3,13 +3,14 @@
 #
 # Tiers: kernel (pure, no_std, proof-eligible), core (no ambient authority),
 # edge (startup/IO; may mint authority).
-# Levels: "warn" | "deny" | "forbid". A tier missing from `levels` leaves the
-# lint at its default. `deny` can be overridden only by
-# `#[expect(lint, reason = "...")]` (TAU-X001). `forbid` is reserved for
-# `unsafe_code`: derive macros commonly emit `#[allow(clippy::...)]`, which
-# rustc rejects under a forbidden lint, so "no exceptions" is enforced
-# structurally instead (TAU-X004): `exceptions = false` on a rule, and every
-# profile lint in the kernel tier.
+# Levels: "warn" | "deny". A tier missing from `levels` leaves the lint at its
+# default. `cargo tauten check` compiles every profile lint at warn level (so
+# one crate's violations never stop its dependents from being checked) and
+# then reports each finding at the level given here. `deny` findings can be
+# excused only by `#[expect(lint, reason = "...")]` (TAU-X001); rules with
+# `exceptions = false`, and every profile lint in the kernel tier, admit no
+# exception at all (TAU-X004). rustc's `forbid` is not used: derive macros
+# commonly emit `#[allow(clippy::...)]`, which rustc rejects under forbid.
 # `enforced_by`: rustc | clippy | tauten | convention.
 
 version = 1
@@ -194,8 +195,9 @@ fix = "Remove the `#[expect]`/`#[allow]` and fix the code it excused."
 [[rule]]
 id = "TAU-U001"
 title = "No unsafe outside the edge"
+exceptions = false
 lints = ["unsafe_code"]
-levels = { kernel = "forbid", core = "forbid" }
+levels = { kernel = "deny", core = "deny" }
 enforced_by = "rustc"
 why = "Every guarantee in this profile assumes safe Rust."
 fix = "Move the unsafe code into an edge crate (or a dedicated `-sys` crate) behind a safe, documented API."

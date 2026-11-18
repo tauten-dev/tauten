@@ -1,0 +1,16 @@
+[package]
+name = "rej-dependent"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[package.metadata.tauten]
+tier = "core"
+
+# Regression: a dependency with blocking findings (rej-unwrap) must not stop
+# this crate from being checked.
+[package.metadata.fixture]
+expect = ["TAU-P003"]
+
+[dependencies]
+rej_unwrap = { package = "rej-unwrap", path = "../rej-unwrap" }

@@ -67,7 +67,6 @@ pub fn explain(profile: &Profile, id: Option<&str>) -> Result<()> {
         let level = rule.level(tier).map_or("-", |l| match l {
             tauten_check::Level::Warn => "warn",
             tauten_check::Level::Deny => "deny",
-            tauten_check::Level::Forbid => "forbid",
         });
         writeln!(out, "  {tier:<6} {level}")?;
     }

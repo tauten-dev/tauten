@@ -56,7 +56,10 @@ mod fixtures {
             let d: serde_json::Value = serde_json::from_str(line).expect("json line");
             let id = d["id"].as_str().expect("id").to_owned();
             let krate = d["crate"].as_str().expect("crate").to_owned();
-            tiers_seen.entry(krate.clone()).or_default().insert(d["tier"].to_string());
+            tiers_seen
+                .entry(krate.clone())
+                .or_default()
+                .insert(d["tier"].to_string());
             if !id.starts_with("TAU-") {
                 if d["severity"] == "error" {
                     unexpected_errors.push(format!("{krate}: {id}: {}", d["message"]));

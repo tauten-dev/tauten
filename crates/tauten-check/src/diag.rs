@@ -148,6 +148,14 @@ pub fn from_compiler(
         .and_then(|c| rule_for(profile, c, &msg.notes));
     let diag = match rule {
         Some(rule) => {
+            // Lints are compiled at warn level; the profile decides severity.
+            let severity = tier.and_then(|t| rule.level(t)).map_or(severity, |level| {
+                if level.is_blocking() {
+                    Severity::Error
+                } else {
+                    Severity::Warning
+                }
+            });
             let mut d = Diagnostic::for_rule(rule, severity, krate, tier, msg.message.clone());
             d.source = code.unwrap_or_default();
             d
@@ -221,6 +229,16 @@ mod tests {
         assert_eq!(d.id, "TAU-P001");
         assert_eq!(d.severity, Severity::Error);
         assert_eq!(d.line, Some(3));
+    }
+
+    #[test]
+    fn profile_decides_severity() {
+        let profile = Profile::embedded().expect("profile");
+        let warn = msg("warning", "clippy::indexing_slicing", &[]);
+        let core = from_compiler(&profile, "k", Some(Tier::Core), &warn).expect("finding");
+        assert_eq!(core.severity, Severity::Error);
+        let edge = from_compiler(&profile, "k", Some(Tier::Edge), &warn).expect("finding");
+        assert_eq!(edge.severity, Severity::Warning);
     }
 
     #[test]

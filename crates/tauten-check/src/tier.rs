@@ -60,10 +60,9 @@ impl fmt::Display for Tier {
 pub enum Level {
     /// Report, do not fail.
     Warn,
-    /// Fail; may be overridden by `#[expect(lint, reason = "...")]`.
+    /// Fail; may be overridden by `#[expect(lint, reason = "...")]` unless
+    /// the rule admits no exceptions.
     Deny,
-    /// Fail; cannot be overridden in source.
-    Forbid,
 }
 
 impl Level {
@@ -73,7 +72,6 @@ impl Level {
         match self {
             Self::Warn => "-W",
             Self::Deny => "-D",
-            Self::Forbid => "-F",
         }
     }
 
@@ -82,7 +80,7 @@ impl Level {
     pub const fn is_blocking(self) -> bool {
         match self {
             Self::Warn => false,
-            Self::Deny | Self::Forbid => true,
+            Self::Deny => true,
         }
     }
 }

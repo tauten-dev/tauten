@@ -26,7 +26,7 @@ pub fn run() -> Result<ExitCode> {
     cmd.args(&args);
     if let Some(tier) = tier_for_invocation(&args) {
         let profile = Profile::embedded()?;
-        cmd.args(profile.lint_flags(tier));
+        cmd.args(profile.report_flags(tier));
         let conf_root = env::var_os(ENV_CONF_ROOT)
             .map(PathBuf::from)
             .context("TAUTEN_CONF_ROOT is not set")?;

@@ -229,6 +229,23 @@ impl Profile {
         flags
     }
 
+    /// Flags that make every profile lint of `tier` report at warn level.
+    ///
+    /// `cargo tauten check` compiles with these so that a violation in one
+    /// crate never stops its dependents from being checked; severity is then
+    /// taken from the profile (see [`crate::diag::from_compiler`]).
+    #[must_use]
+    pub fn report_flags(&self, tier: Tier) -> Vec<String> {
+        let mut flags = Vec::new();
+        for rule in self.rules.iter().filter(|rule| rule.level(tier).is_some()) {
+            for lint in &rule.lints {
+                flags.push("-W".to_owned());
+                flags.push(lint.clone());
+            }
+        }
+        flags
+    }
+
     /// The `clippy.toml` contents for crates of `tier`.
     ///
     /// # Errors
@@ -321,9 +338,22 @@ mod tests {
             flags.get(pos.wrapping_sub(1)).map(String::as_str),
             Some("-D")
         );
-        assert!(flags.windows(2).any(|w| w == ["-F", "unsafe_code"]));
+        assert!(flags.windows(2).any(|w| w == ["-D", "unsafe_code"]));
         let edge = profile.lint_flags(Tier::Edge);
         assert!(!edge.iter().any(|f| f == "clippy::disallowed_methods"));
+    }
+
+    #[test]
+    fn report_flags_cover_the_same_lints_at_warn() {
+        let profile = Profile::embedded().expect("embedded profile parses");
+        for tier in Tier::ALL {
+            let levels = profile.lint_flags(tier);
+            let report = profile.report_flags(tier);
+            assert_eq!(levels.len(), report.len());
+            let lints = |f: &[String]| f.iter().skip(1).step_by(2).cloned().collect::<Vec<_>>();
+            assert_eq!(lints(&levels), lints(&report));
+            assert!(report.iter().step_by(2).all(|f| f == "-W"));
+        }
     }
 
     #[test]
