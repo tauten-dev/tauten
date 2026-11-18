@@ -10,7 +10,7 @@ published. One pilot on the dev split has been run with a real agent; nothing he
 | # | Item | State | Evidence |
 |---|---|---|---|
 | M0 | Plan, mapping, agent profile, rule table (37 rules, ~200 banned API paths) | **done** | `docs/`, `crates/tauten-check/agents.md`, `crates/tauten-check/rules.toml`, generated `docs/RULES.md` (drift-checked) |
-| M0 | Fixtures ported from Sovel examples | **exercised** | `fixtures/cases`: 27 reject + 3 accept crates, exact expected IDs, one tier per crate (`tests/fixtures.rs`) |
+| M0 | Fixtures ported from Sovel examples | **exercised** | `fixtures/cases`: 28 reject + 3 accept crates, exact expected IDs, one tier per crate (`tests/fixtures.rs`) |
 | M0b | Writfold dry run | **exercised** | `docs/dry-runs/writfold-2026-11-18.md`. It found 4 defects in tauten, now fixed. |
 | M1 | `cargo tauten check` (human/JSON), `explain` (+`--markdown`), `profile`, `--assume-tier` | **exercised** | fixtures, self-check, writfold |
 | M1 | Ratchet: `cargo tauten baseline`, `--baseline`, stale-baseline rule TAU-R001, increases refused | **exercised** | unit tests; `tests/ratchet.rs`; writfold clone (707 accepted → 1 new `unwrap` = 1 error → stale slot = R001 → increase refused) |
