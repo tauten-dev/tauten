@@ -5,10 +5,20 @@ Adapted from writfold's proofs/mutants.py. Every translated kernel function
 gets at least one semantic mutation of its Rust source. For each: copy the
 crate, apply the mutation, translate it exactly as the gate does
 (proofs/extract.sh), build the theorems against the mutated translation in a
-scratch copy of the lake project, and require the build to FAIL inside
-exactly the named theorem(s): no other theorem may fail, and the
+scratch copy of the lake project, and require the build to FAIL so that
+exactly the named claims are broken: no other claim may break, and the
 translation itself must still type-check. A proof that survives its mutant
 proves nothing; a failure anywhere else is noise, not calibration.
+
+A claim is broken when its own proof fails, or when it depends (through
+Lean's axiom closure: the failed proof becomes `sorryAx`) on a lemma whose
+proof fails. The ratchet claims (P2) are proved from shared refinement
+lemmas (`apply_spec`, `stale_spec`, ...), so a mutant of a ratchet function
+breaks every claim proved through that function's lemma, and such helper
+lemmas may fail as long as only the named claims break. To find the
+dependents, a reporter is appended to every theorem file of the scratch
+copy; it logs `SORRY_DEPENDENT <name>` for each theorem whose axioms
+include `sorryAx`.
 
     python3 proofs/mutants.py [mutant-name ...]
 """
@@ -36,6 +46,63 @@ class Mutant:
 
 
 T = "Tauten.Kernel."
+
+# Every ratchet claim proved through `apply_spec`.
+APPLY = (T + "apply_covered_iff", T + "apply_cover_count", T + "apply_suppressed_le_accepted",
+         T + "apply_left_spec", T + "ratchet_stale_iff", T + "ratchet_passes_iff",
+         T + "ratchet_headroom", T + "ratchet_example")
+# Every ratchet claim proved through `stale_spec`.
+STALE = (T + "ratchet_stale_iff", T + "ratchet_passes_iff", T + "ratchet_example")
+# Every ratchet claim proved through `count_errors_spec`.
+COUNT = (T + "count_errors_counts", T + "regenerated_baseline_never_grows")
+# Every ratchet claim proved through `increases_spec`.
+INCREASES = (T + "increases_flags", T + "increases_none_iff",
+             T + "regenerated_baseline_never_grows", T + "increase_example")
+
+RATCHET_MUTANTS = (
+    # ratchet: warnings covered by the baseline
+    Mutant("warnings-covered", "ratchet.rs",
+           "    if !finding.error {\n        return false;\n    }\n    match left.get_mut",
+           "    match left.get_mut",
+           APPLY),
+    # ratchet: an entry with nothing left still covers (and never runs out)
+    Mutant("headroom-ignored", "ratchet.rs",
+           "        Some(slot) if *slot > 0 => {",
+           "        Some(slot) if *slot >= 0 => {",
+           APPLY),
+    # ratchet: covering a finding does not use up the entry
+    Mutant("cover-not-consumed", "ratchet.rs",
+           "            *slot = slot.saturating_sub(1);\n            true",
+           "            true",
+           APPLY),
+    # ratchet: covered findings get no flag, so the flags no longer line up
+    # with the findings (the only mutant that breaks R-conserve)
+    Mutant("covered-flag-dropped", "ratchet.rs",
+           "        let hit = take_at(&mut left, findings, i);\n        covered.push(hit);",
+           "        let hit = take_at(&mut left, findings, i);\n        if !hit {\n            covered.push(hit);\n        }",
+           (T + "apply_conserves",) + APPLY),
+    # ratchet: an entry with one finding to spare is not stale
+    Mutant("stale-needs-two", "ratchet.rs",
+           "        if count_at(left, k) > 0 {\n            keys.push(k);",
+           "        if count_at(left, k) > 1 {\n            keys.push(k);",
+           STALE),
+    # ratchet: a new baseline counts warnings too
+    Mutant("warnings-counted", "ratchet.rs",
+           "    if finding.error\n        && let Some(slot) = counts.get_mut(finding.key)",
+           "    if let Some(slot) = counts.get_mut(finding.key)",
+           COUNT),
+    # ratchet: an entry that stays the same counts as growth
+    Mutant("equal-is-growth", "ratchet.rs",
+           "        Some(entry) => count_at(old, entry.key) < entry.count,",
+           "        Some(entry) => count_at(old, entry.key) <= entry.count,",
+           INCREASES),
+    # ratchet: a key the old baseline lacks counts as accepting one finding,
+    # so a new entry of count 1 is not reported as growth
+    Mutant("missing-key-accepts-one", "ratchet.rs",
+           "        Some(count) => *count,\n        None => 0,",
+           "        Some(count) => *count,\n        None => 1,",
+           STALE + INCREASES),
+)
 
 MUTANTS = (
     # tiers: a tier may depend on its own tier; `<` refuses same-tier edges
@@ -88,9 +155,21 @@ MUTANTS = (
            "    if crate_wide && blocking {",
            "    if crate_wide || blocking {",
            (T + "exception_spec",)),
-)
+) + RATCHET_MUTANTS
 
 # lake reports `error: <path>.lean:<line>:<col>: <message>`
+SORRY_DEPENDENT = re.compile(r"SORRY_DEPENDENT (?P<name>\S+)")
+REPORTER = """
+
+open Lean Elab Command in
+run_cmd do
+  let env ← getEnv
+  for entry in env.constants.map₂.toList do
+    if (`Tauten).isPrefixOf entry.1 && entry.2.isThm then
+      let axioms ← liftCoreM (Lean.collectAxioms entry.1)
+      if axioms.contains ``sorryAx then
+        logInfo m!"SORRY_DEPENDENT {entry.1}"
+"""
 ERROR = re.compile(r"^error:\s*(?P<file>[^\s:]+\.lean):(?P<line>\d+):(?P<col>\d+):", re.M)
 DECLARATION = re.compile(r"^(?:@\[[^\]]*\]\s*)?(?:private\s+|protected\s+)?(?:theorem|lemma|def|abbrev|instance)\s+(?P<name>[^\s:(]+)", re.M)
 NAMESPACE = re.compile(r"^namespace\s+(?P<name>\S+)", re.M)
@@ -167,6 +246,8 @@ def calibrate(mutant: Mutant, scratch: Path) -> None:
     for name in ("lakefile.toml", "lean-toolchain", "lake-manifest.json", "Tauten.lean", "Audit.lean"):
         shutil.copy2(PROOFS / name, project / name)
     shutil.copytree(PROOFS / "Tauten", project / "Tauten")
+    for theorems in (project / "Tauten").glob("*.lean"):
+        theorems.write_text(theorems.read_text() + REPORTER)
     shutil.copytree(scratch / "Extracted", project / "Extracted")
     (project / ".lake").mkdir()
     os.symlink(PROOFS / ".lake" / "packages", project / ".lake" / "packages")
@@ -178,22 +259,30 @@ def calibrate(mutant: Mutant, scratch: Path) -> None:
     if unattributed:
         print(build.stdout)
         raise SystemExit(f"FAIL {mutant.name}: errors outside the theorem files: {unattributed}")
+    dependent = set(SORRY_DEPENDENT.findall(build.stdout))
+    broken = (failures | dependent) & claims()
     expected = set(mutant.fails)
-    if not failures or not expected <= failures:
+    if not broken or not expected <= broken:
         print(build.stdout)
-        print(f"attributed failures: {sorted(failures)}")
-        raise SystemExit(f"FAIL {mutant.name}: expected {sorted(expected)} to fail, got {sorted(failures)}")
-    if failures - expected:
+        print(f"failing: {sorted(failures)}; dependent: {sorted(dependent)}")
+        raise SystemExit(f"FAIL {mutant.name}: expected {sorted(expected)} to break, got {sorted(broken)}")
+    if broken - expected:
         print(build.stdout)
-        raise SystemExit(f"FAIL {mutant.name}: unexpected failing theorems {sorted(failures - expected)}")
-    print(f"calibration: {mutant.name} rejected by {', '.join(sorted(failures))}", flush=True)
+        raise SystemExit(f"FAIL {mutant.name}: unexpected broken claims {sorted(broken - expected)}")
+    helpers = sorted(failures - claims())
+    note = f" (failing lemmas: {', '.join(helpers)})" if helpers else ""
+    print(f"calibration: {mutant.name} breaks {', '.join(sorted(broken))}{note}", flush=True)
+
+
+def claims() -> set[str]:
+    """The required claims of the axiom audit."""
+    return set(re.findall(r"``(Tauten[\w.]+)", (PROOFS / "Audit.lean").read_text()))
 
 
 def unclaimed() -> list[str]:
     """Theorems a mutant names that the axiom audit does not require: a
     rename would then pass the audit and be caught only here."""
-    claims = set(re.findall(r"``(Tauten[\w.]+)", (PROOFS / "Audit.lean").read_text()))
-    return sorted({name for m in MUTANTS for name in m.fails} - claims)
+    return sorted({name for m in MUTANTS for name in m.fails} - claims())
 
 
 def main() -> None:

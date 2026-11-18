@@ -7,13 +7,18 @@
 //! baseline may only shrink: fewer findings than recorded is reported as a
 //! stale baseline (TAU-R001) until it is tightened, so freed headroom cannot
 //! silently absorb a new violation.
+//!
+//! The decisions are made by the proved kernel
+//! (`tauten_check_kernel::ratchet`, `docs/proofs/README.md`); this module
+//! interns keys, renders diagnostics and reads and writes the file format.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use serde::{Deserialize, Serialize};
 
 use crate::diag::{Diagnostic, Severity};
 use crate::profile::Profile;
+use tauten_check_kernel::ratchet as kernel;
 
 /// Current baseline file format version.
 pub const VERSION: u32 = 1;
@@ -65,23 +70,72 @@ pub struct Baseline {
     pub entries: Vec<Entry>,
 }
 
-fn count_errors(diags: &[Diagnostic]) -> BTreeMap<Key, u32> {
-    let mut counts = BTreeMap::new();
-    for d in diags.iter().filter(|d| d.severity == Severity::Error) {
-        let slot = counts.entry(Key::of(d)).or_insert(0_u32);
-        *slot = slot.saturating_add(1);
+/// Finding keys interned to indices `0..len`, in key order, for the kernel.
+///
+/// Trusted, not proved: the index is injective (one index per distinct key)
+/// and agrees with key order. The differential tests in `tests.rs` compare
+/// the result with the `BTreeMap` reference.
+struct Interned {
+    keys: Vec<Key>,
+    index: BTreeMap<Key, usize>,
+}
+
+impl Interned {
+    fn new(keys: impl IntoIterator<Item = Key>) -> Self {
+        let sorted: BTreeSet<Key> = keys.into_iter().collect();
+        let keys: Vec<Key> = sorted.into_iter().collect();
+        let index = keys
+            .iter()
+            .enumerate()
+            .map(|(i, key)| (key.clone(), i))
+            .collect();
+        Self { keys, index }
     }
-    counts
+
+    /// The index of `key`; a key that was not interned gets `len`, which the
+    /// kernel treats as a key with nothing accepted.
+    fn of(&self, key: &Key) -> usize {
+        self.index.get(key).copied().unwrap_or(self.keys.len())
+    }
+
+    /// The accepted count per index. Of two entries with the same key the
+    /// later one counts, as when the entries are collected into a map.
+    fn accepted(&self, entries: &[Entry]) -> Vec<u32> {
+        let mut counts = vec![0_u32; self.keys.len()];
+        for entry in entries {
+            if let Some(slot) = counts.get_mut(self.of(&entry.key)) {
+                *slot = entry.count;
+            }
+        }
+        counts
+    }
+
+    fn findings(&self, diags: &[Diagnostic]) -> Vec<kernel::Finding> {
+        diags
+            .iter()
+            .map(|d| kernel::Finding {
+                key: self.of(&Key::of(d)),
+                error: d.severity == Severity::Error,
+            })
+            .collect()
+    }
 }
 
 impl Baseline {
     /// A baseline accepting exactly the error-level findings in `diags`.
+    /// The counts are decided by the proved kernel
+    /// ([`kernel::count_errors`]).
     #[must_use]
     pub fn from_findings(diags: &[Diagnostic]) -> Self {
+        let keys = Interned::new(diags.iter().map(Key::of));
+        let counts = kernel::count_errors(keys.keys.len(), &keys.findings(diags));
         Self {
             version: VERSION,
-            entries: count_errors(diags)
+            entries: keys
+                .keys
                 .into_iter()
+                .zip(counts)
+                .filter(|(_, count)| *count > 0)
                 .map(|(key, count)| Entry { key, count })
                 .collect(),
         }
@@ -93,17 +147,30 @@ impl Baseline {
         self.entries.iter().map(|e| u64::from(e.count)).sum()
     }
 
-    fn counts(&self) -> BTreeMap<&Key, u32> {
-        self.entries.iter().map(|e| (&e.key, e.count)).collect()
-    }
-
-    /// Keys whose count would grow if `next` replaced this baseline.
+    /// Keys whose count would grow if `next` replaced this baseline. Decided
+    /// by the proved kernel ([`kernel::increases`]).
     #[must_use]
     pub fn increases<'n>(&self, next: &'n Self) -> Vec<&'n Entry> {
-        let old = self.counts();
+        let keys = Interned::new(
+            self.entries
+                .iter()
+                .chain(&next.entries)
+                .map(|e| e.key.clone()),
+        );
+        let old = keys.accepted(&self.entries);
+        let entries: Vec<kernel::Entry> = next
+            .entries
+            .iter()
+            .map(|e| kernel::Entry {
+                key: keys.of(&e.key),
+                count: e.count,
+            })
+            .collect();
         next.entries
             .iter()
-            .filter(|e| old.get(&e.key).copied().unwrap_or(0) < e.count)
+            .zip(kernel::increases(&old, &entries))
+            .filter(|(_, grew)| *grew)
+            .map(|(entry, _)| entry)
             .collect()
     }
 }
@@ -119,127 +186,49 @@ pub struct Applied {
 }
 
 /// Remove findings covered by `baseline` and add TAU-R001 for stale entries.
+///
+/// The proved kernel ([`kernel::apply`], [`kernel::stale`]) decides which
+/// findings are covered, what is left of each entry and which entries are
+/// stale; this function interns the keys, keeps the uncovered findings in
+/// order and renders one TAU-R001 per stale key.
 #[must_use]
 pub fn apply(profile: &Profile, baseline: &Baseline, diags: Vec<Diagnostic>) -> Applied {
-    let mut remaining: BTreeMap<Key, u32> = baseline
-        .entries
-        .iter()
-        .map(|e| (e.key.clone(), e.count))
-        .collect();
+    let keys = Interned::new(
+        baseline
+            .entries
+            .iter()
+            .map(|e| e.key.clone())
+            .chain(diags.iter().map(Key::of)),
+    );
+    let findings = keys.findings(&diags);
+    let (covered, left) = kernel::apply(keys.accepted(&baseline.entries), &findings);
     let mut out = Applied::default();
-    for d in diags {
-        if d.severity == Severity::Error
-            && let Some(left) = remaining.get_mut(&Key::of(&d))
-            && *left > 0
-        {
-            *left = left.saturating_sub(1);
+    // The kernel returns one flag per finding (theorem `apply_conserves`).
+    for (d, hit) in diags.into_iter().zip(covered) {
+        if hit {
             out.baselined = out.baselined.saturating_add(1);
-            continue;
+        } else {
+            out.diagnostics.push(d);
         }
-        out.diagnostics.push(d);
     }
     if let Some(rule) = profile.rule("TAU-R001") {
-        for (key, left) in remaining.into_iter().filter(|(_, left)| *left > 0) {
+        for k in kernel::stale(&left) {
+            let (Some(key), Some(left)) = (keys.keys.get(k), left.get(k)) else {
+                continue;
+            };
             let message = format!(
                 "baseline accepts {left} more `{}` finding(s) in `{}` than exist now; tighten it with `cargo tauten baseline`",
                 key.id,
                 key.file.as_deref().unwrap_or(&key.krate),
             );
             let d = Diagnostic::for_rule(rule, Severity::Error, &key.krate, None, message);
-            out.diagnostics.push(d.at(key.file, None, None));
+            out.diagnostics.push(d.at(key.file.clone(), None, None));
         }
     }
     out
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::tier::Tier;
-
-    fn diag(id: &str, file: &str, line: u32, severity: Severity) -> Diagnostic {
-        let profile = Profile::embedded().expect("profile");
-        let rule = profile.rule(id).expect("rule");
-        Diagnostic::for_rule(rule, severity, "c", Some(Tier::Core), "m".to_owned()).at(
-            Some(file.to_owned()),
-            Some(line),
-            Some(1),
-        )
-    }
-
-    fn ids(applied: &Applied) -> Vec<&str> {
-        applied.diagnostics.iter().map(|d| d.id.as_str()).collect()
-    }
-
-    #[test]
-    fn baselined_findings_pass_even_after_moving() {
-        let profile = Profile::embedded().expect("profile");
-        let before = vec![
-            diag("TAU-P001", "a.rs", 3, Severity::Error),
-            diag("TAU-P001", "a.rs", 9, Severity::Error),
-        ];
-        let baseline = Baseline::from_findings(&before);
-        assert_eq!(baseline.total(), 2);
-        let moved = vec![
-            diag("TAU-P001", "a.rs", 40, Severity::Error),
-            diag("TAU-P001", "a.rs", 41, Severity::Error),
-        ];
-        let applied = apply(&profile, &baseline, moved);
-        assert!(applied.diagnostics.is_empty());
-        assert_eq!(applied.baselined, 2);
-    }
-
-    #[test]
-    fn new_findings_fail() {
-        let profile = Profile::embedded().expect("profile");
-        let baseline = Baseline::from_findings(&[diag("TAU-P001", "a.rs", 3, Severity::Error)]);
-        let now = vec![
-            diag("TAU-P001", "a.rs", 3, Severity::Error),
-            diag("TAU-P001", "a.rs", 4, Severity::Error),
-            diag("TAU-N001", "a.rs", 5, Severity::Error),
-        ];
-        let applied = apply(&profile, &baseline, now);
-        assert_eq!(ids(&applied), vec!["TAU-P001", "TAU-N001"]);
-    }
-
-    #[test]
-    fn fixed_findings_make_the_baseline_stale() {
-        let profile = Profile::embedded().expect("profile");
-        let baseline = Baseline::from_findings(&[
-            diag("TAU-P001", "a.rs", 3, Severity::Error),
-            diag("TAU-P001", "a.rs", 4, Severity::Error),
-        ]);
-        let applied = apply(
-            &profile,
-            &baseline,
-            vec![diag("TAU-P001", "a.rs", 3, Severity::Error)],
-        );
-        assert_eq!(ids(&applied), vec!["TAU-R001"]);
-        assert!(
-            applied
-                .diagnostics
-                .iter()
-                .all(|d| d.severity == Severity::Error)
-        );
-    }
-
-    #[test]
-    fn warnings_are_never_baselined() {
-        let baseline = Baseline::from_findings(&[diag("TAU-S002", "a.rs", 1, Severity::Warning)]);
-        assert!(baseline.entries.is_empty());
-    }
-
-    #[test]
-    fn increases_are_detected() {
-        let old = Baseline::from_findings(&[diag("TAU-P001", "a.rs", 3, Severity::Error)]);
-        let same = old.clone();
-        assert!(old.increases(&same).is_empty());
-        let more = Baseline::from_findings(&[
-            diag("TAU-P001", "a.rs", 3, Severity::Error),
-            diag("TAU-P001", "a.rs", 4, Severity::Error),
-            diag("TAU-N001", "b.rs", 1, Severity::Error),
-        ]);
-        assert_eq!(old.increases(&more).len(), 2);
-        assert!(more.increases(&old).is_empty());
-    }
-}
+mod reference;
+#[cfg(test)]
+mod tests;
