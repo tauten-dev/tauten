@@ -1,31 +1,39 @@
 # Status
 
-Updated 2026-11-18. Every line says how far an item got:
-**researched → specified → implemented → exercised**. "Exercised" means it
-ran against real input in this repository, and the evidence is named.
+Updated 2026-11-18 (end of day 1). Every line says how far an item got:
+**specified → implemented → exercised**. "Exercised" means it ran against
+real input in this repository, and the evidence is named. Nothing is
+published; nothing has been measured with a real agent.
 
 ## Milestones (see PLAN.md §6)
 
 | # | Item | State | Evidence |
 |---|---|---|---|
-| M0 | Repo, plan, mapping, agent profile, rule table | **done** | `docs/`, `profile/AGENTS.md`, `crates/tauten-check/rules.toml` (37 rules, ~200 banned API paths) |
-| M0 | Fixtures ported from Sovel reject/accept examples | **exercised** | `fixtures/cases`: 26 reject crates + 3 accept crates, exact expected rule IDs, asserted by `crates/cargo-tauten/tests/fixtures.rs` |
+| M0 | Plan, mapping, agent profile, rule table (38 rules, ~200 banned API paths) | **done** | `docs/`, `crates/tauten-check/agents.md`, `crates/tauten-check/rules.toml`, generated `docs/RULES.md` (drift-checked) |
+| M0 | Fixtures ported from Sovel examples | **exercised** | `fixtures/cases`: 26 reject + 3 accept crates, exact expected IDs, one tier per crate (`tests/fixtures.rs`) |
 | M0b | Writfold dry run | **exercised** | `docs/dry-runs/writfold-2026-11-18.md`. It found 4 defects in tauten, now fixed. |
-| M1 | `cargo tauten check` (human + JSON), `explain`, `explain --markdown`, `profile`, `--assume-tier` | **exercised** | fixture suite; self-check (tauten passes its own profile); writfold dry run |
-| M1 | Structural checks T001–T003, K003, A002, S002, X002–X004 | **exercised** | unit tests in `tauten-check`; fixtures |
+| M1 | `cargo tauten check` (human/JSON), `explain` (+`--markdown`), `profile`, `--assume-tier` | **exercised** | fixtures, self-check, writfold |
+| M1 | Ratchet: `cargo tauten baseline`, `--baseline`, stale-baseline rule TAU-R001, increases refused | **exercised** | unit tests; `tests/ratchet.rs`; writfold clone (707 accepted → 1 new `unwrap` = 1 error → stale slot = R001 → increase refused) |
 | M1 | `init` | not started | |
-| M1 | Ratchet (baseline file, block only new violations) | not started; the dry run shows it is needed for adoption | |
-| M2 | `tauten` (capability tokens) and `tauten-macros` (`newtype!`, `#[refined]`, contracts) | not started | |
+| M2 | `tauten`: `Authority`, `Clock`/`SystemClock`/`ManualClock`, `Env`, `dir` (feature `fs`, cap-std) | **implemented**, doc-tested | `crates/tauten` |
+| M2 | `tauten-macros`: `#[newtype]`, `#[refined]`, `#[requires]`, `#[ensures]` with `old()` | **exercised** | `crates/tauten/tests/behaviour.rs` (runtime), 6 trybuild compile-fail tests |
 | M3 | Proof tier (Aeneas/Lean template from writfold) | not started | |
-| M4 | Benchmark harness and pilot | not started | |
-| M5–M8 | Name, publish, website, writfold adoption | blocked on owner | |
+| M4 | Benchmark harness: host, 4 dev tasks, runner, analysis, admission gate | **exercised with built-in agents only** | `bench/README.md` (validation table); `scripts/bench-validate` in the gate |
+| M4 | Pilot with a real agent | **blocked on owner** (model budget, model choice) | |
+| M5–M8 | Name, publish, website, writfold adoption | **blocked on owner** | |
 
-## Gate
+## Quality
 
-`docker compose run --rm gate` runs: `cargo fmt --check`; build; unit and
-fixture tests; tauten's profile on tauten; a check that `docs/RULES.md` is
-current; `cargo deny check`. `docker compose run --rm mutants` runs
-cargo-mutants on `tauten-check`.
+- Gate (`docker compose run --rm gate`):
+  - format;
+  - build;
+  - unit, fixture, ratchet, behaviour and compile-fail tests;
+  - self-check (tauten passes its own profile);
+  - `docs/RULES.md` drift check;
+  - benchmark admission;
+  - `cargo deny`.
+- Mutation testing (`docker compose run --rm mutants`): first run 14 of 137
+  viable mutants missed in `tauten-check`; after the new tests, 0 missed.
 
 ## Design decisions made while building (with reasons)
 
@@ -39,6 +47,12 @@ cargo-mutants on `tauten-check`.
   is a structural check instead (TAU-X004).
 - **Separate profile for test targets** (`in_tests`). Calibrated on writfold,
   where most panic and IO findings were legitimate test code.
+- **Refined types live in a private generated module**, so even the defining
+  module cannot bypass `try_new`.
+- **Contracts only on `Result`-returning functions.** A violation is a
+  returned error in every build profile; there is no release-mode disabling
+  and no panic.
+- **Baseline keyed without line numbers, and it may only shrink.**
 - **The build directory is keyed by a hash of the profile and tier map**,
   because cargo does not fingerprint what a wrapper adds.
 
@@ -49,7 +63,9 @@ cargo-mutants on `tauten-check`.
   already establishes. The proof tier should subsume them; see the dry-run
   report.
 - S002 (placeholder comments) is a heuristic.
-- Diagnostics from macro expansions point at the macro call site, as clippy
-  reports them.
-- No measurement of agent behaviour yet. Nothing here supports a claim that
-  agents make fewer mistakes.
+- The benchmark has 4 dev tasks on one host. The plan needs about 24 across
+  3 hosts, with ≥ 16 held out, and no real agent has been run.
+- Contracts do not yet support `async fn` or generic newtypes; they have no
+  Kani (`cfg(kani)`) lowering yet.
+- **No measurement of agent behaviour yet. Nothing here supports a claim that
+  agents make fewer mistakes.**

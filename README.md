@@ -70,11 +70,11 @@ Layout:
 
 | Path | Contents |
 |---|---|
-| `crates/tauten-check` | Pure analysis (tier `core`): the rule table (`rules.toml`), lint flags, clippy config generation, diagnostic mapping, structural checks |
+| `crates/tauten-check` | Pure analysis (tier `core`): the rule table (`rules.toml`), the agent profile (`agents.md`), lint flags, clippy config generation, diagnostic mapping, structural checks |
 | `crates/cargo-tauten` | The CLI (tier `edge`): workspace loading, the rustc wrapper, output |
 | `fixtures/cases` | One crate per rule, each listing the exact rule IDs it must produce; three accept crates must produce none |
 | `docs/` | Plan, guidelines, mapping, status, dry-run reports |
-| `profile/AGENTS.md` | The fragment adopting projects paste into their agent instructions |
+| `crates/tauten-check/agents.md` | The agent instructions adopting projects include (written by `cargo tauten init`) |
 
 tauten checks itself with its own profile on every gate run.
 

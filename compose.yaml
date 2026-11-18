@@ -35,6 +35,9 @@ services:
 
   gate:
     <<: *tools
+    environment:
+      CARGO_BUILD_JOBS: ${TAUTEN_JOBS:-8}
+      TAUTEN_GATE_SNAPSHOT: "1"
     command: ["scripts/gate"]
 
   mutants:

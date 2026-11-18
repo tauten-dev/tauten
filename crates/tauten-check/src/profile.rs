@@ -10,6 +10,10 @@ use crate::tier::{Level, Tier};
 /// The profile shipped with this version of tauten.
 pub const EMBEDDED_RULES: &str = include_str!("../rules.toml");
 
+/// The agent instructions shipped with this version of tauten (the fragment
+/// adopting projects add to their AGENTS.md / CLAUDE.md).
+pub const AGENT_PROFILE: &str = include_str!("../agents.md");
+
 /// One rule of the profile.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]

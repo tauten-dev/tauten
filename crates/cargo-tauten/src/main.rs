@@ -2,6 +2,7 @@
 
 mod baseline_file;
 mod clippy;
+mod init;
 mod output;
 mod workspace;
 mod wrapper;
@@ -72,6 +73,15 @@ enum Command {
         /// Allow the baseline to accept more findings than before.
         #[arg(long)]
         allow_increase: bool,
+    },
+    /// Propose a tier for every crate without one and write the agent profile.
+    Init {
+        /// Path to Cargo.toml (default: discover from the current directory).
+        #[arg(long)]
+        manifest_path: Option<PathBuf>,
+        /// Apply the plan (default: print it only).
+        #[arg(long)]
+        write: bool,
     },
     /// Explain a rule, e.g. `cargo tauten explain TAU-P001`; without an ID, list all rules.
     Explain {
@@ -175,6 +185,14 @@ fn run(cli: Cli) -> Result<ExitCode> {
                 path.display(),
                 next.total()
             );
+            Ok(ExitCode::SUCCESS)
+        }
+        Command::Init {
+            manifest_path,
+            write,
+        } => {
+            let ws = workspace::load(manifest_path.as_deref(), &[])?;
+            init::run(&ws, write)?;
             Ok(ExitCode::SUCCESS)
         }
         Command::Explain { id, markdown } => {
