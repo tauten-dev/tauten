@@ -1,7 +1,8 @@
 name: release
 
 # Push a tag `vX.Y.Z` matching the workspace version. The gate runs first;
-# publishing uses the CARGO_REGISTRY_TOKEN repository secret.
+# publishing uses crates.io trusted publishing (GitHub OIDC); no stored token.
+# Each crate's crates.io settings name this repo and `release.yml`.
 on:
   push:
     tags: ["v*.*.*"]
@@ -18,6 +19,9 @@ jobs:
   publish:
     runs-on: ubuntu-24.04
     timeout-minutes: 60
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -30,9 +34,12 @@ jobs:
         run: docker compose --profile build build tools
       - name: Gate
         run: docker compose run --rm gate
+      - name: Get a short-lived crates.io token (trusted publishing)
+        id: auth
+        uses: rust-lang/crates-io-auth-action@3268eb413133e2960fa4ae0e963ca76380c54cd9 # v1.0.6
       - name: Publish all workspace crates in dependency order
         env:
-          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
         run: |
           docker run --rm -e CARGO_REGISTRY_TOKEN \
             -v "$PWD:/work/tauten" -w /work/tauten tauten-tools:local \
