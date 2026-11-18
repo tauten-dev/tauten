@@ -82,7 +82,20 @@ def run_agent(agent, agent_cmd, repo, task_dir, prompt_file, log_dir, timeout):
         proc, seconds = sh(["bash", "-c", cmd], cwd=repo, timeout=timeout)
         (log_dir / "agent.stdout").write_text(proc.stdout)
         (log_dir / "agent.stderr").write_text(proc.stderr)
-        return {"exit": proc.returncode, "seconds": round(seconds, 1)}
+        result = {"exit": proc.returncode, "seconds": round(seconds, 1)}
+        # Agents that print a JSON summary (claude -p --output-format json)
+        # get their cost and turn count recorded; others are left as is.
+        try:
+            summary = json.loads(proc.stdout)
+        except json.JSONDecodeError:
+            summary = None
+        if isinstance(summary, dict):
+            for key in ("total_cost_usd", "num_turns", "is_error"):
+                if key in summary:
+                    result[key] = summary[key]
+            usage = summary.get("usage") or {}
+            result["output_tokens"] = usage.get("output_tokens")
+        return result
     except subprocess.TimeoutExpired:
         return {"exit": None, "seconds": timeout, "timed_out": True}
 
