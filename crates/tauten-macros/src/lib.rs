@@ -297,6 +297,9 @@ fn expand_contracts(kind: Contract, first: Expr, mut item: ItemFn) -> syn::Resul
     }
     item.attrs = kept;
 
+    // Message text is taken before `old(..)` is rewritten, so a violation
+    // reports `old(balance)`, not the generated snapshot binding.
+    let post_texts: Vec<String> = post.iter().map(|cond| quote!(#cond).to_string()).collect();
     let mut snapshots = OldSnapshots::default();
     for expr in &mut post {
         snapshots.visit_expr_mut(expr);
@@ -315,8 +318,7 @@ fn expand_contracts(kind: Contract, first: Expr, mut item: ItemFn) -> syn::Resul
     let takes = snapshots.taken.iter().map(|(ident, expr)| {
         quote! { let #ident = ::tauten::contract::snapshot(&(#expr)); }
     });
-    let checks_post = post.iter().map(|cond| {
-        let text = quote!(#cond).to_string();
+    let checks_post = post.iter().zip(&post_texts).map(|(cond, text)| {
         quote! {
             if !::tauten::contract::holds(__tauten_ok, #cond) {
                 return ::core::result::Result::Err(::core::convert::From::from(

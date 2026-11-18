@@ -96,6 +96,12 @@ mod behaviour {
                 ..
             }))
         ));
+        // The message shows the condition as written, including `old(..)`.
+        let Err(BankError::Contract(ContractViolation::Ensures { condition, .. })) = result else {
+            return;
+        };
+        assert!(condition.contains("old"), "{condition}");
+        assert!(!condition.contains("__tauten"), "{condition}");
     }
 
     #[test]
