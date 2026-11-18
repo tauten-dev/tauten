@@ -11,6 +11,10 @@
 # `exceptions = false`, and every profile lint in the kernel tier, admit no
 # exception at all (TAU-X004). rustc's `forbid` is not used: derive macros
 # commonly emit `#[allow(clippy::...)]`, which rustc rejects under forbid.
+# `in_tests = false`: the rule is not applied when compiling test targets
+# (`#[cfg(test)]` code and `tests/`); tests may panic, do arithmetic, touch
+# temp files and print. Ignored results, stubs and exception hygiene still
+# apply to tests.
 # `enforced_by`: rustc | clippy | tauten | convention.
 
 version = 1
@@ -19,6 +23,7 @@ version = 1
 
 [[rule]]
 id = "TAU-P001"
+in_tests = false
 title = "No unwrap/expect on fallible values"
 lints = ["clippy::unwrap_used", "clippy::expect_used", "clippy::get_unwrap"]
 levels = { kernel = "deny", core = "deny", edge = "deny" }
@@ -28,6 +33,7 @@ fix = "Propagate with `?` and a typed error, or handle the None/Err case explici
 
 [[rule]]
 id = "TAU-P002"
+in_tests = false
 title = "No explicit panics"
 lints = ["clippy::panic", "clippy::unreachable"]
 levels = { kernel = "deny", core = "deny", edge = "warn" }
@@ -37,6 +43,7 @@ fix = "Return a typed error variant. If the state is truly impossible, restructu
 
 [[rule]]
 id = "TAU-P003"
+in_tests = false
 title = "No panicking index or slice"
 lints = ["clippy::indexing_slicing", "clippy::string_slice"]
 levels = { kernel = "deny", core = "deny", edge = "warn" }
@@ -46,6 +53,7 @@ fix = "Use `.get(i)` / `.get(a..b)` and handle None, iterate instead of indexing
 
 [[rule]]
 id = "TAU-P004"
+in_tests = false
 title = "No panics inside fallible functions"
 lints = ["clippy::unwrap_in_result", "clippy::panic_in_result_fn"]
 levels = { kernel = "deny", core = "deny", edge = "deny" }
@@ -55,6 +63,7 @@ fix = "Map the failure into the function's error type and return it with `?`."
 
 [[rule]]
 id = "TAU-P005"
+in_tests = false
 title = "No process exit or leaked values outside the edge"
 lints = ["clippy::exit", "clippy::mem_forget"]
 levels = { kernel = "deny", core = "deny" }
@@ -66,6 +75,7 @@ fix = "Return an error to the edge and let `main` decide the exit code; drop val
 
 [[rule]]
 id = "TAU-N001"
+in_tests = false
 title = "Checked arithmetic"
 lints = ["clippy::arithmetic_side_effects", "clippy::integer_division"]
 levels = { kernel = "deny", core = "deny", edge = "warn" }
@@ -75,6 +85,7 @@ fix = "Use `checked_*` and return an error on None, or `saturating_*`/`wrapping_
 
 [[rule]]
 id = "TAU-N002"
+in_tests = false
 title = "No lossy `as` casts"
 lints = ["clippy::as_conversions", "clippy::cast_possible_truncation", "clippy::cast_sign_loss", "clippy::cast_possible_wrap"]
 levels = { kernel = "deny", core = "deny", edge = "warn" }
@@ -84,6 +95,7 @@ fix = "Use `From`/`TryFrom` (`u32::try_from(x)?`) so out-of-range values become 
 
 [[rule]]
 id = "TAU-N003"
+in_tests = false
 title = "No floating point in the kernel"
 lints = ["clippy::float_arithmetic"]
 levels = { kernel = "deny" }
@@ -93,6 +105,7 @@ fix = "Use integers in fixed units (cents, milliseconds, basis points) or a rati
 
 [[rule]]
 id = "TAU-N004"
+in_tests = false
 title = "No exact float comparison"
 lints = ["clippy::float_cmp", "clippy::float_cmp_const"]
 levels = { kernel = "deny", core = "deny", edge = "deny" }
@@ -113,6 +126,7 @@ fix = "Propagate with `?`, handle the error, or wrap it with context (`.map_err(
 
 [[rule]]
 id = "TAU-E002"
+in_tests = false
 title = "Typed errors outside the edge"
 lints = ["clippy::result_unit_err"]
 levels = { kernel = "deny", core = "deny" }
@@ -124,6 +138,7 @@ fix = "Define an error enum (for example with `thiserror`) whose variants name e
 
 [[rule]]
 id = "TAU-M001"
+in_tests = false
 title = "No wildcard arms over enums you own"
 lints = ["clippy::wildcard_enum_match_arm", "clippy::match_wildcard_for_single_variants"]
 levels = { kernel = "deny", core = "deny", edge = "warn" }
@@ -215,6 +230,7 @@ fix = "Split blocks to one unsafe operation each and add a `// SAFETY:` comment 
 
 [[rule]]
 id = "TAU-A000"
+in_tests = false
 title = "Banned API in this tier"
 lints = ["clippy::disallowed_methods", "clippy::disallowed_types", "clippy::disallowed_macros"]
 levels = { kernel = "deny", core = "deny" }
@@ -224,6 +240,7 @@ fix = "See the specific rule named in the diagnostic."
 
 [[rule]]
 id = "TAU-A001"
+in_tests = false
 title = "No ambient authority"
 lints = []
 levels = { kernel = "deny", core = "deny" }
@@ -242,6 +259,7 @@ fix = "Accept the capability as a parameter and create it in the edge crate's `m
 
 [[rule]]
 id = "TAU-G001"
+in_tests = false
 title = "No hidden global state"
 lints = []
 levels = { kernel = "deny", core = "deny" }
@@ -251,6 +269,7 @@ fix = "Pass the state explicitly, or own it in a struct created by the edge."
 
 [[rule]]
 id = "TAU-C001"
+in_tests = false
 title = "Structured concurrency only"
 lints = []
 levels = { kernel = "deny", core = "deny" }
@@ -269,6 +288,7 @@ fix = "Release guards before awaiting; await or explicitly spawn-and-join future
 
 [[rule]]
 id = "TAU-O001"
+in_tests = false
 title = "No direct console output outside the edge"
 lints = ["clippy::print_stdout", "clippy::print_stderr"]
 levels = { kernel = "deny", core = "deny" }
@@ -278,6 +298,7 @@ fix = "Return the data, or write to an `impl std::io::Write` passed in by the ca
 
 [[rule]]
 id = "TAU-L001"
+in_tests = false
 title = "No unbounded loops outside the edge"
 lints = ["clippy::infinite_loop"]
 levels = { kernel = "deny", core = "deny" }
@@ -289,6 +310,7 @@ fix = "Bound the loop, return a value from it, or move the event loop to the edg
 
 [[rule]]
 id = "TAU-K001"
+in_tests = false
 title = "Kernel determinism and purity"
 lints = []
 levels = { kernel = "deny" }
@@ -298,6 +320,7 @@ fix = "Use `BTreeMap`/`BTreeSet` and plain owned values; pass state explicitly."
 
 [[rule]]
 id = "TAU-K002"
+in_tests = false
 title = "Kernel uses core/alloc paths"
 lints = ["clippy::std_instead_of_core", "clippy::std_instead_of_alloc"]
 levels = { kernel = "deny" }
@@ -345,6 +368,7 @@ fix = "Remove the dependency, or list it in `[package.metadata.tauten] kernel-de
 
 [[rule]]
 id = "TAU-D001"
+in_tests = false
 title = "Documented public API"
 lints = ["missing_docs", "clippy::missing_errors_doc", "clippy::missing_panics_doc"]
 levels = { kernel = "warn", core = "warn" }

@@ -48,10 +48,12 @@ pub fn run(profile: &Profile, ws: &Loaded) -> Result<Vec<Diagnostic>> {
         .join(format!("{:016x}", hasher.finish()));
     let conf_root = base.join("conf");
     for tier in Tier::ALL {
-        let dir = conf_root.join(tier.name());
-        fs::create_dir_all(&dir).with_context(|| format!("creating {}", dir.display()))?;
-        fs::write(dir.join("clippy.toml"), profile.clippy_toml(tier)?)
-            .context("writing generated clippy.toml")?;
+        for test in [false, true] {
+            let dir = conf_root.join(wrapper::conf_dir_name(tier, test));
+            fs::create_dir_all(&dir).with_context(|| format!("creating {}", dir.display()))?;
+            fs::write(dir.join("clippy.toml"), profile.clippy_toml(tier, test)?)
+                .context("writing generated clippy.toml")?;
+        }
     }
 
     let cargo = std::env::var_os("CARGO").map_or_else(|| PathBuf::from("cargo"), PathBuf::from);

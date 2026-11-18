@@ -1,0 +1,13 @@
+[package]
+name = "rej-test-hygiene"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[package.metadata.tauten]
+tier = "core"
+
+# Tests may panic, do arithmetic, touch the filesystem and print; they may
+# not ignore results.
+[package.metadata.fixture]
+expect = ["TAU-E001"]

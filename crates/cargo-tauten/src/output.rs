@@ -63,6 +63,20 @@ pub fn explain(profile: &Profile, id: Option<&str>) -> Result<()> {
     writeln!(out, "Why: {}\n", rule.why)?;
     writeln!(out, "Fix: {}\n", rule.fix)?;
     writeln!(out, "Enforced by: {:?}", rule.enforced_by)?;
+    writeln!(
+        out,
+        "Applies to tests: {}",
+        if rule.in_tests { "yes" } else { "no" }
+    )?;
+    writeln!(
+        out,
+        "Exceptions allowed: {}",
+        if rule.exceptions {
+            "with #[expect(.., reason)]"
+        } else {
+            "never"
+        }
+    )?;
     for tier in Tier::ALL {
         let level = rule.level(tier).map_or("-", |l| match l {
             tauten_check::Level::Warn => "warn",
@@ -90,7 +104,7 @@ pub fn profile(profile: &Profile, tier: Tier) -> Result<()> {
     writeln!(
         out,
         "# clippy.toml for {tier}\n{}",
-        profile.clippy_toml(tier)?
+        profile.clippy_toml(tier, false)?
     )?;
     Ok(())
 }

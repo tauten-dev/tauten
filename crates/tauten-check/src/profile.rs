@@ -31,6 +31,9 @@ pub struct Rule {
     /// Whether `#[expect]`/`#[allow]` may excuse this rule's lints.
     #[serde(default = "default_true")]
     pub exceptions: bool,
+    /// Whether the rule applies when compiling test targets.
+    #[serde(default = "default_true")]
+    pub in_tests: bool,
 }
 
 const fn default_true() -> bool {
@@ -235,9 +238,10 @@ impl Profile {
     /// crate never stops its dependents from being checked; severity is then
     /// taken from the profile (see [`crate::diag::from_compiler`]).
     #[must_use]
-    pub fn report_flags(&self, tier: Tier) -> Vec<String> {
+    pub fn report_flags(&self, tier: Tier, test: bool) -> Vec<String> {
         let mut flags = Vec::new();
-        for rule in self.rules.iter().filter(|rule| rule.level(tier).is_some()) {
+        let applies = |rule: &&Rule| rule.level(tier).is_some() && (rule.in_tests || !test);
+        for rule in self.rules.iter().filter(applies) {
             for lint in &rule.lints {
                 flags.push("-W".to_owned());
                 flags.push(lint.clone());
@@ -246,19 +250,21 @@ impl Profile {
         flags
     }
 
-    /// The `clippy.toml` contents for crates of `tier`.
+    /// The `clippy.toml` contents for crates of `tier` (for test targets when
+    /// `test` is set).
     ///
     /// # Errors
     /// Returns [`ProfileError::Render`] if serialisation fails.
-    pub fn clippy_toml(&self, tier: Tier) -> Result<String, ProfileError> {
+    pub fn clippy_toml(&self, tier: Tier, test: bool) -> Result<String, ProfileError> {
         let mut table = self.clippy_conf.clone();
         for kind in [ApiKind::Method, ApiKind::Type, ApiKind::Macro] {
             let mut entries = Vec::new();
-            for api in self
-                .apis
-                .iter()
-                .filter(|a| a.kind == kind && a.tiers.contains(&tier))
-            {
+            let applies = |api: &&ApiBan| {
+                api.kind == kind
+                    && api.tiers.contains(&tier)
+                    && (!test || self.rule(&api.rule).is_none_or(|r| r.in_tests))
+            };
+            for api in self.apis.iter().filter(applies) {
                 for path in &api.paths {
                     let mut entry = toml::Table::new();
                     entry.insert("path".to_owned(), toml::Value::String(path.clone()));
@@ -348,7 +354,7 @@ mod tests {
         let profile = Profile::embedded().expect("embedded profile parses");
         for tier in Tier::ALL {
             let levels = profile.lint_flags(tier);
-            let report = profile.report_flags(tier);
+            let report = profile.report_flags(tier, false);
             assert_eq!(levels.len(), report.len());
             let lints = |f: &[String]| f.iter().skip(1).step_by(2).cloned().collect::<Vec<_>>();
             assert_eq!(lints(&levels), lints(&report));
@@ -359,14 +365,27 @@ mod tests {
     #[test]
     fn clippy_toml_scopes_bans_by_tier() {
         let profile = Profile::embedded().expect("embedded profile parses");
-        let kernel = profile.clippy_toml(Tier::Kernel).expect("renders");
-        let core = profile.clippy_toml(Tier::Core).expect("renders");
-        let edge = profile.clippy_toml(Tier::Edge).expect("renders");
+        let kernel = profile.clippy_toml(Tier::Kernel, false).expect("renders");
+        let core = profile.clippy_toml(Tier::Core, false).expect("renders");
+        let edge = profile.clippy_toml(Tier::Edge, false).expect("renders");
         assert!(kernel.contains("std::collections::HashMap"));
         assert!(!core.contains("std::collections::HashMap"));
         assert!(core.contains("TAU-A001: ambient clock"));
         assert!(!edge.contains("disallowed-methods"));
         assert!(edge.contains("allow-unwrap-in-tests"));
+        let core_tests = profile.clippy_toml(Tier::Core, true).expect("renders");
+        assert!(!core_tests.contains("TAU-A001"));
+        let core_test_flags = profile.report_flags(Tier::Core, true);
+        assert!(
+            core_test_flags
+                .iter()
+                .any(|f| f == "clippy::let_underscore_must_use")
+        );
+        assert!(
+            !core_test_flags
+                .iter()
+                .any(|f| f == "clippy::panic_in_result_fn")
+        );
     }
 
     #[test]

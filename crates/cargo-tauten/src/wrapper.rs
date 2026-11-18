@@ -26,11 +26,12 @@ pub fn run() -> Result<ExitCode> {
     cmd.args(&args);
     if let Some(tier) = tier_for_invocation(&args) {
         let profile = Profile::embedded()?;
-        cmd.args(profile.report_flags(tier));
+        let test = args.iter().any(|a| a.as_os_str() == "--test");
+        cmd.args(profile.report_flags(tier, test));
         let conf_root = env::var_os(ENV_CONF_ROOT)
             .map(PathBuf::from)
             .context("TAUTEN_CONF_ROOT is not set")?;
-        cmd.env("CLIPPY_CONF_DIR", conf_root.join(tier.name()));
+        cmd.env("CLIPPY_CONF_DIR", conf_root.join(conf_dir_name(tier, test)));
     }
     let status = cmd.status().context("running clippy-driver")?;
     Ok(status
@@ -56,4 +57,13 @@ fn tier_for_invocation(args: &[OsString]) -> Option<Tier> {
         .filter_map(|entry| entry.split_once('='))
         .find(|(name, _)| *name == package)
         .and_then(|(_, tier)| Tier::parse(tier))
+}
+
+/// Directory (under the conf root) holding the clippy.toml for a tier.
+pub fn conf_dir_name(tier: Tier, test: bool) -> String {
+    if test {
+        format!("{tier}-test")
+    } else {
+        tier.name().to_owned()
+    }
 }
