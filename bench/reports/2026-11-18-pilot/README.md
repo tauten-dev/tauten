@@ -37,6 +37,18 @@ Full table with paired bootstrap CIs: [analysis.md](analysis.md). Raw rows:
 - **Cost:** arm C used about 13% more model cost and 17% more turns than arm A,
   and took about 5 s longer per trial (CI excludes 0).
 
+## Threats to validity
+
+- **Oracle visibility.** Trials ran on the host, not in a container. The
+  agent's tools were limited to cargo, git status/diff and file read/edit,
+  but nothing stopped a file read outside the trial repo, including
+  `bench/tasks/*/oracle` in the tauten checkout. Only the final JSON summary
+  of each session was kept, not the transcript, so this cannot be ruled out.
+  The held-out run requires per-trial containers and saved transcripts.
+- **Prompts gave the edges away.** Several prompts state the hidden cases as
+  worked examples (see `docs/bench/HELDOUT-DESIGN.md`), which by itself
+  explains much of the ceiling.
+
 ## Next
 
 1. Harder held-out tasks whose hidden oracles probe the edges agents skip:
