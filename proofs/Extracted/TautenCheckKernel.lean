@@ -95,6 +95,324 @@ def exception.excuse
     else ok exception.Excuse.Allowed
   else ok exception.Excuse.Forbidden
 
+/-- [tauten_check_kernel::ratchet::Finding]
+    Source: 'crates/tauten-check-kernel/src/ratchet.rs', lines 16:0-21:1
+    Visibility: public -/
+structure ratchet.Finding where
+  key : Std.Usize
+  error : Bool
+
+/-- [tauten_check_kernel::ratchet::Entry]
+    Source: 'crates/tauten-check-kernel/src/ratchet.rs', lines 24:0-29:1
+    Visibility: public -/
+structure ratchet.Entry where
+  key : Std.Usize
+  count : Std.U32
+
+/-- [tauten_check_kernel::ratchet::count_at]:
+    Source: 'crates/tauten-check-kernel/src/ratchet.rs', lines 33:0-38:1
+    Visibility: public -/
+def ratchet.count_at
+  (counts : Slice Std.U32) (key : Std.Usize) : Result Std.U32 := do
+  let o ←
+    core.slice.Slice.get (core.slice.index.SliceIndexUsizeSlice Std.U32) counts
+      key
+  match o with
+  | none => ok 0#u32
+  | some count => ok count
+
+/-- [tauten_check_kernel::ratchet::take]:
+    Source: 'crates/tauten-check-kernel/src/ratchet.rs', lines 42:0-53:1
+    Visibility: public -/
+def ratchet.take
+  (left : Slice Std.U32) (finding : ratchet.Finding) :
+  Result (Bool × (Slice Std.U32))
+  := do
+  if finding.error
+  then
+    let (o, get_mut_back) ←
+      core.slice.Slice.get_mut (core.slice.index.SliceIndexUsizeSlice Std.U32)
+        left finding.key
+    match o with
+    | none => let left1 := get_mut_back none
+              ok (false, left1)
+    | some slot =>
+      if slot > 0#u32
+      then
+        let slot1 ← lift (core.num.U32.saturating_sub slot 1#u32)
+        let left1 := get_mut_back (some slot1)
+        ok (true, left1)
+      else let left1 := get_mut_back o
+           ok (false, left1)
+  else ok (false, left)
+
+/-- [tauten_check_kernel::ratchet::take_at]:
+    Source: 'crates/tauten-check-kernel/src/ratchet.rs', lines 56:0-61:1
+    Visibility: public -/
+def ratchet.take_at
+  (left : Slice Std.U32) (findings : Slice ratchet.Finding) (i : Std.Usize) :
+  Result (Bool × (Slice Std.U32))
+  := do
+  let o ←
+    core.slice.Slice.get (core.slice.index.SliceIndexUsizeSlice
+      ratchet.Finding) findings i
+  match o with
+  | none => ok (false, left)
+  | some finding => ratchet.take left finding
+
+/-- [tauten_check_kernel::ratchet::apply]: loop body 0:
+    Source: 'crates/tauten-check-kernel/src/ratchet.rs', lines 73:4-77:5
+    Visibility: public -/
+@[rust_loop_body]
+def ratchet.apply_loop.body
+  (findings : Slice ratchet.Finding) (left : alloc.vec.Vec Std.U32)
+  (covered : alloc.vec.Vec Bool) (i : Std.Usize) :
+  Result (ControlFlow ((alloc.vec.Vec Std.U32) × (alloc.vec.Vec Bool) ×
+    Std.Usize) ((alloc.vec.Vec Bool) × (alloc.vec.Vec Std.U32)))
+  := do
+  let i1 := Slice.len findings
+  if i < i1
+  then
+    let (s, deref_mut_back) ← lift (alloc.vec.Vec.deref_mut left)
+    let (hit, s1) ← ratchet.take_at s findings i
+    let covered1 ← alloc.vec.Vec.push covered hit
+    let i2 ← lift (core.num.Usize.saturating_add i 1#usize)
+    let left1 := deref_mut_back s1
+    ok (cont (left1, covered1, i2))
+  else ok (done (covered, left))
+
+/-- [tauten_check_kernel::ratchet::apply]: loop 0:
+    Source: 'crates/tauten-check-kernel/src/ratchet.rs', lines 73:4-77:5
+    Visibility: public -/
+@[rust_loop]
+def ratchet.apply_loop
+  (findings : Slice ratchet.Finding) (left : alloc.vec.Vec Std.U32)
+  (covered : alloc.vec.Vec Bool) (i : Std.Usize) :
+  Result ((alloc.vec.Vec Bool) × (alloc.vec.Vec Std.U32))
+  := do
+  loop
+    (fun (left1, covered1, i1) => ratchet.apply_loop.body findings left1
+      covered1 i1)
+    (left, covered, i)
+
+/-- [tauten_check_kernel::ratchet::apply]:
+    Source: 'crates/tauten-check-kernel/src/ratchet.rs', lines 69:0-79:1
+    Visibility: public -/
+@[reducible]
+def ratchet.apply
+  (accepted : alloc.vec.Vec Std.U32) (findings : Slice ratchet.Finding) :
+  Result ((alloc.vec.Vec Bool) × (alloc.vec.Vec Std.U32))
+  := do
+  ratchet.apply_loop findings accepted (alloc.vec.Vec.new Bool) 0#usize
+
+/-- [tauten_check_kernel::ratchet::stale]: loop body 0:
+    Source: 'crates/tauten-check-kernel/src/ratchet.rs', lines 87:4-92:5
+    Visibility: public -/
+@[rust_loop_body]
+def ratchet.stale_loop.body
+  (left : Slice Std.U32) (keys : alloc.vec.Vec Std.Usize) (k : Std.Usize) :
+  Result (ControlFlow ((alloc.vec.Vec Std.Usize) × Std.Usize) (alloc.vec.Vec
+    Std.Usize))
+  := do
+  let i := Slice.len left
+  if k < i
+  then
+    let i1 ← ratchet.count_at left k
+    let keys1 ← if i1 > 0#u32
+                  then alloc.vec.Vec.push keys k
+                  else ok keys
+    let k1 ← lift (core.num.Usize.saturating_add k 1#usize)
+    ok (cont (keys1, k1))
+  else ok (done keys)
+
+/-- [tauten_check_kernel::ratchet::stale]: loop 0:
+    Source: 'crates/tauten-check-kernel/src/ratchet.rs', lines 87:4-92:5
+    Visibility: public -/
+@[rust_loop]
+def ratchet.stale_loop
+  (left : Slice Std.U32) (keys : alloc.vec.Vec Std.Usize) (k : Std.Usize) :
+  Result (alloc.vec.Vec Std.Usize)
+  := do
+  loop
+    (fun (keys1, k1) => ratchet.stale_loop.body left keys1 k1)
+    (keys, k)
+
+/-- [tauten_check_kernel::ratchet::stale]:
+    Source: 'crates/tauten-check-kernel/src/ratchet.rs', lines 84:0-94:1
+    Visibility: public -/
+@[reducible]
+def ratchet.stale
+  (left : Slice Std.U32) : Result (alloc.vec.Vec Std.Usize) := do
+  ratchet.stale_loop left (alloc.vec.Vec.new Std.Usize) 0#usize
+
+/-- [tauten_check_kernel::ratchet::zeros]: loop body 0:
+    Source: 'crates/tauten-check-kernel/src/ratchet.rs', lines 101:4-104:5
+    Visibility: public -/
+@[rust_loop_body]
+def ratchet.zeros_loop.body
+  (len : Std.Usize) (counts : alloc.vec.Vec Std.U32) (i : Std.Usize) :
+  Result (ControlFlow ((alloc.vec.Vec Std.U32) × Std.Usize) (alloc.vec.Vec
+    Std.U32))
+  := do
+  if i < len
+  then
+    let counts1 ← alloc.vec.Vec.push counts 0#u32
+    let i1 ← lift (core.num.Usize.saturating_add i 1#usize)
+    ok (cont (counts1, i1))
+  else ok (done counts)
+
+/-- [tauten_check_kernel::ratchet::zeros]: loop 0:
+    Source: 'crates/tauten-check-kernel/src/ratchet.rs', lines 101:4-104:5
+    Visibility: public -/
+@[rust_loop]
+def ratchet.zeros_loop
+  (len : Std.Usize) (counts : alloc.vec.Vec Std.U32) (i : Std.Usize) :
+  Result (alloc.vec.Vec Std.U32)
+  := do
+  loop
+    (fun (counts1, i1) => ratchet.zeros_loop.body len counts1 i1)
+    (counts, i)
+
+/-- [tauten_check_kernel::ratchet::zeros]:
+    Source: 'crates/tauten-check-kernel/src/ratchet.rs', lines 98:0-106:1
+    Visibility: public -/
+@[reducible]
+def ratchet.zeros (len : Std.Usize) : Result (alloc.vec.Vec Std.U32) := do
+  ratchet.zeros_loop len (alloc.vec.Vec.new Std.U32) 0#usize
+
+/-- [tauten_check_kernel::ratchet::add_error]:
+    Source: 'crates/tauten-check-kernel/src/ratchet.rs', lines 109:0-115:1
+    Visibility: public -/
+def ratchet.add_error
+  (counts : Slice Std.U32) (finding : ratchet.Finding) :
+  Result (Slice Std.U32)
+  := do
+  if finding.error
+  then
+    let (o, get_mut_back) ←
+      core.slice.Slice.get_mut (core.slice.index.SliceIndexUsizeSlice Std.U32)
+        counts finding.key
+    match o with
+    | none => ok (get_mut_back none)
+    | some slot =>
+      let slot1 ← lift (core.num.U32.saturating_add slot 1#u32)
+      ok (get_mut_back (some slot1))
+  else ok counts
+
+/-- [tauten_check_kernel::ratchet::add_error_at]:
+    Source: 'crates/tauten-check-kernel/src/ratchet.rs', lines 118:0-122:1
+    Visibility: public -/
+def ratchet.add_error_at
+  (counts : Slice Std.U32) (findings : Slice ratchet.Finding) (i : Std.Usize) :
+  Result (Slice Std.U32)
+  := do
+  let o ←
+    core.slice.Slice.get (core.slice.index.SliceIndexUsizeSlice
+      ratchet.Finding) findings i
+  match o with
+  | none => ok counts
+  | some finding => ratchet.add_error counts finding
+
+/-- [tauten_check_kernel::ratchet::count_errors]: loop body 0:
+    Source: 'crates/tauten-check-kernel/src/ratchet.rs', lines 130:4-133:5
+    Visibility: public -/
+@[rust_loop_body]
+def ratchet.count_errors_loop.body
+  (findings : Slice ratchet.Finding) (counts : alloc.vec.Vec Std.U32)
+  (i : Std.Usize) :
+  Result (ControlFlow ((alloc.vec.Vec Std.U32) × Std.Usize) (alloc.vec.Vec
+    Std.U32))
+  := do
+  let i1 := Slice.len findings
+  if i < i1
+  then
+    let (s, deref_mut_back) ← lift (alloc.vec.Vec.deref_mut counts)
+    let s1 ← ratchet.add_error_at s findings i
+    let i2 ← lift (core.num.Usize.saturating_add i 1#usize)
+    let counts1 := deref_mut_back s1
+    ok (cont (counts1, i2))
+  else ok (done counts)
+
+/-- [tauten_check_kernel::ratchet::count_errors]: loop 0:
+    Source: 'crates/tauten-check-kernel/src/ratchet.rs', lines 130:4-133:5
+    Visibility: public -/
+@[rust_loop]
+def ratchet.count_errors_loop
+  (findings : Slice ratchet.Finding) (counts : alloc.vec.Vec Std.U32)
+  (i : Std.Usize) :
+  Result (alloc.vec.Vec Std.U32)
+  := do
+  loop
+    (fun (counts1, i1) => ratchet.count_errors_loop.body findings counts1 i1)
+    (counts, i)
+
+/-- [tauten_check_kernel::ratchet::count_errors]:
+    Source: 'crates/tauten-check-kernel/src/ratchet.rs', lines 127:0-135:1
+    Visibility: public -/
+def ratchet.count_errors
+  (keys : Std.Usize) (findings : Slice ratchet.Finding) :
+  Result (alloc.vec.Vec Std.U32)
+  := do
+  let counts ← ratchet.zeros keys
+  ratchet.count_errors_loop findings counts 0#usize
+
+/-- [tauten_check_kernel::ratchet::grows_at]:
+    Source: 'crates/tauten-check-kernel/src/ratchet.rs', lines 140:0-145:1
+    Visibility: public -/
+def ratchet.grows_at
+  (old : Slice Std.U32) (next : Slice ratchet.Entry) (i : Std.Usize) :
+  Result Bool
+  := do
+  let o ←
+    core.slice.Slice.get (core.slice.index.SliceIndexUsizeSlice ratchet.Entry)
+      next i
+  match o with
+  | none => ok false
+  | some entry =>
+    let i1 ← ratchet.count_at old entry.key
+    ok (i1 < entry.count)
+
+/-- [tauten_check_kernel::ratchet::increases]: loop body 0:
+    Source: 'crates/tauten-check-kernel/src/ratchet.rs', lines 153:4-157:5
+    Visibility: public -/
+@[rust_loop_body]
+def ratchet.increases_loop.body
+  (old : Slice Std.U32) (next : Slice ratchet.Entry)
+  (grew : alloc.vec.Vec Bool) (i : Std.Usize) :
+  Result (ControlFlow ((alloc.vec.Vec Bool) × Std.Usize) (alloc.vec.Vec Bool))
+  := do
+  let i1 := Slice.len next
+  if i < i1
+  then
+    let more ← ratchet.grows_at old next i
+    let grew1 ← alloc.vec.Vec.push grew more
+    let i2 ← lift (core.num.Usize.saturating_add i 1#usize)
+    ok (cont (grew1, i2))
+  else ok (done grew)
+
+/-- [tauten_check_kernel::ratchet::increases]: loop 0:
+    Source: 'crates/tauten-check-kernel/src/ratchet.rs', lines 153:4-157:5
+    Visibility: public -/
+@[rust_loop]
+def ratchet.increases_loop
+  (old : Slice Std.U32) (next : Slice ratchet.Entry)
+  (grew : alloc.vec.Vec Bool) (i : Std.Usize) :
+  Result (alloc.vec.Vec Bool)
+  := do
+  loop
+    (fun (grew1, i1) => ratchet.increases_loop.body old next grew1 i1)
+    (grew, i)
+
+/-- [tauten_check_kernel::ratchet::increases]:
+    Source: 'crates/tauten-check-kernel/src/ratchet.rs', lines 150:0-159:1
+    Visibility: public -/
+@[reducible]
+def ratchet.increases
+  (old : Slice Std.U32) (next : Slice ratchet.Entry) :
+  Result (alloc.vec.Vec Bool)
+  := do
+  ratchet.increases_loop old next (alloc.vec.Vec.new Bool) 0#usize
+
 /-- [tauten_check_kernel::severity::Severity]
     Source: 'crates/tauten-check-kernel/src/severity.rs', lines 14:0-19:1
     Visibility: public -/

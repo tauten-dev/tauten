@@ -13,8 +13,12 @@ Adapted from writfold's `proofs/Audit.lean` and the P0 probe.
 2. Every required claim exists and is a theorem. `proofs/mutants.py` also
    requires every theorem a mutant names to be in this list.
 3. Every function extracted from `tauten_check_kernel` is reviewed (listed
-   below) and is mentioned in the statement of at least one claim, so a
-   function added to `start_from` without a theorem fails the build.
+   below) and is covered by a claim: it is mentioned in the statement of a
+   required claim, or it is called (transitively, through the extracted
+   definitions) by a function that is. Loop bodies and the ratchet's
+   per-finding helpers are covered this way by the theorems about `apply`,
+   `stale`, `count_errors` and `increases`. A function added to
+   `start_from` without a theorem fails the build.
 
 Constructor enumeration (docs/PROOF-PLAN.md section 2) is not relevant to
 the kernel: it defines no refined type. It returns with the macro instances
@@ -38,6 +42,21 @@ def claims : List Name := [
   ``Tauten.Kernel.exception_spec,
   ``Tauten.Kernel.kernel_never_excuses_levelled_rule,
   ``Tauten.Kernel.no_exceptions_never_excused,
+  -- the baseline ratchet (P2)
+  ``Tauten.Kernel.apply_conserves,
+  ``Tauten.Kernel.apply_covered_iff,
+  ``Tauten.Kernel.apply_cover_count,
+  ``Tauten.Kernel.apply_suppressed_le_accepted,
+  ``Tauten.Kernel.apply_left_spec,
+  ``Tauten.Kernel.ratchet_stale_iff,
+  ``Tauten.Kernel.ratchet_passes_iff,
+  ``Tauten.Kernel.ratchet_headroom,
+  ``Tauten.Kernel.count_errors_counts,
+  ``Tauten.Kernel.increases_flags,
+  ``Tauten.Kernel.increases_none_iff,
+  ``Tauten.Kernel.regenerated_baseline_never_grows,
+  ``Tauten.Kernel.ratchet_example,
+  ``Tauten.Kernel.increase_example,
 ]
 
 /-- The functions translated from `[package.metadata.charon] start_from`. -/
@@ -48,6 +67,27 @@ def reviewedFunctions : List Name := [
   ``tauten_check_kernel.severity.severity,
   ``tauten_check_kernel.exception.permitted,
   ``tauten_check_kernel.exception.excuse,
+  ``tauten_check_kernel.ratchet.count_at,
+  ``tauten_check_kernel.ratchet.take,
+  ``tauten_check_kernel.ratchet.take_at,
+  ``tauten_check_kernel.ratchet.apply,
+  ``tauten_check_kernel.ratchet.apply_loop,
+  ``tauten_check_kernel.ratchet.apply_loop.body,
+  ``tauten_check_kernel.ratchet.stale,
+  ``tauten_check_kernel.ratchet.stale_loop,
+  ``tauten_check_kernel.ratchet.stale_loop.body,
+  ``tauten_check_kernel.ratchet.zeros,
+  ``tauten_check_kernel.ratchet.zeros_loop,
+  ``tauten_check_kernel.ratchet.zeros_loop.body,
+  ``tauten_check_kernel.ratchet.add_error,
+  ``tauten_check_kernel.ratchet.add_error_at,
+  ``tauten_check_kernel.ratchet.count_errors,
+  ``tauten_check_kernel.ratchet.count_errors_loop,
+  ``tauten_check_kernel.ratchet.count_errors_loop.body,
+  ``tauten_check_kernel.ratchet.grows_at,
+  ``tauten_check_kernel.ratchet.increases,
+  ``tauten_check_kernel.ratchet.increases_loop,
+  ``tauten_check_kernel.ratchet.increases_loop.body,
 ]
 
 def auditedTheorems (env : Environment) : Array Name :=
@@ -86,22 +126,42 @@ def extractedFunctions (env : Environment) : Array Name :=
       if (target info.type).getAppFn.isConstOf ``Aeneas.Std.Result then acc.push decl else acc
     else acc).qsort (fun a b => a.toString < b.toString)
 
+/-- The extracted functions a definition's body uses. -/
+def calls (env : Environment) (found : Array Name) (decl : Name) : Array Name :=
+  match env.find? decl with
+  | some info => match info.value? with
+    | some value => value.getUsedConstants.filter found.contains
+    | none => #[]
+  | none => #[]
+
+/-- The extracted functions stated in a claim, then everything they call. -/
+def coveredByClaims (env : Environment) (found : Array Name) : Array Name := Id.run do
+  let mut covered : Array Name := #[]
+  let mut todo : Array Name := #[]
+  for claim in claims do
+    if let some info := env.find? claim then
+      todo := todo ++ info.type.getUsedConstants.filter found.contains
+  while h : todo.size > 0 do
+    let decl := todo[todo.size - 1]
+    todo := todo.pop
+    unless covered.contains decl do
+      covered := covered.push decl
+      todo := todo ++ calls env found decl
+  return covered
+
 def auditCoverage : CommandElabM Unit := do
   let env ← getEnv
   let found := extractedFunctions env
   logInfo m!"EXTRACTED {found.toList}"
+  let covered := coveredByClaims env found
   for decl in found do
     unless reviewedFunctions.contains decl do
       throwError "coverage audit: extracted {decl} is not in reviewedFunctions"
-    let covered := claims.any fun claim =>
-      match env.find? claim with
-      | some info => (info.type.find? fun e => e.isConstOf decl).isSome
-      | none => false
-    unless covered do
-      throwError "coverage audit: no required claim states anything about {decl}"
+    unless covered.contains decl do
+      throwError "coverage audit: no required claim states anything about {decl} or a caller of it"
   for decl in reviewedFunctions do
     unless found.contains decl do
       throwError "coverage audit: reviewed {decl} was not extracted"
-  logInfo m!"COVERAGE ok: {found.size} extracted functions, each stated in a claim"
+  logInfo m!"COVERAGE ok: {found.size} extracted functions, each stated in a claim or called by one"
 
 run_cmd auditCoverage
