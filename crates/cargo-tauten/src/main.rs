@@ -48,6 +48,9 @@ enum Command {
     Explain {
         /// Rule ID.
         id: Option<String>,
+        /// Print the whole rule reference as Markdown (docs/RULES.md).
+        #[arg(long, conflicts_with = "id")]
+        markdown: bool,
     },
     /// Print the generated clippy flags and clippy.toml for a tier.
     Profile {
@@ -106,7 +109,11 @@ fn run(cli: Cli) -> Result<ExitCode> {
             output::print(&diags, matches!(format, Format::Json))?;
             Ok(exit_code(&diags))
         }
-        Command::Explain { id } => {
+        Command::Explain { id, markdown } => {
+            if markdown {
+                print!("{}", output::rules_markdown(&profile));
+                return Ok(ExitCode::SUCCESS);
+            }
             output::explain(&profile, id.as_deref())?;
             Ok(ExitCode::SUCCESS)
         }
