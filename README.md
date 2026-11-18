@@ -1,3 +1,5 @@
+<p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/brand/tauten-icon-dark.svg"><img src="assets/brand/tauten-icon.svg" width="112" alt="tauten logo"></picture></p>
+
 # tauten
 
 **A strictness profile for Rust written by AI agents.** *(Working name; it
@@ -11,7 +13,7 @@ tauten turns those into compiler-checked rules, sorted by how much authority
 a crate holds, and reports each one with a stable ID and a repair hint an
 agent can act on.
 
-> **Status: pre-release, local only.** Not published, no website, and no
+> **Status: pre-release.** Not published yet, no website yet, and no
 > benchmark numbers yet. What exists and what has been exercised is listed in
 > [docs/STATUS.md](docs/STATUS.md). The plan is [docs/PLAN.md](docs/PLAN.md).
 

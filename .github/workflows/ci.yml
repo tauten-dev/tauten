@@ -1,0 +1,32 @@
+name: gate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gate-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  TAUTEN_CPUS: "4"
+  TAUTEN_JOBS: "4"
+  TAUTEN_MEMORY: 12g
+
+jobs:
+  gate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Build the pinned toolchain image
+        run: docker compose --profile build build tools
+      - name: Gate (fmt, build, tests, self-check, docs drift, benchmark admission, cargo-deny)
+        run: docker compose run --rm gate
