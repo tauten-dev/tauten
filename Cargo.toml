@@ -7,8 +7,9 @@ exclude = ["fixtures"]
 version = "0.0.1"
 edition = "2024"
 rust-version = "1.98"
-license = "MIT OR Apache-2.0"
-repository = "https://example.invalid/tauten" # placeholder until the owner creates the org
+license = "MIT"
+repository = "https://github.com/tauten-dev/tauten"
+homepage = "https://tauten.dev"
 
 [workspace.dependencies]
 tauten-check = { path = "crates/tauten-check", version = "0.0.1" }

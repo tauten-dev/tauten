@@ -6,6 +6,7 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
+homepage.workspace = true
 
 # The authority provider: it wraps the ambient APIs that core crates may not
 # call, so it is an edge crate itself.

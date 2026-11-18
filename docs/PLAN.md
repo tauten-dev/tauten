@@ -142,5 +142,5 @@ Docs-only banner commit ("archived research, superseded by <name>"), tag
 
 ## 10. Owner decisions
 
-Name; license (MIT OR Apache-2.0 recommended); Sovel archive; benchmark models
+Name; license (decided: MIT); Sovel archive; benchmark models
 and budget; writfold adoption timing; P2 in 0.1; early name reservation.

@@ -80,4 +80,4 @@ tauten checks itself with its own profile on every gate run.
 
 ## License
 
-MIT OR Apache-2.0 (pending owner confirmation).
+MIT. See [LICENSE](LICENSE).

@@ -16,7 +16,7 @@ Collected 2026-11-18. Each item says what it unblocks.
 
 | # | Decision | Recommendation |
 |---|---|---|
-| 1 | License | MIT OR Apache-2.0 (Rust convention; already in the manifests) |
+| 1 | License | **Decided 2026-11-18: MIT** |
 | 2 | Reserve names now with 0.0.x crates, or wait for 0.1 | Reserve now, once the name is final: the 4 crate names plus the CLI |
 | 3 | Benchmark pilot: model(s), trials, budget cap | 4 dev tasks × 3 arms × 3 trials = 36 runs on one model, before writing the held-out tasks |
 | 4 | Writfold adoption timing | Stage 1 (observe, warn-only) now. Stage 2 (baseline + tiers) after the pilot. Note: writfold's AGENTS.md pauses benchmark pilots *in writfold*; this benchmark lives in the tauten repo. |
