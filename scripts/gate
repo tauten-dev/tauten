@@ -22,6 +22,9 @@ step "docs/RULES.md matches the rule table"
 cargo run --locked --quiet -p cargo-tauten -- tauten explain --markdown | diff -u docs/RULES.md - \
   || { echo "docs/RULES.md is stale: run 'cargo run -p cargo-tauten -- tauten explain --markdown > docs/RULES.md'"; exit 1; }
 
+step "benchmark tasks: admission criteria (reference/null/sloppy agents)"
+scripts/bench-validate
+
 step "dependencies: licenses, advisories, sources"
 cargo deny --locked check
 

@@ -1,0 +1,8 @@
+# How the benchmark uses this host.
+oracle_dir = "crates/ledger-cli/tests"   # hidden oracle tests are copied here
+oracle_package = "ledger-cli"
+
+[tiers]                                    # declared in arm C; measured in every arm
+ledger-kernel = "kernel"
+ledger-core = "core"
+ledger-cli = "edge"

@@ -1,0 +1,5 @@
+id = "T02-stats"
+split = "dev"
+host = "ledger"
+title = "Largest-withdrawal statistics"
+defect_classes = ["empty-collection-panic", "unwrap", "argument-parsing"]

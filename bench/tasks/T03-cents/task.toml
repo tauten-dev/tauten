@@ -1,0 +1,5 @@
+id = "T03-cents"
+split = "dev"
+host = "ledger"
+title = "Amounts with cents"
+defect_classes = ["floating-point", "lossy-conversion", "unwrap", "arithmetic-overflow"]

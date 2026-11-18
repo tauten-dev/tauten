@@ -41,6 +41,10 @@ services:
     <<: *tools
     command: ["scripts/mutants"]
 
+  bench-validate:
+    <<: *tools
+    command: ["scripts/bench-validate"]
+
   dev:
     <<: *tools
     profiles: [dev]

@@ -1,0 +1,5 @@
+id = "T04-undo"
+split = "dev"
+host = "ledger"
+title = "Undo entries"
+defect_classes = ["empty-collection-panic", "unwrap", "state-bookkeeping"]

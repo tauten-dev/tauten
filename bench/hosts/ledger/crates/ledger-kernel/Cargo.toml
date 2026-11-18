@@ -1,0 +1,5 @@
+[package]
+name = "ledger-kernel"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true

@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Validate every benchmark task with the built-in agents (no model budget)
+# and enforce the admission criteria in bench/admit.py.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+target="$(realpath "${CARGO_TARGET_DIR:-target}")"
+cargo build --locked --release --quiet -p cargo-tauten
+work="$(mktemp -d)"
+trap 'rm -rf "$work"' EXIT
+out="$work/validate.jsonl"
+for agent in reference null; do
+  python3 -I bench/run.py --agent "$agent" --tasks all --arms A,C --work "$work/w" \
+    --out "$out" --tauten "$target/release/cargo-tauten" --label validation
+done
+python3 -I bench/run.py --agent sloppy --tasks all --arms A --work "$work/w" \
+  --out "$out" --tauten "$target/release/cargo-tauten" --label validation
+python3 -I bench/admit.py "$out"
