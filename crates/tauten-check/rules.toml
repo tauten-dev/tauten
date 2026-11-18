@@ -256,14 +256,14 @@ lints = []
 levels = { kernel = "deny", core = "deny" }
 enforced_by = "clippy"
 why = "Filesystem, network, environment, clock, randomness and process access must arrive as parameters (capabilities), so a signature shows everything a function can touch and tests can substitute them."
-fix = "Take a capability parameter (for example `&tauten::cap::FsRead`, a `&Dir`, or a trait like `Clock`) and let an edge crate construct it."
+fix = "Take a capability parameter (for example a `&cap_std::fs::Dir` from `Authority::dir`, `&dyn tauten::cap::Clock`, or `&tauten::cap::Env`) and let an edge crate construct it."
 
 [[rule]]
 id = "TAU-A002"
 title = "Authority minted outside the edge"
 lints = []
 levels = { kernel = "deny", core = "deny" }
-enforced_by = "tauten"
+enforced_by = "clippy"
 why = "Capabilities may only be created at startup in edge crates; minting them deeper defeats the point of passing them."
 fix = "Accept the capability as a parameter and create it in the edge crate's `main`."
 
@@ -401,6 +401,25 @@ fix = "Run `cargo tauten baseline` and commit the smaller baseline file."
 # Each entry becomes a `disallowed-*` entry in the generated clippy.toml of the
 # listed tiers, with reason "<rule id>: <note>". Unresolvable paths (crates the
 # project does not use) are ignored.
+
+[[api]]
+rule = "TAU-A002"
+tiers = ["kernel", "core"]
+kind = "method"
+note = "mints authority; only an edge crate may"
+paths = ["tauten::cap::Authority::acquire"]
+
+[[api]]
+rule = "TAU-A001"
+tiers = ["kernel", "core"]
+kind = "method"
+note = "ambient authority through cap-std"
+paths = [
+  "cap_std::ambient_authority", "ambient_authority::ambient_authority",
+  "cap_std::fs::Dir::open_ambient_dir", "cap_std::fs::Dir::create_ambient_dir_all",
+  "cap_std::fs::File::open_ambient", "cap_std::fs::File::create_ambient",
+  "cap_std::fs::File::open_ambient_with",
+]
 
 [[api]]
 rule = "TAU-A001"

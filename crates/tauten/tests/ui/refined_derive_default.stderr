@@ -1,0 +1,5 @@
+error: this derive could construct a refined value without checking the predicate; allowed derives: Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash. Implement the trait by hand through `try_new`
+ --> tests/ui/refined_derive_default.rs:4:17
+  |
+4 | #[derive(Debug, Default)]
+  |                 ^^^^^^^

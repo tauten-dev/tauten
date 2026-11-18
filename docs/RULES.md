@@ -27,7 +27,7 @@
 | [TAU-U002](#tau-u002) | Documented, minimal unsafe blocks | - | - | deny | yes | `#[expect]` + reason | Clippy |
 | [TAU-A000](#tau-a000) | Banned API in this tier | deny | deny | - | no | `#[expect]` + reason | Clippy |
 | [TAU-A001](#tau-a001) | No ambient authority | deny | deny | - | no | `#[expect]` + reason | Clippy |
-| [TAU-A002](#tau-a002) | Authority minted outside the edge | deny | deny | - | yes | never | Tauten |
+| [TAU-A002](#tau-a002) | Authority minted outside the edge | deny | deny | - | yes | `#[expect]` + reason | Clippy |
 | [TAU-G001](#tau-g001) | No hidden global state | deny | deny | - | no | `#[expect]` + reason | Clippy |
 | [TAU-C001](#tau-c001) | Structured concurrency only | deny | deny | - | no | `#[expect]` + reason | Clippy |
 | [TAU-C002](#tau-c002) | Async hazards | deny | deny | deny | yes | `#[expect]` + reason | Clippy |
@@ -266,7 +266,9 @@ Lints: `clippy::disallowed_methods`, `clippy::disallowed_types`, `clippy::disall
 
 Filesystem, network, environment, clock, randomness and process access must arrive as parameters (capabilities), so a signature shows everything a function can touch and tests can substitute them.
 
-**Fix:** Take a capability parameter (for example `&tauten::cap::FsRead`, a `&Dir`, or a trait like `Clock`) and let an edge crate construct it.
+**Fix:** Take a capability parameter (for example a `&cap_std::fs::Dir` from `Authority::dir`, `&dyn tauten::cap::Clock`, or `&tauten::cap::Env`) and let an edge crate construct it.
+
+Banned in kernel, core (ambient authority through cap-std): `cap_std::ambient_authority`, `ambient_authority::ambient_authority`, `cap_std::fs::Dir::open_ambient_dir`, `cap_std::fs::Dir::create_ambient_dir_all`, `cap_std::fs::File::open_ambient`, `cap_std::fs::File::create_ambient`, `cap_std::fs::File::open_ambient_with`
 
 Banned in kernel, core (ambient filesystem access): `std::fs::read`, `std::fs::read_to_string`, `std::fs::write`, `std::fs::read_dir`, `std::fs::create_dir`, `std::fs::create_dir_all`, `std::fs::remove_file`, `std::fs::remove_dir`, `std::fs::remove_dir_all`, `std::fs::rename`, `std::fs::copy`, `std::fs::metadata`, `std::fs::symlink_metadata`, `std::fs::canonicalize`, `std::fs::hard_link`, `std::fs::set_permissions`, `std::fs::read_link`, `std::fs::exists`, `std::fs::File::open`, `std::fs::File::create`, `std::fs::File::create_new`, `std::fs::File::options`, `std::fs::OpenOptions::new`, `std::path::Path::exists`, `std::path::Path::try_exists`, `std::path::Path::is_file`, `std::path::Path::is_dir`, `std::path::Path::is_symlink`, `std::path::Path::metadata`, `std::path::Path::symlink_metadata`, `std::path::Path::read_dir`, `std::path::Path::canonicalize`, `std::path::Path::read_link`, `tokio::fs::read`, `tokio::fs::read_to_string`, `tokio::fs::write`, `tokio::fs::read_dir`, `tokio::fs::create_dir_all`, `tokio::fs::remove_file`, `tokio::fs::remove_dir_all`, `tokio::fs::rename`, `tokio::fs::copy`, `tokio::fs::metadata`, `tokio::fs::File::open`, `tokio::fs::File::create`
 
@@ -285,6 +287,8 @@ Banned in kernel, core (ambient network or standard streams): `std::net::TcpStre
 Capabilities may only be created at startup in edge crates; minting them deeper defeats the point of passing them.
 
 **Fix:** Accept the capability as a parameter and create it in the edge crate's `main`.
+
+Banned in kernel, core (mints authority; only an edge crate may): `tauten::cap::Authority::acquire`
 
 ## TAU-G001
 

@@ -42,6 +42,52 @@ pub fn refined(args: TokenStream, item: TokenStream) -> TokenStream {
         .into()
 }
 
+/// Derives that cannot construct a value: they only copy, compare, hash or
+/// print an existing one. Anything else (`Default`, `Deserialize`,
+/// `Arbitrary`, ...) would create a refined value without `try_new`.
+const REFINED_DERIVES: &[&str] = &[
+    "Clone",
+    "Copy",
+    "Debug",
+    "PartialEq",
+    "Eq",
+    "PartialOrd",
+    "Ord",
+    "Hash",
+];
+
+/// Attributes allowed on a `#[refined]` struct besides allowlisted derives.
+const REFINED_ATTRS: &[&str] = &["doc", "must_use", "repr"];
+
+fn check_refined_attrs(attrs: &[syn::Attribute]) -> syn::Result<()> {
+    for attr in attrs {
+        let path = attr.path();
+        if path.is_ident("derive") {
+            let derives = attr.parse_args_with(
+                syn::punctuated::Punctuated::<syn::Path, syn::Token![,]>::parse_terminated,
+            )?;
+            for derive in &derives {
+                let last = derive.segments.last().map(|s| s.ident.to_string());
+                if !last.is_some_and(|n| REFINED_DERIVES.contains(&n.as_str())) {
+                    return Err(syn::Error::new_spanned(
+                        derive,
+                        "this derive could construct a refined value without checking the predicate; \
+                         allowed derives: Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash. \
+                         Implement the trait by hand through `try_new`",
+                    ));
+                }
+            }
+        } else if !REFINED_ATTRS.iter().any(|a| path.is_ident(a)) {
+            return Err(syn::Error::new_spanned(
+                attr,
+                "attribute not allowed on a #[refined] type: it could construct a value without \
+                 checking the predicate (allowed: doc, must_use, repr, and value-preserving derives)",
+            ));
+        }
+    }
+    Ok(())
+}
+
 fn expand_wrapper(item: &ItemStruct, predicate: Option<&Expr>) -> syn::Result<Tokens> {
     let Fields::Unnamed(fields) = &item.fields else {
         return Err(syn::Error::new_spanned(
@@ -67,6 +113,9 @@ fn expand_wrapper(item: &ItemStruct, predicate: Option<&Expr>) -> syn::Result<To
             &item.generics,
             "generic newtypes are not supported yet",
         ));
+    }
+    if predicate.is_some() {
+        check_refined_attrs(&item.attrs)?;
     }
     let name = &item.ident;
     let vis = &item.vis;

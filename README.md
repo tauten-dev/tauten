@@ -44,7 +44,7 @@ $ cargo tauten explain TAU-A001      # why the rule exists and how to fix it
 error[TAU-A001]: use of a disallowed method `std::fs::read_to_string`
   --> crates/config/src/lib.rs:12:5 (core crate `config`)
   = rule: No ambient authority (enforced by Clippy)
-  = fix: Take a capability parameter (for example `&tauten::cap::FsRead`, a `&Dir`, or a trait like `Clock`) and let an edge crate construct it.
+  = fix: Take a capability parameter (for example a `&cap_std::fs::Dir` from `Authority::dir`, `&dyn tauten::cap::Clock`, or `&tauten::cap::Env`) and let an edge crate construct it.
 ```
 
 The CLI owns the profile: it runs one `cargo check` with itself as the

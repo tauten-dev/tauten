@@ -1,0 +1,18 @@
+[package]
+name = "rej-authority-alias"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[package.metadata.tauten]
+tier = "core"
+
+# Found by the Plyward review: A002 was a syntactic scan, so an alias or a
+# function pointer slipped past it, and cap-std's own ambient authority was
+# not banned at all.
+[package.metadata.fixture]
+expect = ["TAU-A001", "TAU-A002"]
+
+[dependencies]
+tauten = { path = "../../../crates/tauten", features = ["fs"] }
+cap-std = "4.0.3"
