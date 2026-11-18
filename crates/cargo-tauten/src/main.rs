@@ -3,6 +3,7 @@
 mod clippy;
 mod output;
 mod workspace;
+mod wrapper;
 
 use std::path::PathBuf;
 use std::process::ExitCode;
@@ -38,6 +39,10 @@ enum Command {
         /// Skip clippy and run only the structural checks.
         #[arg(long)]
         structure_only: bool,
+        /// Assume a tier for a crate without editing its manifest
+        /// (`name=tier`, or `*=tier` for every crate without one). For trial runs.
+        #[arg(long = "assume-tier", value_name = "CRATE=TIER")]
+        assume_tier: Vec<String>,
     },
     /// Explain a rule, e.g. `cargo tauten explain TAU-P001`; without an ID, list all rules.
     Explain {
@@ -63,6 +68,12 @@ fn parse_tier(text: &str) -> Result<Tier, String> {
 }
 
 fn main() -> ExitCode {
+    if wrapper::active() {
+        return wrapper::run().unwrap_or_else(|error| {
+            eprintln!("cargo-tauten (wrapper): {error:#}");
+            ExitCode::from(2)
+        });
+    }
     let Cargo::Tauten(cli) = Cargo::parse();
     match run(cli) {
         Ok(code) => code,
@@ -80,8 +91,9 @@ fn run(cli: Cli) -> Result<ExitCode> {
             manifest_path,
             format,
             structure_only,
+            assume_tier,
         } => {
-            let ws = workspace::load(manifest_path.as_deref())?;
+            let ws = workspace::load(manifest_path.as_deref(), &assume_tier)?;
             let mut diags = tauten_check::structure::check(&profile, &ws.model);
             if !structure_only {
                 diags.extend(clippy::run(&profile, &ws)?);

@@ -27,7 +27,15 @@ impl Loaded {
     }
 }
 
-pub fn load(manifest_path: Option<&Path>) -> Result<Loaded> {
+pub fn load(manifest_path: Option<&Path>, assume_tier: &[String]) -> Result<Loaded> {
+    let assumed = assume_tier
+        .iter()
+        .map(|spec| {
+            spec.split_once('=')
+                .map(|(name, tier)| (name.to_owned(), tier.to_owned()))
+                .with_context(|| format!("`--assume-tier {spec}` must look like crate=tier"))
+        })
+        .collect::<Result<Vec<_>>>()?;
     let mut cmd = MetadataCommand::new();
     if let Some(path) = manifest_path {
         cmd.manifest_path(path);
@@ -37,12 +45,22 @@ pub fn load(manifest_path: Option<&Path>) -> Result<Loaded> {
     let workspace_lints = read_workspace_lints(&root)?;
     let members: Vec<&Package> = metadata.workspace_packages();
     let names: Vec<&str> = members.iter().map(|p| p.name.as_str()).collect();
-    let model = Workspace {
+    let mut model = Workspace {
         members: members
             .iter()
             .map(|p| member(&root, p, &names, &workspace_lints))
             .collect::<Result<_>>()?,
     };
+    for m in &mut model.members {
+        let named = assumed.iter().find(|(name, _)| name == &m.name);
+        let wildcard = assumed
+            .iter()
+            .find(|(name, _)| name == "*")
+            .filter(|_| m.tier_raw.is_none());
+        if let Some((_, tier)) = named.or(wildcard) {
+            m.tier_raw = Some(tier.clone());
+        }
+    }
     Ok(Loaded { metadata, model })
 }
 

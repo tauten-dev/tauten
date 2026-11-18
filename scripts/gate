@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# The commit gate. Runs inside `docker compose run --rm gate` (read-only
+# checkout); also runnable on a host with the pinned toolchain.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+step() { printf '\n== %s\n' "$*"; }
+
+step "format"
+cargo fmt --all --check
+
+step "build"
+cargo build --locked --workspace --all-targets
+
+step "tests (unit + fixture suite)"
+cargo test --locked --workspace
+
+step "self-check: tauten's own profile on tauten"
+cargo run --locked --quiet -p cargo-tauten -- tauten check
+
+step "dependencies: licenses, advisories, sources"
+cargo deny --locked check
+
+printf '\ngate: passed\n'

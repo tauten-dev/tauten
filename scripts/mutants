@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# Mutation testing: every surviving mutant in the pure analysis crate is a
+# missing test. Output goes to the target volume (checkout is read-only).
+set -euo pipefail
+cd "$(dirname "$0")/.."
+out="${CARGO_TARGET_DIR:-target}/mutants"
+cargo mutants --locked --package tauten-check --output "$out" "$@"
