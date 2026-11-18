@@ -46,5 +46,24 @@ mod ratchet {
         // Re-recording with nothing changed is allowed and idempotent.
         let again = tauten(&["baseline", "--output", file], &manifest);
         assert!(again.status.success());
+
+        // Headroom in an entry is stale: TAU-R001, labelled with the crate's
+        // real tier (it used to say "untiered").
+        let mut doc: serde_json::Value =
+            serde_json::from_str(&std::fs::read_to_string(file).expect("read")).expect("json");
+        let entry = doc["entries"]
+            .as_array_mut()
+            .expect("entries")
+            .iter_mut()
+            .find(|e| e["crate"] == "rej-unwrap")
+            .expect("rej-unwrap entry");
+        entry["count"] = serde_json::json!(entry["count"].as_u64().expect("count") + 1);
+        std::fs::write(file, doc.to_string()).expect("write");
+        let stale = tauten(&["check", "--baseline", file], &manifest);
+        assert_eq!(stale.status.code(), Some(1));
+        let text = String::from_utf8_lossy(&stale.stdout);
+        assert!(text.contains("error[TAU-R001]"), "{text}");
+        assert!(text.contains("core crate `rej-unwrap`"), "{text}");
+        assert!(!text.contains("untiered"), "{text}");
     }
 }

@@ -7,6 +7,7 @@ mod output;
 mod workspace;
 mod wrapper;
 
+use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::process::ExitCode;
 
@@ -136,13 +137,16 @@ fn run(cli: Cli) -> Result<ExitCode> {
             no_baseline,
             warnings,
         } => {
-            let (root, diags) = collect(&profile, &target)?;
+            let (root, diags, tiers) = collect(&profile, &target)?;
             let baseline_path = baseline.unwrap_or_else(|| root.join(baseline_file::DEFAULT_NAME));
             let (diags, baselined) = if no_baseline || !baseline_path.is_file() {
                 (diags, 0)
             } else {
                 let accepted = baseline_file::read(&baseline_path)?;
-                let applied = baseline::apply(&profile, &accepted, diags);
+                let mut applied = baseline::apply(&profile, &accepted, diags);
+                for d in applied.diagnostics.iter_mut().filter(|d| d.tier.is_none()) {
+                    d.tier = tiers.get(&d.krate).copied();
+                }
                 (applied.diagnostics, applied.baselined)
             };
             let options = output::Options {
@@ -158,7 +162,7 @@ fn run(cli: Cli) -> Result<ExitCode> {
             output,
             allow_increase,
         } => {
-            let (root, diags) = collect(&profile, &target)?;
+            let (root, diags, _) = collect(&profile, &target)?;
             let path = output.unwrap_or_else(|| root.join(baseline_file::DEFAULT_NAME));
             let next = Baseline::from_findings(&diags);
             if path.is_file() && !allow_increase {
@@ -212,8 +216,18 @@ fn run(cli: Cli) -> Result<ExitCode> {
 
 /// Load the workspace and run every check. Returns the workspace root and
 /// the sorted, de-duplicated findings.
-fn collect(profile: &Profile, target: &Target) -> Result<(PathBuf, Vec<Diagnostic>)> {
+/// Findings plus each member's declared tier, so diagnostics created after
+/// the scan (the ratchet's TAU-R001) can name the crate's tier.
+type Collected = (PathBuf, Vec<Diagnostic>, BTreeMap<String, Tier>);
+
+fn collect(profile: &Profile, target: &Target) -> Result<Collected> {
     let ws = workspace::load(target.manifest_path.as_deref(), &target.assume_tier)?;
+    let tiers = ws
+        .model
+        .members
+        .iter()
+        .filter_map(|m| m.tier().map(|t| (m.name.clone(), t)))
+        .collect();
     let mut diags = tauten_check::structure::check(profile, &ws.model);
     if !target.structure_only {
         diags.extend(clippy::run(profile, &ws)?);
@@ -223,7 +237,7 @@ fn collect(profile: &Profile, target: &Target) -> Result<(PathBuf, Vec<Diagnosti
             .cmp(&(&b.file, b.line, b.column, &b.id, &b.message))
     });
     diags.dedup();
-    Ok((ws.root().to_path_buf(), diags))
+    Ok((ws.root().to_path_buf(), diags, tiers))
 }
 
 fn exit_code(diags: &[Diagnostic]) -> ExitCode {

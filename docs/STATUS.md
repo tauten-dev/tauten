@@ -10,7 +10,7 @@ published; nothing has been measured with a real agent.
 | # | Item | State | Evidence |
 |---|---|---|---|
 | M0 | Plan, mapping, agent profile, rule table (37 rules, ~200 banned API paths) | **done** | `docs/`, `crates/tauten-check/agents.md`, `crates/tauten-check/rules.toml`, generated `docs/RULES.md` (drift-checked) |
-| M0 | Fixtures ported from Sovel examples | **exercised** | `fixtures/cases`: 26 reject + 3 accept crates, exact expected IDs, one tier per crate (`tests/fixtures.rs`) |
+| M0 | Fixtures ported from Sovel examples | **exercised** | `fixtures/cases`: 27 reject + 3 accept crates, exact expected IDs, one tier per crate (`tests/fixtures.rs`) |
 | M0b | Writfold dry run | **exercised** | `docs/dry-runs/writfold-2026-11-18.md`. It found 4 defects in tauten, now fixed. |
 | M1 | `cargo tauten check` (human/JSON), `explain` (+`--markdown`), `profile`, `--assume-tier` | **exercised** | fixtures, self-check, writfold |
 | M1 | Ratchet: `cargo tauten baseline`, `--baseline`, stale-baseline rule TAU-R001, increases refused | **exercised** | unit tests; `tests/ratchet.rs`; writfold clone (707 accepted → 1 new `unwrap` = 1 error → stale slot = R001 → increase refused) |
@@ -20,8 +20,8 @@ published; nothing has been measured with a real agent.
 | M3 | Proof tier (Aeneas/Lean template from writfold) | not started | |
 | M4 | Benchmark harness: host, 4 dev tasks, runner, analysis, admission gate | **exercised with built-in agents only** | `bench/README.md` (validation table); `scripts/bench-validate` in the gate |
 | M4 | Pilot with a real agent | **blocked on owner** (model budget, model choice) | |
-| M5 | Repo, CI gate, tag-driven release workflow, crates.io token secret | **implemented** | `.github/workflows/`; first `0.0.1` publish awaits owner go-ahead |
-| M7 | Website (tauten.dev) | in progress | placeholder live repo `tauten-dev/tauten-dev.github.io`; spec in progress |
+| M5 | Repo (public), CI gate, tag-driven release via crates.io trusted publishing (no stored token) | **exercised** | 0.0.1 of all four crates published 2026-11-18 by `release.yml` after the gate passed; trusted publishing first used at the next release |
+| M7 | Website (tauten.dev) | **live** | `tauten-dev/tauten-dev.github.io`, generated from a pinned commit with drift checks; benchmark section shows pending |
 | M8 | Writfold adoption | not started | |
 | — | Plyward review | done | `docs/reviews/plyward-2026-11-18.md`; three defects fixed in `e7fbc8c` |
 
