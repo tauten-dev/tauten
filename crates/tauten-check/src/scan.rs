@@ -249,6 +249,36 @@ mod tests {
     }
 
     #[test]
+    fn cfg_attr_without_no_std_is_not_no_std() {
+        let attrs = crate_attrs("#![cfg_attr(test, allow(dead_code))]\n").expect("parses");
+        assert!(!attrs.no_std);
+    }
+
+    #[test]
+    fn inner_doc_comments_and_literal_boundaries() {
+        let found = placeholder_comments(
+            "//! a todo in crate docs\nlet s = \"x\";// todo right after a literal\n",
+        );
+        let lines: Vec<u32> = found.iter().map(|(h, _)| h.line).collect();
+        assert_eq!(lines, vec![2]);
+    }
+
+    #[test]
+    fn doc_comments_are_skipped_even_when_tokenizing_fails() {
+        // Unbalanced delimiters: no literal ranges are available.
+        let found =
+            placeholder_comments("//! a todo in crate docs\n/// a stub\nfn f( {\n// for now\n");
+        let lines: Vec<u32> = found.iter().map(|(h, _)| h.line).collect();
+        assert_eq!(lines, vec![4]);
+    }
+
+    #[test]
+    fn comment_starting_exactly_at_a_literal_end_is_a_comment() {
+        let found = placeholder_comments("let s = (\"x\"// todo\n);\n");
+        assert_eq!(found.len(), 1);
+    }
+
+    #[test]
     fn finds_lint_exceptions() {
         let src = "#![expect(clippy::unwrap_used, reason = \"x\")]\nmod m {\n    #[allow(clippy::panic, dead_code)]\n    fn f() {}\n}\n";
         let found = lint_exceptions(src).expect("parses");

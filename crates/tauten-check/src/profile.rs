@@ -390,6 +390,32 @@ mod tests {
     }
 
     #[test]
+    fn api_bans_go_to_the_right_list() {
+        let profile = Profile::embedded().expect("embedded profile parses");
+        assert!(profile.api_bans().iter().any(|a| a.rule == "TAU-A001"));
+        let kernel: toml::Table = profile
+            .clippy_toml(Tier::Kernel, false)
+            .expect("renders")
+            .parse()
+            .expect("valid toml");
+        let paths = |key: &str| -> Vec<String> {
+            kernel
+                .get(key)
+                .and_then(toml::Value::as_array)
+                .map(|a| {
+                    a.iter()
+                        .filter_map(|e| e.get("path")?.as_str().map(str::to_owned))
+                        .collect()
+                })
+                .unwrap_or_default()
+        };
+        assert!(paths("disallowed-types").contains(&"std::collections::HashMap".to_owned()));
+        assert!(!paths("disallowed-methods").contains(&"std::collections::HashMap".to_owned()));
+        assert!(paths("disallowed-methods").contains(&"std::fs::read".to_owned()));
+        assert!(paths("disallowed-macros").contains(&"std::thread_local".to_owned()));
+    }
+
+    #[test]
     fn rejects_duplicate_lint_owners() {
         let text = r#"
 version = 1

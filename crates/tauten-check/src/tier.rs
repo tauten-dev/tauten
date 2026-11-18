@@ -84,3 +84,26 @@ impl Level {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn names_round_trip() {
+        for tier in Tier::ALL {
+            assert_eq!(Tier::parse(tier.name()), Some(tier));
+            assert_eq!(tier.to_string(), tier.name());
+        }
+        assert_eq!(Tier::Kernel.name(), "kernel");
+        assert_eq!(Tier::parse("Kernel"), None);
+    }
+
+    #[test]
+    fn dependencies_point_inward() {
+        assert!(Tier::Edge.may_depend_on(Tier::Kernel));
+        assert!(Tier::Core.may_depend_on(Tier::Core));
+        assert!(!Tier::Kernel.may_depend_on(Tier::Core));
+        assert!(!Tier::Core.may_depend_on(Tier::Edge));
+    }
+}

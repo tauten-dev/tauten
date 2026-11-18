@@ -372,6 +372,25 @@ mod tests {
     }
 
     #[test]
+    fn kernel_dep_message_names_the_unlisted_dependency() {
+        let mut k = member("k", "kernel");
+        k.external_deps = vec!["serde".into(), "allowed".into()];
+        k.kernel_dep_allowlist.push("allowed".into());
+        k.sources.push(SourceFile {
+            path: "k/src/lib.rs".into(),
+            text: "#![no_std]".into(),
+            is_crate_root: true,
+        });
+        let found = run(vec![k]);
+        assert_eq!(found.len(), 1);
+        assert!(
+            found
+                .iter()
+                .all(|d| d.message.contains("`serde`") && !d.message.contains("`allowed`"))
+        );
+    }
+
+    #[test]
     fn flags_escapes_and_minting() {
         let mut c = member("c", "core");
         c.manifest_lints.push(ManifestLint {

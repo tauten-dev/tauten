@@ -4,4 +4,4 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 out="${CARGO_TARGET_DIR:-target}/mutants"
-cargo mutants --locked --package tauten-check --output "$out" "$@"
+cargo mutants --cargo-arg=--locked --package tauten-check --output "$out" "$@"

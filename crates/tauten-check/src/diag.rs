@@ -265,6 +265,41 @@ mod tests {
     }
 
     #[test]
+    fn only_uncoded_summaries_are_dropped() {
+        let profile = Profile::embedded().expect("profile");
+        for text in [
+            "aborting due to 2 previous errors",
+            "3 warnings emitted",
+            "1 warning emitted",
+            "Some errors have detailed explanations: E0308.",
+            "For more information about this error, try `rustc --explain E0308`.",
+        ] {
+            let m = CompilerMessage {
+                level: "error".to_owned(),
+                message: text.to_owned(),
+                ..CompilerMessage::default()
+            };
+            assert!(from_compiler(&profile, "k", None, &m).is_none(), "{text}");
+        }
+        let real = CompilerMessage {
+            level: "error".to_owned(),
+            message: "expected `;`".to_owned(),
+            ..CompilerMessage::default()
+        };
+        assert_eq!(
+            from_compiler(&profile, "k", None, &real).map(|d| d.id),
+            Some("rustc".to_owned())
+        );
+        let coded = CompilerMessage {
+            level: "warning".to_owned(),
+            code: Some("clippy::unwrap_used".to_owned()),
+            message: "aborting due to a coded lint".to_owned(),
+            ..CompilerMessage::default()
+        };
+        assert!(from_compiler(&profile, "k", Some(Tier::Core), &coded).is_some());
+    }
+
+    #[test]
     fn summaries_are_dropped() {
         let profile = Profile::embedded().expect("profile");
         let m = CompilerMessage {
