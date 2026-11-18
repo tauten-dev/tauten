@@ -56,6 +56,8 @@ def setup_repo(repo, host_dir, host, arm):
     if arm == "C":
         # Single source: the agent profile shipped in tauten-check.
         instructions += "\n" + (BENCH.parent / "crates" / "tauten-check" / "agents.md").read_text()
+    # Build output must never count as the agent's change.
+    (repo / ".gitignore").write_text("/target\n")
     (repo / "AGENTS.md").write_text(instructions)
     (repo / "CLAUDE.md").write_text(instructions)
     if arm == "C":
