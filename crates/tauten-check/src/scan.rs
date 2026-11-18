@@ -49,6 +49,8 @@ pub struct LintException {
     pub at: Hit,
     /// Whether the attribute is crate-level (`#![...]` at the file root).
     pub crate_level: bool,
+    /// Whether it is `allow` (rather than `expect`).
+    pub allow: bool,
 }
 
 /// Every lint exception written in the file. Returns `None` if the file
@@ -84,6 +86,7 @@ impl ExceptionVisitor {
                     lint: lint.to_owned(),
                     at: hit(attr.pound_token.span),
                     crate_level,
+                    allow: path.is_ident("allow"),
                 });
             }
         }

@@ -247,6 +247,19 @@ impl Ctx<'_> {
     fn exceptions(&mut self, tier: Tier, file: &SourceFile) {
         for exception in scan::lint_exceptions(&file.text).unwrap_or_default() {
             let lint = exception.lint.as_str();
+            // Clippy's `allow_attributes` skips inner attributes, so a
+            // file-level `#![allow]` would otherwise escape TAU-X001.
+            if exception.crate_level && exception.allow {
+                self.emit(
+                    "TAU-X001",
+                    Some(tier),
+                    format!(
+                        "file-level `#![allow({lint})]`: use `#![expect({lint}, reason = \"...\")]`, \
+                         or narrow it to the item that needs it"
+                    ),
+                    Some((file.path.as_str(), exception.at)),
+                );
+            }
             let Some(rule) = self.profile.rule_for_lint(lint) else {
                 continue;
             };

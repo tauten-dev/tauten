@@ -10,8 +10,8 @@ use crate::tier::{Level, Tier};
 /// Rule IDs that tauten's own structural checks and ratchet emit. Every
 /// profile must define them, or those checks would silently report nothing.
 pub const EMITTED_BY_CODE: &[&str] = &[
-    "TAU-A002", "TAU-K003", "TAU-R001", "TAU-S002", "TAU-T001", "TAU-T002", "TAU-T003", "TAU-X002",
-    "TAU-X003", "TAU-X004",
+    "TAU-A002", "TAU-K003", "TAU-X001", "TAU-R001", "TAU-S002", "TAU-T001", "TAU-T002", "TAU-T003",
+    "TAU-X002", "TAU-X003", "TAU-X004",
 ];
 
 /// The profile shipped with this version of tauten.

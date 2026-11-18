@@ -1,0 +1,13 @@
+[package]
+name = "rej-file-allow"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[package.metadata.tauten]
+tier = "kernel"
+
+# Found by the writfold adoption pilot: clippy's allow_attributes skips inner
+# attributes, so a file-level `#![allow]` escaped TAU-X001.
+[package.metadata.fixture]
+expect = ["TAU-X001"]

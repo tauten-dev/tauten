@@ -27,7 +27,7 @@ tier = "core"   # "kernel" | "core" | "edge"
 
 | Tier | Meaning | Examples of what is rejected |
 |---|---|---|
-| `kernel` | Pure, `no_std`, deterministic decisions; eligible for proofs | any lint exception, floats, `HashMap`, `Rc`/`RefCell`, outward dependencies |
+| `kernel` | Pure, `no_std`, deterministic decisions; eligible for proofs | any exception to a profile rule, floats, `HashMap`, `Rc`/`RefCell`, outward dependencies |
 | `core` | Library code; effects arrive as parameters | `std::fs::read`, `SystemTime::now`, `println!`, detached threads, globals, `unwrap`, indexing, unchecked `+` |
 | `edge` | Startup and IO; the only tier that may create authority | `unwrap`, ignored results, stubs (most other rules become warnings) |
 
