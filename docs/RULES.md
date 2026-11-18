@@ -40,6 +40,7 @@
 | [TAU-T002](#tau-t002) | Tier dependency direction | deny | deny | deny | yes | never | Tauten |
 | [TAU-T003](#tau-t003) | Kernel dependencies are allowlisted | deny | - | - | yes | never | Tauten |
 | [TAU-D001](#tau-d001) | Documented public API | warn | warn | - | no | `#[expect]` + reason | Rustc |
+| [TAU-R001](#tau-r001) | Baseline must be tight | deny | deny | deny | yes | never | Tauten |
 
 In `kernel` crates no profile rule admits exceptions (TAU-X004). "Tests: no" means the rule is not applied to test targets.
 
@@ -398,3 +399,11 @@ Undocumented public items and error cases are where callers, human or agent, gue
 **Fix:** Add a doc comment; document each error variant a function can return under `# Errors`.
 
 Lints: `missing_docs`, `clippy::missing_errors_doc`, `clippy::missing_panics_doc`
+
+## TAU-R001
+
+**Baseline must be tight**
+
+The baseline records existing violations so a project can adopt the profile gradually. It may only shrink: once a violation is fixed, its slot must be removed, or a new violation could silently take it.
+
+**Fix:** Run `cargo tauten baseline` and commit the smaller baseline file.

@@ -5,6 +5,7 @@
 //! stable rule IDs, and runs structural checks over a workspace model that
 //! the caller (normally `cargo-tauten`) builds from disk.
 
+pub mod baseline;
 pub mod diag;
 pub mod profile;
 pub mod scan;

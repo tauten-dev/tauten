@@ -386,6 +386,17 @@ enforced_by = "rustc"
 why = "Undocumented public items and error cases are where callers, human or agent, guess wrong."
 fix = "Add a doc comment; document each error variant a function can return under `# Errors`."
 
+# -------------------------------------------------------------- ratchet ---
+
+[[rule]]
+id = "TAU-R001"
+title = "Baseline must be tight"
+lints = []
+levels = { kernel = "deny", core = "deny", edge = "deny" }
+enforced_by = "tauten"
+why = "The baseline records existing violations so a project can adopt the profile gradually. It may only shrink: once a violation is fixed, its slot must be removed, or a new violation could silently take it."
+fix = "Run `cargo tauten baseline` and commit the smaller baseline file."
+
 # ---------------------------------------------------------- banned APIs ---
 # Each entry becomes a `disallowed-*` entry in the generated clippy.toml of the
 # listed tiers, with reason "<rule id>: <note>". Unresolvable paths (crates the

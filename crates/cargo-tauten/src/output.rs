@@ -5,7 +5,18 @@ use std::io::{self, Write};
 use anyhow::Result;
 use tauten_check::{Diagnostic, Profile, Severity, Tier};
 
-pub fn print(diags: &[Diagnostic], json: bool) -> Result<()> {
+pub struct Options {
+    pub json: bool,
+    pub all_warnings: bool,
+    pub baselined: u64,
+}
+
+pub fn print(diags: &[Diagnostic], options: &Options) -> Result<()> {
+    let Options {
+        json,
+        all_warnings,
+        baselined,
+    } = *options;
     let stdout = io::stdout();
     let mut out = stdout.lock();
     if json {
@@ -15,7 +26,10 @@ pub fn print(diags: &[Diagnostic], json: bool) -> Result<()> {
         }
         return Ok(());
     }
-    for d in diags {
+    let shown = diags
+        .iter()
+        .filter(|d| all_warnings || d.severity == Severity::Error);
+    for d in shown {
         let label = match d.severity {
             Severity::Error => "error",
             Severity::Warning => "warning",
@@ -43,7 +57,28 @@ pub fn print(diags: &[Diagnostic], json: bool) -> Result<()> {
         .filter(|d| d.severity == Severity::Error)
         .count();
     let warnings = diags.len().saturating_sub(errors);
-    writeln!(out, "tauten: {errors} error(s), {warnings} warning(s)")?;
+    if !all_warnings && warnings > 0 {
+        let mut by_rule: std::collections::BTreeMap<(&str, &str), usize> =
+            std::collections::BTreeMap::new();
+        for d in diags.iter().filter(|d| d.severity == Severity::Warning) {
+            let slot = by_rule
+                .entry((d.id.as_str(), d.rule.as_deref().unwrap_or("")))
+                .or_insert(0);
+            *slot = slot.saturating_add(1);
+        }
+        writeln!(out, "warnings (run with --warnings to list them):")?;
+        for ((id, title), count) in by_rule {
+            writeln!(out, "  {count:>6}  {id}  {title}")?;
+        }
+    }
+    if baselined > 0 {
+        writeln!(
+            out,
+            "tauten: {errors} error(s), {warnings} warning(s), {baselined} accepted by the baseline"
+        )?;
+    } else {
+        writeln!(out, "tauten: {errors} error(s), {warnings} warning(s)")?;
+    }
     Ok(())
 }
 
