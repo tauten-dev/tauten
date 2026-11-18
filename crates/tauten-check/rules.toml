@@ -1,0 +1,491 @@
+# The tauten profile: the single source of truth for lint levels, banned APIs,
+# structural rules and the text `cargo tauten explain` prints.
+#
+# Tiers: kernel (pure, no_std, proof-eligible), core (no ambient authority),
+# edge (startup/IO; may mint authority).
+# Levels: "warn" | "deny" | "forbid". A tier missing from `levels` leaves the
+# lint at its default. `deny` can be overridden only by
+# `#[expect(lint, reason = "...")]` (TAU-X001). `forbid` is reserved for
+# `unsafe_code`: derive macros commonly emit `#[allow(clippy::...)]`, which
+# rustc rejects under a forbidden lint, so "no exceptions" is enforced
+# structurally instead (TAU-X004): `exceptions = false` on a rule, and every
+# profile lint in the kernel tier.
+# `enforced_by`: rustc | clippy | tauten | convention.
+
+version = 1
+
+# ---------------------------------------------------------------- panics ---
+
+[[rule]]
+id = "TAU-P001"
+title = "No unwrap/expect on fallible values"
+lints = ["clippy::unwrap_used", "clippy::expect_used", "clippy::get_unwrap"]
+levels = { kernel = "deny", core = "deny", edge = "deny" }
+enforced_by = "clippy"
+why = "unwrap/expect turn every unexpected input into a crash, and agents use them to silence the type checker instead of handling the case."
+fix = "Propagate with `?` and a typed error, or handle the None/Err case explicitly with match, if let, or a default chosen on purpose."
+
+[[rule]]
+id = "TAU-P002"
+title = "No explicit panics"
+lints = ["clippy::panic", "clippy::unreachable"]
+levels = { kernel = "deny", core = "deny", edge = "warn" }
+enforced_by = "clippy"
+why = "A panic is an untyped, unrecoverable failure that callers cannot see in the signature."
+fix = "Return a typed error variant. If the state is truly impossible, restructure the types so it cannot be represented."
+
+[[rule]]
+id = "TAU-P003"
+title = "No panicking index or slice"
+lints = ["clippy::indexing_slicing", "clippy::string_slice"]
+levels = { kernel = "deny", core = "deny", edge = "warn" }
+enforced_by = "clippy"
+why = "`v[i]` and `&s[a..b]` panic on out-of-range or non-char-boundary input; off-by-one errors become crashes."
+fix = "Use `.get(i)` / `.get(a..b)` and handle None, iterate instead of indexing, or use `split_at_checked`."
+
+[[rule]]
+id = "TAU-P004"
+title = "No panics inside fallible functions"
+lints = ["clippy::unwrap_in_result", "clippy::panic_in_result_fn"]
+levels = { kernel = "deny", core = "deny", edge = "deny" }
+enforced_by = "clippy"
+why = "A function that returns Result has promised to report failure as a value; panicking inside it breaks that promise."
+fix = "Map the failure into the function's error type and return it with `?`."
+
+[[rule]]
+id = "TAU-P005"
+title = "No process exit or leaked values outside the edge"
+lints = ["clippy::exit", "clippy::mem_forget"]
+levels = { kernel = "deny", core = "deny" }
+enforced_by = "clippy"
+why = "Exiting skips cleanup and hides control flow from callers; mem::forget silently leaks resources."
+fix = "Return an error to the edge and let `main` decide the exit code; drop values normally."
+
+# ------------------------------------------------------------- numerics ---
+
+[[rule]]
+id = "TAU-N001"
+title = "Checked arithmetic"
+lints = ["clippy::arithmetic_side_effects", "clippy::integer_division"]
+levels = { kernel = "deny", core = "deny", edge = "warn" }
+enforced_by = "clippy"
+why = "Integer overflow and division by zero either panic or wrap silently depending on build profile; both are logic errors agents rarely test."
+fix = "Use `checked_*` and return an error on None, or `saturating_*`/`wrapping_*` when that behaviour is the specification. Say which in a comment."
+
+[[rule]]
+id = "TAU-N002"
+title = "No lossy `as` casts"
+lints = ["clippy::as_conversions", "clippy::cast_possible_truncation", "clippy::cast_sign_loss", "clippy::cast_possible_wrap"]
+levels = { kernel = "deny", core = "deny", edge = "warn" }
+enforced_by = "clippy"
+why = "`as` silently truncates, wraps and changes sign."
+fix = "Use `From`/`TryFrom` (`u32::try_from(x)?`) so out-of-range values become errors."
+
+[[rule]]
+id = "TAU-N003"
+title = "No floating point in the kernel"
+lints = ["clippy::float_arithmetic"]
+levels = { kernel = "deny" }
+enforced_by = "clippy"
+why = "Floating point is not associative and has NaN; kernel decisions must be exact and proof-friendly."
+fix = "Use integers in fixed units (cents, milliseconds, basis points) or a rational type."
+
+[[rule]]
+id = "TAU-N004"
+title = "No exact float comparison"
+lints = ["clippy::float_cmp", "clippy::float_cmp_const"]
+levels = { kernel = "deny", core = "deny", edge = "deny" }
+enforced_by = "clippy"
+why = "Exact equality of computed floats is almost always a bug."
+fix = "Compare with an explicit tolerance, or use integers in fixed units."
+
+# --------------------------------------------------------------- errors ---
+
+[[rule]]
+id = "TAU-E001"
+title = "Never ignore a result"
+lints = ["unused_must_use", "clippy::let_underscore_must_use", "clippy::map_err_ignore"]
+levels = { kernel = "deny", core = "deny", edge = "deny" }
+enforced_by = "rustc"
+why = "Dropping a Result or discarding the original error is how failures go silent."
+fix = "Propagate with `?`, handle the error, or wrap it with context (`.map_err(|e| MyError::Io(e))`) instead of discarding it."
+
+[[rule]]
+id = "TAU-E002"
+title = "Typed errors outside the edge"
+lints = ["clippy::result_unit_err"]
+levels = { kernel = "deny", core = "deny" }
+enforced_by = "clippy"
+why = "`Result<T, ()>`, `anyhow::Error` and similar erase which failures are possible, so callers cannot handle them exhaustively."
+fix = "Define an error enum (for example with `thiserror`) whose variants name each failure. Convert to anyhow/eyre only in edge crates."
+
+# ---------------------------------------------------------------- match ---
+
+[[rule]]
+id = "TAU-M001"
+title = "No wildcard arms over enums you own"
+lints = ["clippy::wildcard_enum_match_arm", "clippy::match_wildcard_for_single_variants"]
+levels = { kernel = "deny", core = "deny", edge = "warn" }
+enforced_by = "clippy"
+why = "A `_` arm silently absorbs variants added later; exhaustive matches turn a new variant into a compile error at every decision site."
+fix = "List every variant. Group them with `A | B => ...` if they share behaviour."
+
+# ---------------------------------------------------------------- stubs ---
+
+[[rule]]
+id = "TAU-S001"
+title = "No stubs or debug leftovers"
+exceptions = false
+lints = ["clippy::todo", "clippy::unimplemented", "clippy::dbg_macro"]
+levels = { kernel = "deny", core = "deny", edge = "deny" }
+enforced_by = "clippy"
+why = "Agents leave `todo!()` and `unimplemented!()` behind and report the task done."
+fix = "Implement the branch, or return a typed `Unsupported` error if the case is deliberately out of scope."
+
+[[rule]]
+id = "TAU-S002"
+title = "Suspicious placeholder comments"
+lints = []
+levels = { kernel = "warn", core = "warn", edge = "warn" }
+enforced_by = "tauten"
+why = "Comments such as 'for now', 'placeholder', 'TODO' or 'FIXME' usually mark unfinished work that tests do not cover."
+fix = "Finish the work, or track it in your issue tracker and remove the comment."
+
+# ---------------------------------------------------------- escape hatch ---
+
+[[rule]]
+id = "TAU-X001"
+title = "Lint exceptions must be `#[expect]` with a reason"
+lints = ["clippy::allow_attributes", "clippy::allow_attributes_without_reason", "unfulfilled_lint_expectations"]
+levels = { kernel = "deny", core = "deny", edge = "deny" }
+enforced_by = "clippy"
+why = "`#[allow]` silently outlives the code it excused. `#[expect(lint, reason = \"...\")]` documents why and fails once the exception is no longer needed."
+fix = "Replace `#[allow(x)]` with `#[expect(x, reason = \"why this is safe here\")]` on the smallest item possible, or fix the code."
+
+[[rule]]
+id = "TAU-X002"
+title = "No crate-wide exceptions to profile lints"
+lints = []
+levels = { kernel = "deny", core = "deny", edge = "deny" }
+enforced_by = "tauten"
+why = "A crate-level `#![expect(...)]` or `#![allow(...)]` of a profile lint switches the rule off for the whole crate."
+fix = "Move the exception to the single item that needs it, with a reason."
+
+[[rule]]
+id = "TAU-X003"
+title = "Manifest lint table loosens the profile"
+lints = []
+levels = { kernel = "warn", core = "warn", edge = "warn" }
+enforced_by = "tauten"
+why = "`[lints]` entries that allow or warn profile lints have no effect under `cargo tauten check` but mislead readers and plain `cargo clippy` runs."
+fix = "Remove the entry from `[lints]` / `[workspace.lints]`."
+
+[[rule]]
+id = "TAU-X004"
+title = "No exceptions to this rule here"
+lints = []
+levels = { kernel = "deny", core = "deny", edge = "deny" }
+enforced_by = "tauten"
+why = "Some rules admit no exceptions: stub macros anywhere, and any profile lint in a kernel crate, whose code must stay extractable and provable."
+fix = "Remove the `#[expect]`/`#[allow]` and fix the code it excused."
+
+# --------------------------------------------------------------- unsafe ---
+
+[[rule]]
+id = "TAU-U001"
+title = "No unsafe outside the edge"
+lints = ["unsafe_code"]
+levels = { kernel = "forbid", core = "forbid" }
+enforced_by = "rustc"
+why = "Every guarantee in this profile assumes safe Rust."
+fix = "Move the unsafe code into an edge crate (or a dedicated `-sys` crate) behind a safe, documented API."
+
+[[rule]]
+id = "TAU-U002"
+title = "Documented, minimal unsafe blocks"
+lints = ["clippy::undocumented_unsafe_blocks", "clippy::multiple_unsafe_ops_per_block"]
+levels = { edge = "deny" }
+enforced_by = "clippy"
+why = "Each unsafe operation needs its own stated justification for review."
+fix = "Split blocks to one unsafe operation each and add a `// SAFETY:` comment explaining why the contract holds."
+
+# ------------------------------------------------- authority and globals ---
+
+[[rule]]
+id = "TAU-A000"
+title = "Banned API in this tier"
+lints = ["clippy::disallowed_methods", "clippy::disallowed_types", "clippy::disallowed_macros"]
+levels = { kernel = "deny", core = "deny" }
+enforced_by = "clippy"
+why = "The API is banned in this tier; see the specific rule named in the diagnostic."
+fix = "See the specific rule named in the diagnostic."
+
+[[rule]]
+id = "TAU-A001"
+title = "No ambient authority"
+lints = []
+levels = { kernel = "deny", core = "deny" }
+enforced_by = "clippy"
+why = "Filesystem, network, environment, clock, randomness and process access must arrive as parameters (capabilities), so a signature shows everything a function can touch and tests can substitute them."
+fix = "Take a capability parameter (for example `&tauten::cap::FsRead`, a `&Dir`, or a trait like `Clock`) and let an edge crate construct it."
+
+[[rule]]
+id = "TAU-A002"
+title = "Authority minted outside the edge"
+lints = []
+levels = { kernel = "deny", core = "deny" }
+enforced_by = "tauten"
+why = "Capabilities may only be created at startup in edge crates; minting them deeper defeats the point of passing them."
+fix = "Accept the capability as a parameter and create it in the edge crate's `main`."
+
+[[rule]]
+id = "TAU-G001"
+title = "No hidden global state"
+lints = []
+levels = { kernel = "deny", core = "deny" }
+enforced_by = "clippy"
+why = "Global and thread-local state creates invisible coupling between calls and breaks test isolation."
+fix = "Pass the state explicitly, or own it in a struct created by the edge."
+
+[[rule]]
+id = "TAU-C001"
+title = "Structured concurrency only"
+lints = []
+levels = { kernel = "deny", core = "deny" }
+enforced_by = "clippy"
+why = "Detached threads and tasks can outlive their caller, leak errors and race with shutdown."
+fix = "Use `std::thread::scope`, or `tokio::task::JoinSet` owned by the caller and awaited before returning."
+
+[[rule]]
+id = "TAU-C002"
+title = "Async hazards"
+lints = ["clippy::await_holding_lock", "clippy::await_holding_refcell_ref", "clippy::let_underscore_future", "clippy::large_futures"]
+levels = { kernel = "deny", core = "deny", edge = "deny" }
+enforced_by = "clippy"
+why = "Holding a lock across `.await` deadlocks, and dropping a future means the work never runs."
+fix = "Release guards before awaiting; await or explicitly spawn-and-join futures."
+
+[[rule]]
+id = "TAU-O001"
+title = "No direct console output outside the edge"
+lints = ["clippy::print_stdout", "clippy::print_stderr"]
+levels = { kernel = "deny", core = "deny" }
+enforced_by = "clippy"
+why = "Console output is an effect; library code that prints cannot be tested or redirected."
+fix = "Return the data, or write to an `impl std::io::Write` passed in by the caller."
+
+[[rule]]
+id = "TAU-L001"
+title = "No unbounded loops outside the edge"
+lints = ["clippy::infinite_loop"]
+levels = { kernel = "deny", core = "deny" }
+enforced_by = "clippy"
+why = "A loop with no exit cannot be reasoned about or terminated by the caller."
+fix = "Bound the loop, return a value from it, or move the event loop to the edge."
+
+# --------------------------------------------------------------- kernel ---
+
+[[rule]]
+id = "TAU-K001"
+title = "Kernel determinism and purity"
+lints = []
+levels = { kernel = "deny" }
+enforced_by = "clippy"
+why = "Kernel decisions must be deterministic and free of shared mutable state so they can be extracted and proved (Aeneas) and replayed exactly."
+fix = "Use `BTreeMap`/`BTreeSet` and plain owned values; pass state explicitly."
+
+[[rule]]
+id = "TAU-K002"
+title = "Kernel uses core/alloc paths"
+lints = ["clippy::std_instead_of_core", "clippy::std_instead_of_alloc"]
+levels = { kernel = "deny" }
+enforced_by = "clippy"
+why = "Kernel crates are `no_std`; `std` paths hide the dependency."
+fix = "Import from `core::` or `alloc::`."
+
+[[rule]]
+id = "TAU-K003"
+title = "Kernel crate attributes"
+lints = []
+levels = { kernel = "deny" }
+enforced_by = "tauten"
+why = "A kernel crate root must declare `#![no_std]` so the compiler enforces the absence of IO."
+fix = "Add `#![no_std]` at the top of the kernel crate's `lib.rs`."
+
+# ----------------------------------------------------------- structure ---
+
+[[rule]]
+id = "TAU-T001"
+title = "Every workspace crate declares a tier"
+lints = []
+levels = { kernel = "deny", core = "deny", edge = "deny" }
+enforced_by = "tauten"
+why = "Rules depend on the tier; an undeclared crate would escape the profile."
+fix = "Add `[package.metadata.tauten]` with `tier = \"kernel\"`, `\"core\"` or `\"edge\"` to the crate's Cargo.toml."
+
+[[rule]]
+id = "TAU-T002"
+title = "Tier dependency direction"
+lints = []
+levels = { kernel = "deny", core = "deny", edge = "deny" }
+enforced_by = "tauten"
+why = "Dependencies must point inward (edge -> core -> kernel); otherwise a pure crate can reach IO through its dependency."
+fix = "Invert the dependency: move the shared code down a tier, or pass the capability in."
+
+[[rule]]
+id = "TAU-T003"
+title = "Kernel dependencies are allowlisted"
+lints = []
+levels = { kernel = "deny" }
+enforced_by = "tauten"
+why = "Each external dependency of the kernel widens what must be trusted and may block proof extraction."
+fix = "Remove the dependency, or list it in `[package.metadata.tauten] kernel-deps = [\"name\"]` with a justification in review."
+
+[[rule]]
+id = "TAU-D001"
+title = "Documented public API"
+lints = ["missing_docs", "clippy::missing_errors_doc", "clippy::missing_panics_doc"]
+levels = { kernel = "warn", core = "warn" }
+enforced_by = "rustc"
+why = "Undocumented public items and error cases are where callers, human or agent, guess wrong."
+fix = "Add a doc comment; document each error variant a function can return under `# Errors`."
+
+# ---------------------------------------------------------- banned APIs ---
+# Each entry becomes a `disallowed-*` entry in the generated clippy.toml of the
+# listed tiers, with reason "<rule id>: <note>". Unresolvable paths (crates the
+# project does not use) are ignored.
+
+[[api]]
+rule = "TAU-A001"
+tiers = ["kernel", "core"]
+kind = "method"
+note = "ambient filesystem access"
+paths = [
+  "std::fs::read", "std::fs::read_to_string", "std::fs::write", "std::fs::read_dir",
+  "std::fs::create_dir", "std::fs::create_dir_all", "std::fs::remove_file",
+  "std::fs::remove_dir", "std::fs::remove_dir_all", "std::fs::rename", "std::fs::copy",
+  "std::fs::metadata", "std::fs::symlink_metadata", "std::fs::canonicalize",
+  "std::fs::hard_link", "std::fs::set_permissions", "std::fs::read_link", "std::fs::exists",
+  "std::fs::File::open", "std::fs::File::create", "std::fs::File::create_new",
+  "std::fs::File::options", "std::fs::OpenOptions::new",
+  "std::path::Path::exists", "std::path::Path::try_exists", "std::path::Path::is_file",
+  "std::path::Path::is_dir", "std::path::Path::is_symlink", "std::path::Path::metadata",
+  "std::path::Path::symlink_metadata", "std::path::Path::read_dir",
+  "std::path::Path::canonicalize", "std::path::Path::read_link",
+  "tokio::fs::read", "tokio::fs::read_to_string", "tokio::fs::write", "tokio::fs::read_dir",
+  "tokio::fs::create_dir_all", "tokio::fs::remove_file", "tokio::fs::remove_dir_all",
+  "tokio::fs::rename", "tokio::fs::copy", "tokio::fs::metadata",
+  "tokio::fs::File::open", "tokio::fs::File::create",
+]
+
+[[api]]
+rule = "TAU-A001"
+tiers = ["kernel", "core"]
+kind = "method"
+note = "ambient environment or process state"
+paths = [
+  "std::env::var", "std::env::var_os", "std::env::vars", "std::env::vars_os",
+  "std::env::args", "std::env::args_os", "std::env::current_dir",
+  "std::env::set_current_dir", "std::env::set_var", "std::env::remove_var",
+  "std::env::temp_dir", "std::env::home_dir", "std::env::current_exe",
+  "std::process::Command::new", "std::process::id",
+  "tokio::process::Command::new",
+]
+
+[[api]]
+rule = "TAU-A001"
+tiers = ["kernel", "core"]
+kind = "method"
+note = "ambient clock"
+paths = [
+  "std::time::SystemTime::now", "std::time::Instant::now", "std::thread::sleep",
+  "tokio::time::Instant::now", "tokio::time::sleep",
+  "chrono::Utc::now", "chrono::Local::now", "time::OffsetDateTime::now_utc",
+  "time::OffsetDateTime::now_local", "jiff::Timestamp::now", "jiff::Zoned::now",
+]
+
+[[api]]
+rule = "TAU-A001"
+tiers = ["kernel", "core"]
+kind = "method"
+note = "ambient randomness"
+paths = [
+  "rand::thread_rng", "rand::rng", "rand::random", "getrandom::getrandom",
+  "getrandom::fill", "uuid::Uuid::new_v4", "uuid::Uuid::now_v7",
+]
+
+[[api]]
+rule = "TAU-A001"
+tiers = ["kernel", "core"]
+kind = "method"
+note = "ambient network or standard streams"
+paths = [
+  "std::net::TcpStream::connect", "std::net::TcpStream::connect_timeout",
+  "std::net::TcpListener::bind", "std::net::UdpSocket::bind",
+  "std::net::ToSocketAddrs::to_socket_addrs",
+  "std::io::stdin", "std::io::stdout", "std::io::stderr",
+  "tokio::net::TcpStream::connect", "tokio::net::TcpListener::bind",
+  "tokio::net::UdpSocket::bind", "tokio::io::stdin", "tokio::io::stdout", "tokio::io::stderr",
+  "reqwest::get", "reqwest::Client::new", "reqwest::blocking::get",
+  "reqwest::blocking::Client::new",
+]
+
+[[api]]
+rule = "TAU-P005"
+tiers = ["kernel", "core"]
+kind = "method"
+note = "process termination"
+paths = ["std::process::exit", "std::process::abort"]
+
+[[api]]
+rule = "TAU-G001"
+tiers = ["kernel", "core"]
+kind = "type"
+note = "global or lazily initialised shared state"
+paths = [
+  "std::sync::OnceLock", "std::sync::LazyLock", "once_cell::sync::Lazy",
+  "once_cell::sync::OnceCell", "once_cell::unsync::Lazy",
+]
+
+[[api]]
+rule = "TAU-G001"
+tiers = ["kernel", "core"]
+kind = "macro"
+note = "global or thread-local state"
+paths = ["std::thread_local", "lazy_static::lazy_static"]
+
+[[api]]
+rule = "TAU-C001"
+tiers = ["kernel", "core"]
+kind = "method"
+note = "detached thread or task"
+paths = [
+  "std::thread::spawn", "std::thread::Builder::spawn", "tokio::spawn",
+  "tokio::task::spawn", "tokio::task::spawn_blocking", "tokio::task::spawn_local",
+  "async_std::task::spawn",
+]
+
+[[api]]
+rule = "TAU-E002"
+tiers = ["kernel", "core"]
+kind = "type"
+note = "type-erased error"
+paths = ["anyhow::Error", "eyre::Report", "color_eyre::Report"]
+
+[[api]]
+rule = "TAU-K001"
+tiers = ["kernel"]
+kind = "type"
+note = "shared mutability or nondeterministic iteration in the kernel"
+paths = [
+  "std::rc::Rc", "std::rc::Weak", "std::cell::RefCell", "std::cell::Cell",
+  "std::sync::Arc", "std::sync::Mutex", "std::sync::RwLock",
+  "std::collections::HashMap", "std::collections::HashSet",
+]
+
+# Settings copied into every generated clippy.toml.
+[clippy_conf]
+allow-unwrap-in-tests = true
+allow-expect-in-tests = true
+allow-panic-in-tests = true
+allow-indexing-slicing-in-tests = true

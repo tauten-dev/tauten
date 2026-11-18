@@ -1,0 +1,14 @@
+[workspace]
+resolver = "3"
+members = ["crates/*"]
+exclude = ["fixtures"]
+
+[workspace.package]
+version = "0.0.1"
+edition = "2024"
+rust-version = "1.98"
+license = "MIT OR Apache-2.0"
+repository = "https://example.invalid/tauten" # placeholder until the owner creates the org
+
+[workspace.dependencies]
+tauten-check = { path = "crates/tauten-check", version = "0.0.1" }
