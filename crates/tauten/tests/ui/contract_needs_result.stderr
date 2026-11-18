@@ -1,0 +1,5 @@
+error: contracts need a `Result<T, E>` return type with `E: From<tauten::ContractViolation>`
+ --> tests/ui/contract_needs_result.rs:3:20
+  |
+3 | fn half(x: u32) -> u32 {
+  |                    ^^^

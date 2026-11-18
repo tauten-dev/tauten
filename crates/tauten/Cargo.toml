@@ -1,0 +1,24 @@
+[package]
+name = "tauten"
+description = "Capability tokens, refinement types and checked contracts for the tauten Rust strictness profile."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+# The authority provider: it wraps the ambient APIs that core crates may not
+# call, so it is an edge crate itself.
+[package.metadata.tauten]
+tier = "edge"
+
+[features]
+default = []
+fs = ["dep:cap-std"]
+
+[dependencies]
+cap-std = { version = "4.0.3", optional = true }
+tauten-macros = { path = "../tauten-macros", version = "0.0.1" }
+
+[dev-dependencies]
+trybuild = "1.0.125"

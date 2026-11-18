@@ -1,0 +1,12 @@
+error[E0277]: the trait bound `Vec<u8>: Copy` is not satisfied
+ --> tests/ui/old_needs_copy.rs:8:1
+  |
+8 | #[tauten::ensures(|n: &usize| *n == old(items).len())]
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `Copy` is not implemented for `Vec<u8>`
+  |
+note: required by a bound in `snapshot`
+ --> src/contract.rs
+  |
+  | pub const fn snapshot<T: Copy>(value: &T) -> T {
+  |                          ^^^^ required by this bound in `snapshot`
+  = note: this error originates in the attribute macro `tauten::ensures` (in Nightly builds, run with -Z macro-backtrace for more info)

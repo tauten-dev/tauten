@@ -1,0 +1,5 @@
+error[E0451]: field `_private` of struct `Authority` is private
+ --> tests/ui/forged_authority.rs:3:38
+  |
+3 |     let _ = tauten::cap::Authority { _private: () };
+  |                                      ^^^^^^^^ private field

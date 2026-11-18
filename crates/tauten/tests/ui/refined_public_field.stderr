@@ -1,0 +1,5 @@
+error: the field must be private: a public field would let callers skip the constructor
+ --> tests/ui/refined_public_field.rs:3:20
+  |
+3 | pub struct Percent(pub u8);
+  |                    ^^^
