@@ -1,0 +1,12 @@
+[package]
+name = "acc-kernel"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[package.metadata.tauten]
+tier = "kernel"
+
+# Sovel origin: contract_arithmetic / named_sum
+[package.metadata.fixture]
+expect = []

@@ -86,7 +86,10 @@ fn run(cli: Cli) -> Result<ExitCode> {
             if !structure_only {
                 diags.extend(clippy::run(&profile, &ws)?);
             }
-            diags.sort_by(|a, b| (&a.file, a.line, &a.id).cmp(&(&b.file, b.line, &b.id)));
+            diags.sort_by(|a, b| {
+                (&a.file, a.line, a.column, &a.id, &a.message)
+                    .cmp(&(&b.file, b.line, b.column, &b.id, &b.message))
+            });
             diags.dedup();
             output::print(&diags, matches!(format, Format::Json))?;
             Ok(exit_code(&diags))

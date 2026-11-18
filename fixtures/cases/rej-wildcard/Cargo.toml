@@ -1,0 +1,12 @@
+[package]
+name = "rej-wildcard"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[package.metadata.tauten]
+tier = "core"
+
+# Sovel origin: trait_composition_missing / named_sum
+[package.metadata.fixture]
+expect = ["TAU-M001"]

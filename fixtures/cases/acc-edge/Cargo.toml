@@ -1,0 +1,16 @@
+[package]
+name = "acc-edge"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[package.metadata.tauten]
+tier = "edge"
+
+# Sovel origin: native_entry
+[package.metadata.fixture]
+expect = []
+
+[dependencies]
+acc_kernel = { package = "acc-kernel", path = "../acc-kernel" }
+acc_core = { package = "acc-core", path = "../acc-core" }

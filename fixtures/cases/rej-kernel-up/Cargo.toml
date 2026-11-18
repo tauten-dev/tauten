@@ -1,0 +1,15 @@
+[package]
+name = "rej-kernel-up"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[package.metadata.tauten]
+tier = "kernel"
+
+# Sovel origin: wrong_stage
+[package.metadata.fixture]
+expect = ["TAU-T002"]
+
+[dependencies]
+acc_core = { package = "acc-core", path = "../acc-core" }

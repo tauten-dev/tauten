@@ -1,0 +1,12 @@
+[package]
+name = "rej-contract-overflow"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[package.metadata.tauten]
+tier = "core"
+
+# Sovel origin: contract_overflow
+[package.metadata.fixture]
+expect = ["TAU-N001"]

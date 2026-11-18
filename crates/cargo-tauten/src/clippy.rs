@@ -46,7 +46,12 @@ fn run_tier(
         .arg("clippy")
         .arg("--manifest-path")
         .arg(ws.root().join("Cargo.toml"))
-        .args(["--message-format=json", "--all-targets", "--quiet"])
+        .args([
+            "--message-format=json",
+            "--all-targets",
+            "--keep-going",
+            "--quiet",
+        ])
         .arg("--target-dir")
         .arg(target.join("build"));
     for package in packages {

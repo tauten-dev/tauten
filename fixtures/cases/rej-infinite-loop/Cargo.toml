@@ -1,0 +1,12 @@
+[package]
+name = "rej-infinite-loop"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[package.metadata.tauten]
+tier = "core"
+
+# Sovel origin: loop_invariant
+[package.metadata.fixture]
+expect = ["TAU-L001"]

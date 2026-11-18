@@ -1,0 +1,12 @@
+[package]
+name = "rej-stub-excused"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[package.metadata.tauten]
+tier = "edge"
+
+# Sovel origin: (agent failure mode)
+[package.metadata.fixture]
+expect = ["TAU-X004"]

@@ -1,0 +1,12 @@
+[package]
+name = "rej-kernel-exception"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[package.metadata.tauten]
+tier = "kernel"
+
+# Sovel origin: unproved_precondition
+[package.metadata.fixture]
+expect = ["TAU-X004"]

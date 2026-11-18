@@ -1,0 +1,12 @@
+[package]
+name = "rej-kernel-impure"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[package.metadata.tauten]
+tier = "kernel"
+
+# Sovel origin: (determinism)
+[package.metadata.fixture]
+expect = ["TAU-K003", "TAU-K001", "TAU-N003"]
