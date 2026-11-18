@@ -14,9 +14,9 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  TAUTEN_CPUS: "4"
-  TAUTEN_JOBS: "4"
-  TAUTEN_MEMORY: 12g
+  TAUTEN_CPUS: "2"
+  TAUTEN_JOBS: "2"
+  TAUTEN_MEMORY: 6g
 
 jobs:
   gate:
