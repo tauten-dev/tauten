@@ -12,8 +12,10 @@ cd /work
 rm -rf crates proofs/Extracted proofs/Tauten
 mkdir -p crates
 cp "$repo/Cargo.toml" "$repo/Cargo.lock" .
-cp -r "$repo/crates/tauten-check-kernel" crates/
-rm -rf crates/tauten-check-kernel/target
+for crate in tauten-check-kernel tauten tauten-macros tauten-proof-instances; do
+    cp -r "$repo/crates/$crate" crates/
+    rm -rf "crates/$crate/target"
+done
 for entry in "$repo"/proofs/*; do
     cp -r "$entry" proofs/
 done

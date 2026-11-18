@@ -484,6 +484,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "tauten-proof-instances"
+version = "0.0.2"
+dependencies = [
+ "tauten",
+]
+
+[[package]]
 name = "termcolor"
 version = "1.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

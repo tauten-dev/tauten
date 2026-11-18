@@ -2,7 +2,8 @@
 
 Lean 4 theorems about the decision code of the checker, stated over the
 Charon/Aeneas translation of the shipped Rust. Plan: `docs/PROOF-PLAN.md`.
-P0 (toolchain probe): `docs/proofs/probe.md`. This page covers P1 and P2.
+P0 (toolchain probe): `docs/proofs/probe.md`. This page covers P1, P2
+and P3 (the macros' generated code, for listed instances).
 
 ## What is proved (P1, P2)
 
@@ -96,16 +97,156 @@ What is trusted, not proved:
 - The toolchain: Charon, Aeneas and its Lean library, Lean, and rustc.
 
 This is not a proof of tauten. It covers three small decisions and the
-ratchet's counting. Scanning, diagnostic mapping, interning, rendering and
-the macros (planned for P3) are not covered.
+ratchet's counting, and (P3, below) the code the macros generated for a
+list of instances. Scanning, diagnostic mapping, interning and rendering
+are not covered.
+
+## What the macros generate, for listed instances (P3)
+
+The site wording for this section is **"proved for listed instances"**.
+The macros are not verified: `tauten-macros` (a proc-macro over
+`syn`/`quote`) is not translated, and nothing here quantifies over every
+input it accepts.
+
+`crates/tauten-proof-instances` (`publish = false`, so `cargo publish
+--workspace` skips it; tier `edge` only because the `tauten` runtime is an
+edge crate in this workspace) applies the real macros as a user would.
+Charon translates the *expansion*, so the Lean definitions are the
+macro's actual output. `include = ["tauten::contract", "tauten::error"]`
+makes `holds`, `snapshot`, `RefineError` and `ContractViolation`
+transparent; no `axiom` is emitted.
+
+| Instance | Macro input |
+|---|---|
+| `Percent(u8)` | `#[refined(\|v\| *v <= 100)]` |
+| `Port(u16)` | `#[refined(\|p\| *p >= 1024 && *p <= 49151)]` |
+| `Offset(i32)` | `#[refined(\|x\| *x >= -1000 && *x <= 1000)]` |
+| `Count(u64)` | `#[refined(\|n\| *n != 0)]` |
+| `Tag(u32)` | `#[newtype]` with `derive(Default)`: the control of the constructor audit |
+| `deposit(balance: u64, amount: u64)` | `#[requires(amount > 0)]`, `#[ensures(\|after\| *after > old(balance))]` |
+| `withdraw(balance: &mut u64, amount: u64)` | `#[requires(amount > 0)]`, `#[ensures(\|after\| *after < old(*balance))]` |
+| `scale(value: u32, factor: u32)` | `#[requires(factor <= 1000)]`, `#[ensures(\|scaled\| *scaled >= old(value))]` (false for a zero factor: every outcome is reachable) |
+| `share(total: u32, divisor: u32)` | `#[requires(divisor != 0)]`; the body divides and would panic on 0 |
+
+### How the instance proofs constrain the generator
+
+`proofs/Tauten/MacroShapes.lean` defines what an expansion reduces to and
+proves the facts once, for an arbitrary predicate, body and postcondition
+(schematic claims, no extracted function):
+
+- `refinedTryNew p err x`: `Ok x` if `p x`, else `Err err`.
+  `refined_ok_iff`, `refined_ok_value` (the `Ok` value is `x`),
+  `refined_err_iff`, `refined_total` (no third outcome, no panic).
+- `contractCall pre reqErr post ensErr body` (by-value parameters) and
+  `contractCallMut ... s0 body` (a `&mut` parameter as state in and out).
+  `contract_requires`/`contract_mut_requires`: a false precondition gives
+  `Err reqErr` (and the entry state) *for every body*, including one that
+  panics: the body is not evaluated. `contract_ok`/`contract_mut_ok`: the
+  body's `Ok t` is returned iff `post t`, else `Err ensErr`.
+  `contract_err`/`contract_mut_err`: the body's `Err` is returned unchanged.
+
+Each instance then has a `*_shape` theorem: the extracted function
+*equals* the shape at that instance's predicate or conditions, stated over
+the mathematical values (`.val`), with the exact error values the macro
+emits (type name, predicate text, function name, condition text). Every
+other instance claim is proved through its shape theorem. A change to what
+the macro emits breaks the shape theorems and, through them, the claims
+(mutants below).
+
+### Claims (`proofs/Tauten/Refined.lean`, `proofs/Tauten/Contracts.lean`)
+
+Per refined type `T` in `percent`, `port`, `offset`, `count` (Plyward
+`spec/REFINEMENTS.md` "Formal targets for Percent", targets 1, 2, 3, 5):
+
+| Claim | Target | Statement |
+|---|---|---|
+| `T_try_new_shape` | binding | `try_new` is `refinedTryNew` at the predicate and the macro's `RefineError` |
+| `T_try_new_ok_iff` | F01-1 reflection | `try_new x` is `Ok` iff the predicate holds of `x` |
+| `T_try_new_sound` | F01-2 introduction, raw value | `try_new x = Ok v` implies `get v`, `into_inner v` and `as_ref v` return `x`, and the predicate holds of `x` |
+| `T_try_new_err_iff` | F01-3 rejection | `try_new x` is `Err` iff the predicate is false (with `refined_total`: no clamping, no panic) |
+| `T_try_from_spec` | F01-5 | `TryFrom::try_from` is `try_new` |
+| `T_derived_spec` | F01-5 | derived `clone` is the identity, `eq` compares the values, `assert_fields_are_eq` is a no-op |
+| `T_boundaries` | witnesses | Percent: 0 and 100 accepted unchanged, 101 and 255 rejected; Port: 0, 1023, 49152, 65535 rejected, 1024, 49151 accepted; Offset: `i32::MIN`, -1001, 1001, `i32::MAX` rejected, -1000, 0, 1000 accepted; Count: 0 rejected, 1 and `u64::MAX` accepted |
+
+`tag_control_spec` states the control's `new` and derived `default`.
+
+F01-5, constructor enumeration, is also an audit (`Audit.lean`): for
+each refined type, every extracted function whose result is `Result T`
+with `T` mentioning the type is listed (from the unreduced signature, with
+no `isInternal` filter, which hides the `__tauten_*` module). The list must
+be exactly `try_new`, `try_from` and the derived `clone`. For the control
+it must contain `new` and the derived `default`, so the audit sees derived
+impls. Result today:
+
+```
+CONSTRUCTORS …Percent: [….Insts.CoreCloneClone.clone, ….Insts.CoreConvertTryFromU8RefineError.try_from, ….try_new]
+CONSTRUCTORS …Tag (control): [….Insts.CoreCloneClone.clone, ….Insts.CoreDefaultDefault.default, ….new]
+CONSTRUCTOR_AUDIT ok: 4 refined types, control found 2 constructors
+```
+
+Contracts (`IsRequires r`: `r` is `Err(Contract(Requires ..))`; likewise
+`IsEnsures`):
+
+| Function | Claims |
+|---|---|
+| `deposit` | `deposit_shape`; `deposit_requires_iff` (`Requires` iff `amount = 0`); `deposit_never_ensures`; `deposit_ok` (no overflow: `Ok` of the sum); `deposit_overflow` (the body's `Err(Overflow)`, unchanged) |
+| `withdraw` | `withdraw_shape` (the postcondition compares with the balance **at entry**: `old(*balance)` is the pre-state); `withdraw_requires_iff`; `withdraw_requires_keeps_balance` (a refused call returns the balance unchanged); `withdraw_never_ensures`; `withdraw_ok` (returns and stores `balance - amount`); `withdraw_insufficient` (the body's `Err`, balance untouched) |
+| `scale` | `scale_shape`; `scale_requires_iff` (iff `factor > 1000`); `scale_ensures_iff` (`Ensures` iff `factor = 0` and `value ≠ 0`); `scale_ok`; `scale_overflow` |
+| `share` | `share_shape`; `share_requires_skips_body` (`share t 0` is `Err(Requires)` while the body on the same arguments is `fail divisionByZero`: the body is not evaluated); `share_requires_iff`; `share_ok` (the quotient) |
+| all | `contract_examples`: `deposit(5, 0)` is `Requires`, `scale(5, 0)` is `Ensures`, `scale(1, 1001)` is `Requires`, `withdraw(10, 8)` leaves and returns 2, `withdraw(7, 8)` is `Insufficient` with 7 kept |
+
+Stated, not hidden: a postcondition failure on a `&mut` function keeps
+the body's write (`contractCallMut`'s `Err ensErr, s1`). The wrapper
+reports the violation; it does not roll back. That is the shipped
+behaviour, now stated as a theorem; none of the instances can reach it,
+because their postconditions hold.
+
+### Macro mutants
+
+`proofs/mutants.py` also mutates `crates/tauten-macros/src/lib.rs` (10
+mutants) and
+re-translates the instance crate through the mutated macros. A claim
+counts as broken when its proof fails or depends on one that does (the
+P2 rule); "falsifies" names the claims whose statement is false for the
+mutated code. REFINED = the 20 claims through the four `*_try_new_shape`;
+DEPOSIT, WITHDRAW, SCALE, SHARE = the claims of that function;
+EX = `contract_examples`.
+
+| Mutant | Change to the generator | Must break | Falsifies (among them) |
+|---|---|---|---|
+| `refined-check-inverted` | `if holds(..)` becomes `if !holds(..)` | REFINED | every `*_ok_iff`, `*_err_iff`, `*_boundaries` |
+| `try-from-unchecked` | `try_from` returns `Ok(Self(value))` | the four `*_try_from_spec` | all four |
+| `refined-default` | the generated module gains `impl Default` (the `derive(Default)` bug class) | no claim; the constructor audit fails (`constructor audit: …default returns a …Percent`) | — |
+| `attributes-dropped` | the struct's attributes (its derives among them) not forwarded to the generated struct | the four `*_derived_spec`, `tag_control_spec` | all five (the derived impls no longer exist) |
+| `requires-inverted` | `if !(cond)` becomes `if (cond)` | DEPOSIT, WITHDRAW, SCALE, SHARE, EX | every `*_requires_iff`, `*_ok` |
+| `requires-dropped` | no precondition check | DEPOSIT, WITHDRAW, SCALE, SHARE, EX | every `*_requires_iff`, `share_requires_skips_body` |
+| `requires-after-body` | the precondition checked after the body ran | DEPOSIT, WITHDRAW, SCALE, SHARE, EX | `share_requires_skips_body` (the body panics first); for the other functions the body is total and the observable result is unchanged, so their claims break only because the shape proofs no longer go through |
+| `snapshot-after-body` | `old(..)` taken after the body | WITHDRAW, EX | `withdraw_shape`, `withdraw_ok`, `contract_examples` (`old(*balance)` sees the write). The by-value instances cannot tell: their parameters do not change, which is why the `&mut` instance exists |
+| `ensures-skipped` | no postcondition check | DEPOSIT, WITHDRAW, SCALE, EX (`share` has no postcondition) | `scale_ensures_iff`, `contract_examples` |
+| `ensures-reported-as-requires` | a postcondition failure reported as `Requires` | DEPOSIT, WITHDRAW, SCALE, EX | `scale_ensures_iff`, `scale_requires_iff`, `contract_examples` |
+
+What is trusted, not proved, for P3:
+- That the instances represent the macro's behaviour on other inputs. The
+  shapes are proved for these nine items only; other predicates (calls,
+  `String`/`Vec` values, arithmetic that panics, predicates that diverge)
+  are not covered. Async contracts are not translated at all.
+- Privacy of the generated module (rustc), so that nothing outside it can
+  build `T(value)` directly; and the derive/attribute allowlist being
+  complete (compile-fail tests).
+- That the source texts in errors are what the user wrote (the theorems
+  pin the strings the macro emits today).
+- The toolchain, as for P1 and P2.
 
 ## The gate
 
 `proofs/gate.sh` runs in the pinned proofs image and has four steps:
 
-1. **Extract.** `proofs/extract.sh` runs Charon then Aeneas on
-   `crates/tauten-check-kernel` (`[package.metadata.charon] start_from`
-   names the six functions) with `-abort-on-error`.
+1. **Extract.** `proofs/extract-all.sh` runs `proofs/extract.sh` (Charon
+   then Aeneas, `-abort-on-error`) on `crates/tauten-check-kernel`
+   (`[package.metadata.charon] start_from` names its functions) and on
+   `crates/tauten-proof-instances` (`start_from` names the `refined` and
+   `contracts` modules; this step fetches `syn`, `quote` and
+   `proc-macro2` from crates.io).
 2. **Drift check.** The fresh translation must equal the committed
    `proofs/Extracted/` byte for byte. It records source line numbers, so run
    `cargo fmt` before refreshing.
@@ -113,20 +254,24 @@ the macros (planned for P3) are not covered.
    - every theorem under `Tauten` uses no axioms beyond `propext`,
      `Classical.choice` and `Quot.sound` (the transitive closure, so
      `sorryAx` or an Aeneas `axiom` for an opaque function fails it);
-   - all 27 required claims exist;
-   - every function extracted from `tauten_check_kernel` (27, counting
-     loops and loop bodies) is on a reviewed list and is stated in a
-     required claim or called, through the extracted definitions, by a
-     function that is.
-
-   Constructor enumeration does not apply: the kernel has no refined type.
-   It returns with the macro instances in P3.
+   - all 87 required claims exist (27 kernel, 50 instance, 10 schematic);
+   - constructor enumeration (P3, above);
+   - every extracted function (27 from `tauten_check_kernel`, counting
+     loops and loop bodies; 59 from `tauten_proof_instances`, counting
+     closures, derives and the transparent runtime helpers) is on a
+     reviewed list and is stated in a required claim or called, through
+     the extracted definitions and trait-instance records, by a function
+     that is.
 4. **Mutants.** `proofs/mutants.py` applies 17 mutations to the kernel's
-   Rust source. For each one it re-extracts, rebuilds, and requires the
+   Rust source and 10 to the macros' source (P3, above). For each one it
+   re-extracts, rebuilds, and requires the
    build to break exactly the named claims (a claim breaks when its proof
    fails or depends on a failed lemma; helper lemmas may fail) and no
    error outside the theorem files. Every theorem a mutant names must be a
-   required claim. Each of the 27 claims is broken by at least one mutant.
+   required claim. Each of the 77 claims stated over the extraction is
+   broken by at least one mutant; the 10 schematic claims
+   (`Tauten.Macros`) mention no extracted function, so no mutant of the
+   Rust source can break them.
 
 | Mutant | Change | Theorems that must fail |
 |---|---|---|
@@ -190,6 +335,15 @@ After you change the kernel:
 4. For a new function: add it to `start_from`, to `reviewedFunctions` in
    `Audit.lean`, and to a claim.
 
+After you change `crates/tauten-macros` or `crates/tauten` (P3): the
+instance crate's translation changes whenever the expansion does, so run
+`sh proofs/refresh.sh` and expect the drift check to fail until you do.
+If the shape of the expansion changed on purpose, update the shapes in
+`Tauten/MacroShapes.lean` and the `*_shape` proofs; if the instance's
+behaviour changed, a claim should say so. A new refined instance needs
+its claims, its row in `refinedTypes` and its functions in
+`reviewedFunctions` (`Audit.lean`).
+
 Writing kernel code that translates (writfold's rules, confirmed here):
 - The kernel profile forbids indexing and unchecked arithmetic, so loops
   are `while i < xs.len()` over `xs.get(i)` with `saturating_add(1)`, and
@@ -233,6 +387,17 @@ P2 (2026-11-18, load average about 14 to 21):
 |---|---|---|---|---|---|
 | Cold container (`docker compose … run --rm proofs`) | 20 s | <1 s | 15 s | 197 s | 232 s (233 s wall time) |
 | Warm (long-lived container, `proofs/container.sh`) | 2 s | <1 s | 1 s | 211 s | 214 s |
+
+P3 (2026-11-18, load average about 3 to 7):
+
+| Run | Extract (both crates) | Drift | `lake build` + audit | Mutants | Total |
+|---|---|---|---|---|---|
+| Cold container (`docker compose … run --rm proofs`), 26 mutants (before `attributes-dropped` was added) | 17 s (includes crates.io fetch of `syn` and Charon's sysroot setup) | <1 s | 12 s | 256 s | 285 s (286 s wall time) |
+| Warm (long-lived container, `proofs/container.sh`), all 27 mutants | 5 s | <1 s | 1 s | 265 s | 271 s |
+
+A macro mutant re-translates the instance crate through the mutated
+macros (it compiles `syn` again in a fresh shadow workspace) and rebuilds
+every theorem file: about 10 s each.
 
 Each mutant re-extracts the kernel and rebuilds every theorem file, about
 10 to 13 s now that the ratchet proofs exist. On GitHub, P1's gate took

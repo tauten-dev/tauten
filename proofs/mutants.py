@@ -10,6 +10,14 @@ exactly the named claims are broken: no other claim may break, and the
 translation itself must still type-check. A proof that survives its mutant
 proves nothing; a failure anywhere else is noise, not calibration.
 
+Macro mutants (P3) mutate crates/tauten-macros/src/lib.rs instead: the
+instance crate crates/tauten-proof-instances is translated through the
+mutated macros (in a scratch copy of the crates it reaches), and the claims
+about the macros' expansion must break. A mutant with `audit` set must
+instead fail the constructor audit in Audit.lean, with that text, and break
+no claim: a refined value built outside `try_new` is caught by the
+enumeration, not by a theorem.
+
 A claim is broken when its own proof fails, or when it depends (through
 Lean's axiom closure: the failed proof becomes `sorryAx`) on a lemma whose
 proof fails. The ratchet claims (P2) are proved from shared refinement
@@ -34,6 +42,10 @@ import tempfile
 ROOT = Path(__file__).resolve().parent.parent
 PROOFS = ROOT / "proofs"
 KERNEL = ROOT / "crates" / "tauten-check-kernel"
+INSTANCES = ROOT / "crates" / "tauten-proof-instances"
+MACROS = ROOT / "crates" / "tauten-macros"
+# The crates the instance crate reaches through `path` dependencies.
+INSTANCE_TREE = ("tauten-proof-instances", "tauten", "tauten-macros")
 
 
 @dataclass(frozen=True)
@@ -43,6 +55,11 @@ class Mutant:
     before: str
     after: str
     fails: tuple[str, ...]
+    # "kernel": `file` is in crates/tauten-check-kernel/src; "macros": in
+    # crates/tauten-macros/src, and the instance crate is re-translated.
+    crate: str = "kernel"
+    # Expected text of an Audit.lean error, for a mutant only the audit catches.
+    audit: str | None = None
 
 
 T = "Tauten.Kernel."
@@ -157,6 +174,89 @@ MUTANTS = (
            (T + "exception_spec",)),
 ) + RATCHET_MUTANTS
 
+I = "Tauten.Instances."
+REFINED_TYPES = ("percent", "port", "offset", "count")
+# Every refined claim proved through a `*_try_new_shape` theorem.
+REFINED_SHAPE = tuple(I + f"{ty}_{claim}" for ty in REFINED_TYPES
+                      for claim in ("try_new_shape", "try_new_ok_iff", "try_new_sound",
+                                    "try_new_err_iff", "boundaries"))
+TRY_FROM = tuple(I + f"{ty}_try_from_spec" for ty in REFINED_TYPES)
+# Every contract claim proved through `deposit_shape`, `withdraw_shape`,
+# `scale_shape` or `share_shape` (`contract_examples` uses the first three).
+DEPOSIT = tuple(I + c for c in ("deposit_shape", "deposit_requires_iff", "deposit_never_ensures",
+                                "deposit_ok", "deposit_overflow"))
+WITHDRAW = tuple(I + c for c in ("withdraw_shape", "withdraw_requires_iff",
+                                 "withdraw_requires_keeps_balance", "withdraw_never_ensures",
+                                 "withdraw_ok", "withdraw_insufficient"))
+SCALE = tuple(I + c for c in ("scale_shape", "scale_requires_iff", "scale_ensures_iff",
+                              "scale_ok", "scale_overflow"))
+SHARE = tuple(I + c for c in ("share_shape", "share_requires_skips_body", "share_requires_iff",
+                              "share_ok"))
+EXAMPLES = (I + "contract_examples",)
+BODY = ('            #[allow(clippy::redundant_closure_call, reason = "the body runs in a closure '
+        'so `return` stays local")]\n'
+        '            let __tauten_result: #ret = (|| -> #ret #body)();\n')
+
+MACRO_MUTANTS = (
+    # refined: the check inverted, so try_new accepts exactly the invalid values
+    Mutant("refined-check-inverted", "lib.rs",
+           "if ::tauten::contract::holds(&value, #predicate) {",
+           "if !::tauten::contract::holds(&value, #predicate) {",
+           REFINED_SHAPE, crate="macros"),
+    # refined: TryFrom wraps the raw value without the check
+    Mutant("try-from-unchecked", "lib.rs",
+           "                    Self::try_new(value)\n",
+           "                    ::core::result::Result::Ok(Self(value))\n",
+           TRY_FROM, crate="macros"),
+    # refined: the generator adds a `Default` that builds a value without the
+    # check (the `derive(Default)` bug class); only the constructor audit sees it
+    Mutant("refined-default", "lib.rs",
+           "    let conversions = if predicate.is_some() {\n        quote! {\n",
+           "    let conversions = if predicate.is_some() {\n        quote! {\n"
+           "            impl ::core::default::Default for #name {\n"
+           "                fn default() -> Self { Self(::core::default::Default::default()) }\n"
+           "            }\n",
+           (), crate="macros", audit="constructor audit"),
+    # newtype/refined: the user's attributes (derives among them) not forwarded
+    # to the generated struct
+    Mutant("attributes-dropped", "lib.rs",
+           "            #(#attrs)*\n            pub struct #name(#inner);\n",
+           "            pub struct #name(#inner);\n",
+           tuple(I + f"{ty}_derived_spec" for ty in REFINED_TYPES) + (I + "tag_control_spec",),
+           crate="macros"),
+    # requires: the negation dropped, so exactly the valid calls are refused
+    Mutant("requires-inverted", "lib.rs",
+           "            if !(#cond) {",
+           "            if (#cond) {",
+           DEPOSIT + WITHDRAW + SCALE + SHARE + EXAMPLES, crate="macros"),
+    # requires: no precondition check at all
+    Mutant("requires-dropped", "lib.rs",
+           "            #(#checks_pre)*\n            #(#takes)*\n",
+           "            #(#takes)*\n",
+           DEPOSIT + WITHDRAW + SCALE + SHARE + EXAMPLES, crate="macros"),
+    # requires: checked only after the body has run
+    Mutant("requires-after-body", "lib.rs",
+           "            #(#checks_pre)*\n            #(#takes)*\n" + BODY,
+           "            #(#takes)*\n" + BODY + "            #(#checks_pre)*\n",
+           DEPOSIT + WITHDRAW + SCALE + SHARE + EXAMPLES, crate="macros"),
+    # old(): the snapshot taken after the body, so `old(*balance)` sees its write
+    Mutant("snapshot-after-body", "lib.rs",
+           "            #(#takes)*\n" + BODY,
+           BODY + "            #(#takes)*\n",
+           WITHDRAW + EXAMPLES, crate="macros"),
+    # ensures: no postcondition check at all
+    Mutant("ensures-skipped", "lib.rs",
+           "                #(#checks_post)*\n",
+           "",
+           DEPOSIT + WITHDRAW + SCALE + EXAMPLES, crate="macros"),
+    # ensures: a postcondition violation reported as a precondition violation
+    Mutant("ensures-reported-as-requires", "lib.rs",
+           "                    ::tauten::ContractViolation::ensures(#function, #text),",
+           "                    ::tauten::ContractViolation::requires(#function, #text),",
+           DEPOSIT + WITHDRAW + SCALE + EXAMPLES, crate="macros"),
+)
+MUTANTS = MUTANTS + MACRO_MUTANTS
+
 # lake reports `error: <path>.lean:<line>:<col>: <message>`
 SORRY_DEPENDENT = re.compile(r"SORRY_DEPENDENT (?P<name>\S+)")
 REPORTER = """
@@ -225,21 +325,58 @@ def run(command: list[str], cwd: Path, env: dict[str, str] | None = None) -> sub
                           text=True, timeout=1800, env={**os.environ, **(env or {})})
 
 
-def calibrate(mutant: Mutant, scratch: Path) -> None:
-    crate = scratch / "crate"
-    shutil.copytree(KERNEL, crate, ignore=shutil.ignore_patterns("target"))
-    source = crate / "src" / mutant.file
+def mutate(source: Path, mutant: Mutant) -> None:
     text = source.read_text()
     if text.count(mutant.before) != 1:
         raise SystemExit(f"FAIL {mutant.name}: mutation site does not match exactly once")
     source.write_text(text.replace(mutant.before, mutant.after))
 
-    extraction = run(["sh", str(PROOFS / "extract.sh"), str(crate), str(scratch / "Extracted"),
-                      "--", "-abort-on-error"], ROOT,
-                     {"EXTRACT_AS": str(KERNEL.relative_to(ROOT))})
-    if extraction.returncode != 0:
+
+def translate(mutant: Mutant, scratch: Path) -> Path:
+    """Translate the crate the mutant affects; return the Lean file written."""
+    if mutant.crate == "kernel":
+        crate = scratch / "crate"
+        shutil.copytree(KERNEL, crate, ignore=shutil.ignore_patterns("target"))
+        mutate(crate / "src" / mutant.file, mutant)
+        command = ["sh", str(PROOFS / "extract.sh"), str(crate), str(scratch / "fresh"),
+                   "--", "-abort-on-error"]
+        extraction = run(command, ROOT, {"EXTRACT_AS": str(KERNEL.relative_to(ROOT))})
+        produced = scratch / "fresh" / "TautenCheckKernel.lean"
+    elif mutant.crate == "macros":
+        # A scratch copy of the crates the instance crate reaches, at their
+        # repository paths, with proofs/extract.sh, so the translation of the
+        # unchanged instance sources is placed exactly as the gate places it.
+        tree = scratch / "tree"
+        (tree / "proofs").mkdir(parents=True)
+        for name in ("Cargo.toml", "Cargo.lock"):
+            shutil.copy2(ROOT / name, tree / name)
+        shutil.copy2(PROOFS / "extract.sh", tree / "proofs" / "extract.sh")
+        for name in INSTANCE_TREE:
+            shutil.copytree(ROOT / "crates" / name, tree / "crates" / name,
+                            ignore=shutil.ignore_patterns("target"))
+        mutate(tree / "crates" / "tauten-macros" / "src" / mutant.file, mutant)
+        command = ["sh", str(tree / "proofs" / "extract.sh"),
+                   str(tree / "crates" / "tauten-proof-instances"), str(scratch / "fresh"),
+                   "--", "-abort-on-error"]
+        extraction = run(command, tree)
+        produced = scratch / "fresh" / "TautenProofInstances.lean"
+    else:
+        raise SystemExit(f"FAIL {mutant.name}: unknown crate {mutant.crate}")
+    if extraction.returncode != 0 or not produced.exists():
         print(extraction.stdout)
-        raise SystemExit(f"FAIL {mutant.name}: the mutated kernel did not translate")
+        raise SystemExit(f"FAIL {mutant.name}: the mutated code did not translate")
+    return produced
+
+
+def calibrate(mutant: Mutant, scratch: Path) -> None:
+    produced = translate(mutant, scratch)
+    # The committed translation of every crate, with the mutated one replaced.
+    shutil.copytree(PROOFS / "Extracted", scratch / "Extracted")
+    if not (scratch / "Extracted" / produced.name).exists():
+        raise SystemExit(f"FAIL {mutant.name}: {produced.name} is not in proofs/Extracted")
+    if (scratch / "Extracted" / produced.name).read_text() == produced.read_text():
+        raise SystemExit(f"FAIL {mutant.name}: the mutation does not change the translation")
+    shutil.copy2(produced, scratch / "Extracted" / produced.name)
 
     project = scratch / "proofs"
     project.mkdir()
@@ -254,8 +391,19 @@ def calibrate(mutant: Mutant, scratch: Path) -> None:
 
     build = run(["lake", "build"], project)
     if build.returncode == 0:
-        raise SystemExit(f"FAIL {mutant.name}: the proofs still build against the mutated kernel")
+        raise SystemExit(f"FAIL {mutant.name}: the proofs still build against the mutated code")
     failures, unattributed = failing_theorems(build.stdout, project)
+    if mutant.audit is not None:
+        # Only the audit may fail, with the expected text, and no claim may break.
+        if failures or any(entry != "Audit.lean" for entry in unattributed) or not unattributed:
+            print(build.stdout)
+            raise SystemExit(f"FAIL {mutant.name}: expected only Audit.lean to fail; "
+                             f"theorems {sorted(failures)}, elsewhere {unattributed}")
+        if mutant.audit not in build.stdout:
+            print(build.stdout)
+            raise SystemExit(f"FAIL {mutant.name}: Audit.lean failed without '{mutant.audit}'")
+        print(f"calibration: {mutant.name} fails the audit ({mutant.audit})", flush=True)
+        return
     if unattributed:
         print(build.stdout)
         raise SystemExit(f"FAIL {mutant.name}: errors outside the theorem files: {unattributed}")
