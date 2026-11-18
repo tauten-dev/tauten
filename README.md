@@ -2,8 +2,7 @@
 
 # tauten
 
-**A strictness profile for Rust written by AI agents.** *(Working name; it
-will change before the first release.)*
+**A strictness profile for Rust written by AI agents.**
 
 Agents rarely get memory safety wrong in Rust: the compiler stops them. What
 gets through is everything else: `unwrap` on input, unchecked arithmetic,

@@ -1,6 +1,6 @@
 # Status
 
-Updated 2026-11-18 (end of day 1). Every line says how far an item got:
+Updated 2026-11-18 (evening). Name final: tauten; license MIT; code at github.com/tauten-dev/tauten (private until first release). Every line says how far an item got:
 **specified → implemented → exercised**. "Exercised" means it ran against
 real input in this repository, and the evidence is named. Nothing is
 published; nothing has been measured with a real agent.
@@ -9,18 +9,21 @@ published; nothing has been measured with a real agent.
 
 | # | Item | State | Evidence |
 |---|---|---|---|
-| M0 | Plan, mapping, agent profile, rule table (38 rules, ~200 banned API paths) | **done** | `docs/`, `crates/tauten-check/agents.md`, `crates/tauten-check/rules.toml`, generated `docs/RULES.md` (drift-checked) |
+| M0 | Plan, mapping, agent profile, rule table (37 rules, ~200 banned API paths) | **done** | `docs/`, `crates/tauten-check/agents.md`, `crates/tauten-check/rules.toml`, generated `docs/RULES.md` (drift-checked) |
 | M0 | Fixtures ported from Sovel examples | **exercised** | `fixtures/cases`: 26 reject + 3 accept crates, exact expected IDs, one tier per crate (`tests/fixtures.rs`) |
 | M0b | Writfold dry run | **exercised** | `docs/dry-runs/writfold-2026-11-18.md`. It found 4 defects in tauten, now fixed. |
 | M1 | `cargo tauten check` (human/JSON), `explain` (+`--markdown`), `profile`, `--assume-tier` | **exercised** | fixtures, self-check, writfold |
 | M1 | Ratchet: `cargo tauten baseline`, `--baseline`, stale-baseline rule TAU-R001, increases refused | **exercised** | unit tests; `tests/ratchet.rs`; writfold clone (707 accepted → 1 new `unwrap` = 1 error → stale slot = R001 → increase refused) |
-| M1 | `init` | not started | |
-| M2 | `tauten`: `Authority`, `Clock`/`SystemClock`/`ManualClock`, `Env`, `dir` (feature `fs`, cap-std) | **implemented**, doc-tested | `crates/tauten` |
+| M1 | `init` (proposes tiers; `--write` adds them and `AGENTS.tauten.md`) | **exercised** (manually) | scratch two-crate workspace, 2026-11-18; no automated test yet |
+| M2 | `tauten`: `Authority`, `Clock`/`SystemClock`/`ManualClock`, `Env`, `dir` (feature `fs`, cap-std) | **exercised** | doc tests; `crates/tauten/tests/ui/forged_authority.rs`; fixture `rej-authority-alias` |
 | M2 | `tauten-macros`: `#[newtype]`, `#[refined]`, `#[requires]`, `#[ensures]` with `old()` | **exercised** | `crates/tauten/tests/behaviour.rs` (runtime), 6 trybuild compile-fail tests |
 | M3 | Proof tier (Aeneas/Lean template from writfold) | not started | |
 | M4 | Benchmark harness: host, 4 dev tasks, runner, analysis, admission gate | **exercised with built-in agents only** | `bench/README.md` (validation table); `scripts/bench-validate` in the gate |
 | M4 | Pilot with a real agent | **blocked on owner** (model budget, model choice) | |
-| M5–M8 | Name, publish, website, writfold adoption | **blocked on owner** | |
+| M5 | Repo, CI gate, tag-driven release workflow, crates.io token secret | **implemented** | `.github/workflows/`; first `0.0.1` publish awaits owner go-ahead |
+| M7 | Website (tauten.dev) | in progress | placeholder live repo `tauten-dev/tauten-dev.github.io`; spec in progress |
+| M8 | Writfold adoption | not started | |
+| — | Plyward review | done | `docs/reviews/plyward-2026-11-18.md`; three defects fixed in `e7fbc8c` |
 
 ## Quality
 
