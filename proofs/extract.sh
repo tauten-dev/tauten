@@ -6,18 +6,18 @@
 #
 # The crate is copied into a throwaway shadow workspace at its own
 # repository-relative path, together with every crate it reaches through
-# `path` dependencies (for the probe: crates/tauten and crates/tauten-macros),
-# so relative paths in Aeneas's output are stable. The shadow root carries
-# the real root's resolver and the `[workspace.package]` keys those crates
-# inherit, nothing else; Cargo.lock is copied so registry versions match the
-# real workspace.
+# `path` dependencies (none for crates/tauten-check-kernel), so relative
+# paths in Aeneas's output are stable. The shadow root carries the real
+# root's resolver and the `[workspace.package]` keys those crates inherit,
+# nothing else; Cargo.lock is copied so registry versions match the real
+# workspace.
 #
-# EXTRACT_NO_METADATA=1 ignores the crate's [package.metadata.charon] (Charon
-# merges it with command-line --start-from/--include; proofs/probe.sh needs
-# each item alone).
+# EXTRACT_AS=<repo-relative path> places a crate that lives outside the
+# repository (proofs/mutants.py's mutated copy) at that path, so its
+# translation is the one the theorems expect.
 #
 # Without `-abort-on-error` among the Aeneas args, Aeneas reports errors and
-# still writes what it could; the probe wants that, the gate will not.
+# still writes what it could; the gate and the mutants always pass it.
 set -eu
 crate="$(cd "$1" && pwd)"
 dest="$2"
@@ -54,23 +54,16 @@ while todo:
         for dep in manifest.get(table, {}).values():
             if isinstance(dep, dict) and "path" in dep:
                 todo.append(os.path.join(here, dep["path"]))
+placed = {}
 for here in seen:
     rel = os.path.relpath(here, root)
+    if here == seen[0] and os.environ.get("EXTRACT_AS"):
+        rel = os.environ["EXTRACT_AS"]
     assert not rel.startswith(".."), rel
+    placed[here] = rel
     shutil.copytree(here, os.path.join(work, rel),
                     ignore=shutil.ignore_patterns("target"))
-main = os.path.relpath(seen[0], root)
-if os.environ.get("EXTRACT_NO_METADATA"):
-    # The probe driver's isolated runs: Charon merges the manifest's
-    # start_from/include with the command line, so drop the manifest's.
-    path = os.path.join(work, main, "Cargo.toml")
-    kept, skip = [], False
-    for line in open(path).read().splitlines():
-        if line.strip().startswith("["):
-            skip = line.strip() == "[package.metadata.charon]"
-        if not skip:
-            kept.append(line)
-    open(path, "w").write("\n".join(kept) + "\n")
+main = placed[seen[0]]
 lines = ["[workspace]", f'members = ["{main}"]', f'resolver = "{ws.get("resolver", "2")}"',
          "", "[workspace.package]"]
 lines += [f'{k} = "{package[k]}"' for k in sorted(inherited)]

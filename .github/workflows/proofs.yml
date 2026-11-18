@@ -1,0 +1,62 @@
+name: proofs
+
+# Lean proofs over crates/tauten-check-kernel (docs/proofs/README.md):
+# extract with Charon/Aeneas, refuse drift against proofs/Extracted/, lake
+# build with the axiom and coverage audit, mutant calibration. Separate from
+# the `gate` workflow; runs only when the proved code, the macros (P3) or
+# the proofs change, nightly, and on demand.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "crates/tauten-check-kernel/**"
+      - "crates/tauten-macros/**"
+      - "proofs/**"
+      - "compose.proofs.yaml"
+      - ".github/workflows/proofs.yml"
+  pull_request:
+    paths:
+      - "crates/tauten-check-kernel/**"
+      - "crates/tauten-macros/**"
+      - "proofs/**"
+      - "compose.proofs.yaml"
+      - ".github/workflows/proofs.yml"
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: read
+
+concurrency:
+  group: proofs-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PROOFS_IMAGE: ghcr.io/tauten-dev/proofs-toolchain:lean-4.35.0-aeneas-c5eb4a2-charon-8cae8fd
+
+jobs:
+  proofs:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Free disk space for the proofs image (about 20 GB unpacked)
+        run: |
+          df -h /
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /usr/local/.ghcup \
+            /opt/hostedtoolcache/CodeQL /usr/local/share/boost /usr/share/swift \
+            /usr/local/lib/node_modules /usr/local/share/powershell /usr/local/share/chromium
+          sudo docker image prune --all --force
+          df -h /
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Pull the pinned proofs toolchain image
+        run: |
+          docker login ghcr.io -u "${{ github.actor }}" --password-stdin <<< "${{ secrets.GITHUB_TOKEN }}"
+          time docker pull "$PROOFS_IMAGE"
+          docker logout ghcr.io
+          df -h /
+      - name: Proofs gate (extract, drift, lake build, axiom audit, mutants)
+        run: time docker compose -f compose.proofs.yaml run --rm proofs

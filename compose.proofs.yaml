@@ -1,0 +1,26 @@
+# Lean proofs over crates/tauten-check-kernel (docs/proofs/README.md):
+# regenerate the translation, refuse drift against proofs/Extracted/,
+# lake build with the axiom and coverage audit, mutant calibration.
+#   docker compose -f compose.proofs.yaml run --rm proofs
+#   sh proofs/refresh.sh      # regenerate and copy out proofs/Extracted/
+#
+# The image is writfold's proofs toolchain (`deps` stage of its
+# proofs/Dockerfile), pinned: Lean v4.35.0, Aeneas nightly-2026.11.07-c5eb4a2,
+# Charon 8cae8fd on nightly-2026-09-17, mathlib per proofs/lake-manifest.json.
+# linux/amd64 only. About 20 GB unpacked.
+services:
+  proofs:
+    image: ghcr.io/tauten-dev/proofs-toolchain:lean-4.35.0-aeneas-c5eb4a2-charon-8cae8fd
+    platform: linux/amd64
+    pull_policy: missing
+    init: true
+    # Network stays on: in a fresh container Charon builds its full-MIR
+    # sysroot (`miri setup`), which fetches crates from crates.io. The
+    # kernel itself has no dependencies.
+    volumes:
+      - type: bind
+        source: .
+        target: /repo
+        read_only: true
+    working_dir: /work
+    command: ["sh", "/repo/proofs/container.sh"]

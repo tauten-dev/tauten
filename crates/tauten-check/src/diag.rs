@@ -1,9 +1,10 @@
 //! Structured diagnostics and the mapping from compiler messages to rules.
 
 use serde::{Deserialize, Serialize};
+use tauten_check_kernel::severity as kernel_severity;
 
 use crate::profile::{Profile, Rule};
-use crate::tier::Tier;
+use crate::tier::{Level, Tier};
 
 /// What enforces a rule. Shown with every diagnostic so claims stay honest.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -29,6 +30,24 @@ pub enum Severity {
     Warning,
     /// Fails the check.
     Error,
+}
+
+impl Severity {
+    /// The severity of a finding whose rule has `level` in the crate's tier;
+    /// without a level, `fallback`. Decided by the proved kernel
+    /// ([`kernel_severity::severity`]).
+    #[must_use]
+    pub(crate) fn decide(level: Option<Level>, fallback: Self) -> Self {
+        let level = level.map(Level::kernel);
+        let fallback = match fallback {
+            Self::Warning => kernel_severity::Severity::Warning,
+            Self::Error => kernel_severity::Severity::Error,
+        };
+        match kernel_severity::severity(level, fallback) {
+            kernel_severity::Severity::Warning => Self::Warning,
+            kernel_severity::Severity::Error => Self::Error,
+        }
+    }
 }
 
 /// One finding, in the stable schema printed by `--format json`.
@@ -149,13 +168,7 @@ pub fn from_compiler(
     let diag = match rule {
         Some(rule) => {
             // Lints are compiled at warn level; the profile decides severity.
-            let severity = tier.and_then(|t| rule.level(t)).map_or(severity, |level| {
-                if level.is_blocking() {
-                    Severity::Error
-                } else {
-                    Severity::Warning
-                }
-            });
+            let severity = Severity::decide(tier.and_then(|t| rule.level(t)), severity);
             let mut d = Diagnostic::for_rule(rule, severity, krate, tier, msg.message.clone());
             d.source = code.unwrap_or_default();
             d
@@ -203,6 +216,22 @@ fn is_summary(message: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn compiler_severity_agrees_with_the_reference() {
+        for level in [None, Some(Level::Warn), Some(Level::Deny)] {
+            for compiler in [Severity::Warning, Severity::Error] {
+                let reference = level.map_or(compiler, |level| {
+                    if level.is_blocking() {
+                        Severity::Error
+                    } else {
+                        Severity::Warning
+                    }
+                });
+                assert_eq!(Severity::decide(level, compiler), reference);
+            }
+        }
+    }
 
     fn msg(level: &str, code: &str, notes: &[&str]) -> CompilerMessage {
         CompilerMessage {

@@ -2,6 +2,8 @@
 
 use std::collections::BTreeMap;
 
+use tauten_check_kernel::exception::{self, Excuse};
+
 use crate::diag::{Diagnostic, Severity};
 use crate::profile::Profile;
 use crate::scan;
@@ -107,12 +109,8 @@ impl Ctx<'_> {
         let Some(rule) = self.profile.rule(id) else {
             return;
         };
-        let level = tier.and_then(|t| rule.level(t)).unwrap_or(Level::Deny);
-        let severity = if level.is_blocking() {
-            Severity::Error
-        } else {
-            Severity::Warning
-        };
+        // Structural findings without a level in the tier block.
+        let severity = Severity::decide(tier.and_then(|t| rule.level(t)), Severity::Error);
         let mut diag = Diagnostic::for_rule(rule, severity, &self.member.name, tier, message);
         diag = match at {
             Some((file, hit)) => diag.at(Some(file.to_owned()), Some(hit.line), Some(hit.column)),
@@ -242,27 +240,33 @@ impl Ctx<'_> {
         }
     }
 
+    /// Lint exceptions, decided by the proved kernel
+    /// ([`exception::excuse`]). A lint has exactly one owning rule (the
+    /// profile rejects shared ownership), so the lint is blocking in `tier`
+    /// exactly when that rule's level there is blocking.
     fn exceptions(&mut self, tier: Tier, file: &SourceFile) {
-        let blocking: Vec<&str> = self.profile.blocking_lints(tier).collect();
         for exception in scan::lint_exceptions(&file.text).unwrap_or_default() {
             let lint = exception.lint.as_str();
             let Some(rule) = self.profile.rule_for_lint(lint) else {
                 continue;
             };
             let at = Some((file.path.as_str(), exception.at));
-            if !rule.exceptions || (tier == Tier::Kernel && rule.level(tier).is_some()) {
-                let message = format!(
-                    "exception for `{lint}` ({}) is not permitted in {tier} crates",
-                    rule.id
-                );
-                self.emit("TAU-X004", Some(tier), message, at);
-            } else if exception.crate_level && blocking.contains(&lint) {
-                self.emit(
+            let level = rule.level(tier).map(Level::kernel);
+            match exception::excuse(rule.exceptions, tier.kernel(), level, exception.crate_level) {
+                Excuse::Forbidden => {
+                    let message = format!(
+                        "exception for `{lint}` ({}) is not permitted in {tier} crates",
+                        rule.id
+                    );
+                    self.emit("TAU-X004", Some(tier), message, at);
+                }
+                Excuse::CrateWide => self.emit(
                     "TAU-X002",
                     Some(tier),
                     format!("crate-wide exception for `{lint}`"),
                     at,
-                );
+                ),
+                Excuse::Allowed => {}
             }
         }
     }
@@ -292,6 +296,66 @@ mod tests {
     fn run(members: Vec<Member>) -> Vec<Diagnostic> {
         let profile = Profile::embedded().expect("profile");
         check(&profile, &Workspace { members })
+    }
+
+    /// The exception decision before it moved to the kernel, kept as the
+    /// reference for a differential test.
+    fn reference_excuse(
+        profile: &Profile,
+        rule: &crate::profile::Rule,
+        lint: &str,
+        tier: Tier,
+        crate_level: bool,
+    ) -> Option<&'static str> {
+        let blocking: Vec<&str> = profile.blocking_lints(tier).collect();
+        if !rule.exceptions || (tier == Tier::Kernel && rule.level(tier).is_some()) {
+            Some("TAU-X004")
+        } else if crate_level && blocking.contains(&lint) {
+            Some("TAU-X002")
+        } else {
+            None
+        }
+    }
+
+    #[test]
+    fn kernel_excuse_agrees_with_the_reference_on_every_profile_lint() {
+        let profile = Profile::embedded().expect("profile");
+        let mut compared = 0;
+        for rule in profile.rules() {
+            for lint in &rule.lints {
+                for tier in Tier::ALL {
+                    for crate_level in [false, true] {
+                        let level = rule.level(tier).map(Level::kernel);
+                        let got = match exception::excuse(
+                            rule.exceptions,
+                            tier.kernel(),
+                            level,
+                            crate_level,
+                        ) {
+                            Excuse::Forbidden => Some("TAU-X004"),
+                            Excuse::CrateWide => Some("TAU-X002"),
+                            Excuse::Allowed => None,
+                        };
+                        let want = reference_excuse(&profile, rule, lint, tier, crate_level);
+                        assert_eq!(got, want, "{lint} in {tier}, crate-wide {crate_level}");
+                        compared += 1;
+                    }
+                }
+            }
+        }
+        assert!(compared > 100, "only {compared} cases");
+    }
+
+    #[test]
+    fn structural_severity_agrees_with_the_reference() {
+        for level in [None, Some(Level::Warn), Some(Level::Deny)] {
+            let reference = if level.unwrap_or(Level::Deny).is_blocking() {
+                Severity::Error
+            } else {
+                Severity::Warning
+            };
+            assert_eq!(Severity::decide(level, Severity::Error), reference);
+        }
     }
 
     #[test]

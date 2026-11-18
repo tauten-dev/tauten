@@ -2,6 +2,7 @@
 
 use core::fmt;
 use serde::{Deserialize, Serialize};
+use tauten_check_kernel::{severity as kernel_severity, tiers as kernel_tiers};
 
 /// How much authority a crate holds. Ordered from most to least restricted.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
@@ -41,10 +42,21 @@ impl Tier {
     }
 
     /// Whether a crate of this tier may depend on a crate of tier `dep`.
-    /// Dependencies must point inward: edge -> core -> kernel.
+    /// Dependencies must point inward: edge -> core -> kernel. Decided by
+    /// the proved kernel ([`kernel_tiers::may_depend_on`]).
     #[must_use]
     pub fn may_depend_on(self, dep: Self) -> bool {
-        dep <= self
+        kernel_tiers::may_depend_on(self.kernel(), dep.kernel())
+    }
+
+    /// The same tier in the decision kernel.
+    #[must_use]
+    pub(crate) const fn kernel(self) -> kernel_tiers::Tier {
+        match self {
+            Self::Kernel => kernel_tiers::Tier::Kernel,
+            Self::Core => kernel_tiers::Tier::Core,
+            Self::Edge => kernel_tiers::Tier::Edge,
+        }
     }
 }
 
@@ -75,12 +87,19 @@ impl Level {
         }
     }
 
-    /// Whether a violation at this level fails the check.
+    /// Whether a violation at this level fails the check. Decided by the
+    /// proved kernel ([`kernel_severity::is_blocking`]).
     #[must_use]
     pub const fn is_blocking(self) -> bool {
+        kernel_severity::is_blocking(self.kernel())
+    }
+
+    /// The same level in the decision kernel.
+    #[must_use]
+    pub(crate) const fn kernel(self) -> kernel_severity::Level {
         match self {
-            Self::Warn => false,
-            Self::Deny => true,
+            Self::Warn => kernel_severity::Level::Warn,
+            Self::Deny => kernel_severity::Level::Deny,
         }
     }
 }
@@ -97,6 +116,18 @@ mod tests {
         }
         assert_eq!(Tier::Kernel.name(), "kernel");
         assert_eq!(Tier::parse("Kernel"), None);
+    }
+
+    /// The kernel decides exactly as the derived order did before it moved.
+    #[test]
+    fn kernel_agrees_with_the_derived_order() {
+        for tier in Tier::ALL {
+            for dep in Tier::ALL {
+                assert_eq!(tier.may_depend_on(dep), dep <= tier, "{tier} -> {dep}");
+            }
+        }
+        assert!(!Level::Warn.is_blocking());
+        assert!(Level::Deny.is_blocking());
     }
 
     #[test]
