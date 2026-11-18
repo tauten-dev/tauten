@@ -1,6 +1,7 @@
-# Lean proofs over crates/tauten-check-kernel (docs/proofs/README.md):
-# regenerate the translation, refuse drift against proofs/Extracted/,
-# lake build with the axiom and coverage audit, mutant calibration.
+# Lean proofs over crates/tauten-check-kernel and the macros' expansion of
+# crates/tauten-proof-instances (docs/proofs/README.md): regenerate the
+# translation, refuse drift against proofs/Extracted/, lake build with the
+# axiom, constructor and coverage audit, mutant calibration.
 #   docker compose -f compose.proofs.yaml run --rm proofs
 #   sh proofs/refresh.sh      # regenerate and copy out proofs/Extracted/
 #
@@ -16,7 +17,8 @@ services:
     init: true
     # Network stays on: in a fresh container Charon builds its full-MIR
     # sysroot (`miri setup`), which fetches crates from crates.io. The
-    # kernel itself has no dependencies.
+    # kernel itself has no dependencies; the instance crate's macros need
+    # syn, quote and proc-macro2 from crates.io.
     volumes:
       - type: bind
         source: .

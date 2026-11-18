@@ -22,7 +22,22 @@ reading the sources and writfold's recorded experience; P0 exists to test them.
   discipline: the ratchet claims share refinement lemmas, so the mutant
   calibration counts a claim as broken when it depends on a failed lemma
   (`docs/proofs/README.md`). Interning is trusted and tested, as planned.
-- P3 to P5 are not started.
+- **P3 done locally** (branch `proofs-p3`, not yet merged or run on
+  GitHub). `crates/tauten-proof-instances` (unpublished) applies the real
+  macros: 4 refined types, a `#[newtype]` control with `derive(Default)`,
+  4 contract functions (one with a `&mut` parameter, one whose body would
+  panic without the precondition). Charon/Aeneas translate the expansion
+  as is: no macro change was needed (the kill criterion did not apply).
+  A schematic shape per macro (`Tauten/MacroShapes.lean`), a `*_shape`
+  theorem per instance, F01 targets 1, 2, 3 and 5 per refined type
+  (target 5 also as the constructor audit, with the control showing it
+  sees derived impls), the contract claims (`Requires` iff the
+  precondition is false and the body is not evaluated; `Ensures` iff the
+  body's `Ok` fails the postcondition; otherwise the body's result;
+  `old(..)` is the pre-state). 60 new audited claims (87 in all), 10
+  macro-source mutants, all killed. Wording: "proved for listed
+  instances", never "macros verified" (`docs/proofs/README.md`).
+- P4 and P5 are not started.
 
 Sources read: tauten `crates/*/src`, `docs/STATUS.md`, `docs/PLAN.md` section 4,
 `docs/reviews/plyward-2026-11-18.md`; writfold `proofs/` (Dockerfile, extract.sh,
@@ -206,7 +221,7 @@ work. Total 9.5 to 12.5 days if nothing is killed.
 | P0 (**done**) | Toolchain reuse and probe on a branch. Copy writfold's `proofs/` skeleton and pins. Probe crate with: tier `rank`; a ratchet loop over `Vec<u32>`; `Percent(u8)` through the real macro; one `requires`/`ensures`/`old` function; ledger `apply` (`checked_add`, `ok_or`); a `derive(Default)` control | 0.5 to 1 | A table in `docs/proofs/probe.md`: per item, extracts or not, with the Charon/Aeneas error text. Decision recorded: closure-free expansion needed or not; derived impls visible or not | Image cannot be built or the probe crate cannot be loaded within 1 day: stop, report, keep proofs to user kernels (M3) only |
 | P1 (**done locally; CI run pending**) | `tauten-check-kernel` with tier relation, severity and exception decisions; `tauten-check` calls it. `proofs/` with extract, drift check, `lake build`, `Audit.lean`, at least 4 mutants; proof workflow in CI | 2 | Proof workflow green on main; theorems: `may_depend_on` is a total order agreeing with rank, kernel depends only on kernel; `severity_spec`; `exception_spec` with "kernel never excuses a levelled rule"; each mutant breaks exactly its theorem | More than 3 days, or the gate takes over 30 minutes warm |
 | P2 (**done locally**) | Ratchet in the kernel, interning in the shell, differential test against the old BTreeMap code, theorems R-conserve to R-shrink, at least 6 mutants | 3 | Theorems in the audit claims list; existing `tests/ratchet.rs` and writfold dry-run numbers unchanged | More than 5 days: ship the kernel refactor with the differential test and R-conserve only; record the rest as open |
-| P3 | `tauten-proof-instances`; closure-free expansion if P0 requires it; schematic lemma; F01 targets 1, 2, 3; constructor enumeration (target 5) if P0 showed derived impls are visible; contract theorems (Err(requires) iff precondition false, body not evaluated then; Err(ensures) iff body Ok and postcondition false; otherwise the body's result; `old` is the pre-state value); macro-source mutants | 2 to 3 | At least 3 refined instances and 2 contract instances proved; at least 4 macro mutants killed | Expansion cannot be made extractable without changing user-visible behaviour: stop, label macros "tested" on the site |
+| P3 (**done locally**) | `tauten-proof-instances`; closure-free expansion if P0 requires it; schematic lemma; F01 targets 1, 2, 3; constructor enumeration (target 5) if P0 showed derived impls are visible; contract theorems (Err(requires) iff precondition false, body not evaluated then; Err(ensures) iff body Ok and postcondition false; otherwise the body's result; `old` is the pre-state value); macro-source mutants | 2 to 3 | At least 3 refined instances and 2 contract instances proved; at least 4 macro mutants killed | Expansion cannot be made extractable without changing user-visible behaviour: stop, label macros "tested" on the site |
 | P4 | Plain-Rust fix: `Profile::parse` rejects tables lacking emitted IDs. Then interned validator in the kernel with `validate_ok_iff` (unique ids, unique lint owner, bans reference existing rules, required IDs present) | 1.5 | Theorem plus 3 mutants; a reject fixture for a table without TAU-R001 | More than 2 days: keep the fix and tests, drop the theorem |
 | P5 | Fold into M3: the same `proofs/` files become the user template; `proofs/claims.toml` (function -> theorem -> mutants); `cargo tauten proofs` JSON outcomes `proved, drift, build-failed, audit-failed, mutant-survived, tool-missing`; `proofs/TRUST.md`; website badge data generated from the audit | 1 to 2 | Template instantiated on `bench/hosts/ledger` kernel with one theorem; site badge list generated, not hand-written | Existing PLAN rule: template not done in 3 days, ship without |
 

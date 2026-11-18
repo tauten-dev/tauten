@@ -1,0 +1,36 @@
+[package]
+name = "tauten-proof-instances"
+description = "Instances of tauten's #[refined] and contract macros whose expansions are translated to Lean 4 and proved (docs/proofs/README.md, P3). Never published."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+
+# Edge, not kernel: in this workspace the `tauten` runtime is itself an edge
+# crate (it provides `Authority`), and a kernel or core crate may not depend
+# on it here (TAU-T002). Outside this workspace `tauten` is an external
+# dependency and user kernel crates use the same macros.
+[package.metadata.tauten]
+tier = "edge"
+
+[dependencies]
+tauten = { path = "../tauten" }
+
+# Read by Charon when the proofs gate translates this crate
+# (proofs/extract.sh). The whole `refined` and `contracts` modules are
+# translated, so every impl the macros or derives generate is visible to the
+# constructor audit. `include` makes the runtime helpers the expansions call
+# (`contract::holds`, `contract::snapshot`) and the error types transparent;
+# without it Aeneas emits them as Lean axioms (docs/proofs/probe.md).
+[package.metadata.charon]
+start_from = [
+    "tauten_proof_instances::refined",
+    "tauten_proof_instances::contracts",
+]
+include = ["tauten::contract", "tauten::error"]
+
+# Stated locally, not inherited: the proofs gate translates this crate in a
+# shadow workspace that carries no `workspace.lints`.
+[lints.rust]
+unsafe_code = "forbid"
