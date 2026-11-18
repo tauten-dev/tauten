@@ -7,7 +7,7 @@ success rate and time?
 **Status.**
 - The harness, one host repo and 4 dev tasks exist and are validated with
   built-in agents.
-- **No real agent has been run yet; there are no results.**
+- **Pilot on the dev split only (2026-11-18, Claude Sonnet 5.5, 36 trials): no held-out result yet.** Report: [reports/2026-11-18-pilot](reports/2026-11-18-pilot/README.md).
 - The design is in [PREREGISTRATION.md](PREREGISTRATION.md) (draft, not yet
   frozen).
 

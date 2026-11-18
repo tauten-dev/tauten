@@ -3,7 +3,7 @@
 Updated 2026-11-18 (evening). Name final: tauten; license MIT; code at github.com/tauten-dev/tauten (private until first release). Every line says how far an item got:
 **specified → implemented → exercised**. "Exercised" means it ran against
 real input in this repository, and the evidence is named. Nothing is
-published; nothing has been measured with a real agent.
+published. One pilot on the dev split has been run with a real agent; nothing held-out has been measured.
 
 ## Milestones (see PLAN.md §6)
 
@@ -18,10 +18,10 @@ published; nothing has been measured with a real agent.
 | M2 | `tauten`: `Authority`, `Clock`/`SystemClock`/`ManualClock`, `Env`, `dir` (feature `fs`, cap-std) | **exercised** | doc tests; `crates/tauten/tests/ui/forged_authority.rs`; fixture `rej-authority-alias` |
 | M2 | `tauten-macros`: `#[newtype]`, `#[refined]`, `#[requires]`, `#[ensures]` with `old()` | **exercised** | `crates/tauten/tests/behaviour.rs` (runtime), 6 trybuild compile-fail tests |
 | P0 | Proof plan probe: Charon/Aeneas on tauten-shaped code | **exercised** (local, 32 CPUs) | `docs/proofs/probe.md`; probe retired in P1 (kept at `2885ee1`) |
-| P1 | `tauten-check-kernel` (tier order, severity, lint exceptions); `tauten-check` calls it; 13 Lean theorems over the extraction; axiom + coverage audit; drift check; 9 mutants; `proofs.yml` workflow | **exercised locally**; CI workflow not yet run | `docs/proofs/README.md`; `docker compose -f compose.proofs.yaml run --rm proofs` passes. The GitHub runner time is not measured yet. Every claim is broken by at least one mutant |
+| P1 | `tauten-check-kernel` (tier order, severity, lint exceptions); `tauten-check` calls it; 13 Lean theorems over the extraction; axiom + coverage audit; drift check; 9 mutants; `proofs.yml` workflow | **exercised** (local and GitHub CI) | `docs/proofs/README.md`; `proofs.yml` green on main 2026-11-18 (gate 2 min, job 7 min incl. image pull). Every claim is broken by at least one mutant |
 | M3 | Proof tier for users (Aeneas/Lean template from writfold) | not started | |
 | M4 | Benchmark harness: host, 4 dev tasks, runner, analysis, admission gate | **exercised with built-in agents only** | `bench/README.md` (validation table); `scripts/bench-validate` in the gate |
-| M4 | Pilot with a real agent | **blocked on owner** (model budget, model choice) | |
+| M4 | Pilot with a real agent (dev split) | **exercised** | `bench/reports/2026-11-18-pilot`: 36 trials, Sonnet 5.5. Ceiling: 0 escaped defects in every arm; enforcement removed unchecked arithmetic (A 6/12, B 5/12, C 0/12 trials). Held-out suite being designed |
 | M5 | Repo (public), CI gate, tag-driven release via crates.io trusted publishing (no stored token) | **exercised** | 0.0.1 of all four crates published 2026-11-18 by `release.yml` after the gate passed; trusted publishing first used at the next release |
 | M7 | Website (tauten.dev) | **live** | `tauten-dev/tauten-dev.github.io`, generated from a pinned commit with drift checks; benchmark section shows pending |
 | M8 | Writfold adoption | not started | |
@@ -69,7 +69,7 @@ published; nothing has been measured with a real agent.
   report.
 - S002 (placeholder comments) is a heuristic.
 - The benchmark has 4 dev tasks on one host. The plan needs about 24 across
-  3 hosts, with ≥ 16 held out, and no real agent has been run.
+  3 hosts, with ≥ 16 held out. The dev-split pilot hit a ceiling, so harder held-out tasks are needed.
 - Contracts do not yet support `async fn` or generic newtypes; they have no
   Kani (`cfg(kani)`) lowering yet.
 - **No measurement of agent behaviour yet. Nothing here supports a claim that
