@@ -376,8 +376,9 @@ mod tests {
         let core_tests = profile.clippy_toml(Tier::Core, true).expect("renders");
         assert!(!core_tests.contains("TAU-A001"));
         let core_test_flags = profile.report_flags(Tier::Core, true);
+        assert!(core_test_flags.iter().any(|f| f == "unused_must_use"));
         assert!(
-            core_test_flags
+            !core_test_flags
                 .iter()
                 .any(|f| f == "clippy::let_underscore_must_use")
         );

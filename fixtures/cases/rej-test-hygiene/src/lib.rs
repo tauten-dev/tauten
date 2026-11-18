@@ -23,7 +23,12 @@ mod tests {
     }
 
     #[test]
-    fn ignored_result_still_counts() {
+    fn explicit_discard_is_allowed_in_tests() {
         let _ = step();
+    }
+
+    #[test]
+    fn silent_drop_still_counts() {
+        step();
     }
 }

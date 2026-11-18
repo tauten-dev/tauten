@@ -118,11 +118,21 @@ fix = "Compare with an explicit tolerance, or use integers in fixed units."
 [[rule]]
 id = "TAU-E001"
 title = "Never ignore a result"
-lints = ["unused_must_use", "clippy::let_underscore_must_use", "clippy::map_err_ignore"]
+lints = ["unused_must_use", "clippy::map_err_ignore"]
 levels = { kernel = "deny", core = "deny", edge = "deny" }
 enforced_by = "rustc"
 why = "Dropping a Result or discarding the original error is how failures go silent."
 fix = "Propagate with `?`, handle the error, or wrap it with context (`.map_err(|e| MyError::Io(e))`) instead of discarding it."
+
+[[rule]]
+id = "TAU-E003"
+in_tests = false
+title = "Explicit discards of results need a reason"
+lints = ["clippy::let_underscore_must_use"]
+levels = { kernel = "deny", core = "deny", edge = "deny" }
+enforced_by = "clippy"
+why = "`let _ = fallible()` is visible but still loses the failure. In library code that is rarely right; in tests it is the normal idiom for best-effort cleanup, so tests are exempt."
+fix = "Handle or propagate the result. If discarding is correct, say why: `#[expect(clippy::let_underscore_must_use, reason = \"best-effort cleanup\")]`."
 
 [[rule]]
 id = "TAU-E002"
