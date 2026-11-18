@@ -7,6 +7,13 @@ use serde::Deserialize;
 use crate::diag::EnforcedBy;
 use crate::tier::{Level, Tier};
 
+/// Rule IDs that tauten's own structural checks and ratchet emit. Every
+/// profile must define them, or those checks would silently report nothing.
+pub const EMITTED_BY_CODE: &[&str] = &[
+    "TAU-A002", "TAU-K003", "TAU-R001", "TAU-S002", "TAU-T001", "TAU-T002", "TAU-T003", "TAU-X002",
+    "TAU-X003", "TAU-X004",
+];
+
 /// The profile shipped with this version of tauten.
 pub const EMBEDDED_RULES: &str = include_str!("../rules.toml");
 
@@ -111,6 +118,9 @@ pub struct Profile {
 /// Why a rule table was rejected.
 #[derive(Debug, thiserror::Error)]
 pub enum ProfileError {
+    /// A rule the checker emits itself is absent from the table.
+    #[error("rule table lacks {0}, which the checker emits")]
+    MissingRule(String),
     /// The TOML did not match the schema.
     #[error("rule table is not valid: {0}")]
     Parse(#[from] toml::de::Error),
@@ -179,6 +189,11 @@ impl Profile {
         }
         if let Some(bad) = raw.api.iter().find(|api| !ids.contains(&api.rule)) {
             return Err(ProfileError::UnknownRule(bad.rule.clone()));
+        }
+        // A missing structural rule would make its check silently report
+        // nothing (for example, stale baselines would pass without TAU-R001).
+        if let Some(missing) = EMITTED_BY_CODE.iter().find(|id| !ids.contains(**id)) {
+            return Err(ProfileError::MissingRule((*missing).to_owned()));
         }
         Ok(Self {
             rules: raw.rule,
@@ -445,6 +460,24 @@ fix = "f"
         assert!(matches!(
             Profile::parse(text),
             Err(ProfileError::DuplicateLint { .. })
+        ));
+    }
+
+    #[test]
+    fn rejects_a_table_missing_a_rule_the_checker_emits() {
+        let start = EMBEDDED_RULES
+            .find("id = \"TAU-R001\"")
+            .expect("R001 in table");
+        let block = EMBEDDED_RULES[..start]
+            .rfind("[[rule]]")
+            .expect("block start");
+        let end = EMBEDDED_RULES[start..]
+            .find("[[")
+            .map_or(EMBEDDED_RULES.len(), |e| start + e);
+        let text = format!("{}{}", &EMBEDDED_RULES[..block], &EMBEDDED_RULES[end..]);
+        assert!(matches!(
+            Profile::parse(&text),
+            Err(ProfileError::MissingRule(id)) if id == "TAU-R001"
         ));
     }
 }
