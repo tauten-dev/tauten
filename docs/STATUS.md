@@ -1,9 +1,10 @@
 # Status
 
-Updated 2026-11-18 (evening). Name final: tauten; license MIT; code at github.com/tauten-dev/tauten (private until first release). Every line says how far an item got:
+Updated 2026-11-19. Name final: tauten; license MIT; code at github.com/tauten-dev/tauten (public). Every line says how far an item got:
 **specified → implemented → exercised**. "Exercised" means it ran against
-real input in this repository, and the evidence is named. Nothing is
-published. One pilot on the dev split has been run with a real agent; nothing held-out has been measured.
+real input in this repository, and the evidence is named. Versions 0.0.1
+and 0.0.2 are on crates.io; the site is at tauten.dev. Development pilot
+completed; held-out benefit not established.
 
 ## Milestones (see PLAN.md §6)
 
@@ -22,7 +23,7 @@ published. One pilot on the dev split has been run with a real agent; nothing he
 | P2 | Baseline ratchet in `tauten-check-kernel` (`apply`, `stale`, `count_errors`, `increases`); `tauten-check` interns keys and calls it; 14 more Lean claims (R-conserve, R-cover, R-stale, R-exact, R-headroom, R-shrink, 2 non-vacuity examples); 8 more mutants; differential test against the old `BTreeMap` ratchet | **exercised** (local and GitHub CI) | `docs/proofs/README.md`; local proof gate passed (27 claims, 17 mutants); interning is trusted and covered by the differential test; `proofs.yml` green on main 2026-11-18 (gate 206 s) |
 | P3 | Proofs over what the macros generate, for listed instances: `crates/tauten-proof-instances` (unpublished; 4 `#[refined]` types, a `#[newtype]` control, 4 contract functions incl. `&mut` and `old`); a schematic shape per macro; per instance a shape theorem plus Plyward F01 targets 1, 2, 3, 5 and the contract claims; constructor audit; 60 more Lean claims (87 in all); 10 macro-source mutants | **exercised** (local and GitHub CI) | `docs/proofs/README.md` (P3 section); local proof gate passed (87 claims, 27 mutants). Wording: "proved for listed instances"; the macros themselves are not verified. `proofs.yml` green on main 2026-11-19 (gate 408 s) |
 | P4 | Rule-table well-formedness in `tauten-check-kernel` (`table::validate`: unique IDs, unique lint owner, API bans name existing rules, every emitted ID present); `Profile::parse` interns names and calls it; `validate_ok_iff` + non-vacuity examples (2 claims, 89 in all); 5 mutants (32 in all); differential test against the old checks; reject fixture `fixtures/profiles/rej-missing-r001.toml` | **exercised** (local and GitHub CI) | `docs/proofs/README.md` (P4 section); local proof gate passed (89 claims, 32 mutants, 339 s warm). Error order is not a theorem; the differential test compares error texts on 3,000 random tables |
-| P5 | Proof tier for users (M3): `proofs/claims.toml`; `cargo tauten proofs` (JSON outcome per claim: proved, drift, build-failed, audit-failed, mutant-survived, tool-missing; records `proofs/claims.json` with a source fingerprint); template `crates/cargo-tauten/templates/proofs` + `cargo tauten init --proofs`; N001/P003 findings in kernel functions with a fresh, total, proved claim reported as subsumed (kernel `subsume::subsumes`, 4 claims, 4 mutants); `proofs/TRUST.md`; badge data `proofs/claims.json` | **exercised** (local and GitHub CI) | Worked example `bench/hosts/ledger` (`apply_spec`, 2 mutants, `proved`, gate 53 s cold); fixture `fixtures/proofs-subsume` with a recorded gate run and `tests/proofs.rs` (fresh/stale/non-total/unclaimed, tool-missing without the toolchain); tauten's own gate via `cargo tauten proofs`: 20 of 20 claims `proved` (93 audited claims, 36 mutants, 409 s cold). CI does not run `cargo tauten proofs` yet; the site does not read `claims.json` yet |
+| P5 | Proof tier for users (M3): `proofs/claims.toml`; `cargo tauten proofs` (JSON outcome per claim: proved, drift, build-failed, audit-failed, mutant-survived, tool-missing; records `proofs/claims.json` with a source fingerprint); template `crates/cargo-tauten/templates/proofs` + `cargo tauten init --proofs`; N001/P003 findings in kernel functions with a fresh, total, proved claim reported as subsumed (kernel `subsume::subsumes`, 4 claims, 4 mutants); `proofs/TRUST.md`; badge data `proofs/claims.json` | **exercised** (local and GitHub CI) | Worked example `bench/hosts/ledger` (`apply_spec`, 2 mutants, `proved`, gate 53 s cold); fixture `fixtures/proofs-subsume` with a recorded gate run and `tests/proofs.rs` (fresh/stale/non-total/unclaimed, tool-missing without the toolchain); tauten's own gate via `cargo tauten proofs`: 20 of 20 claims `proved` (93 audited claims, 36 mutants, 409 s cold). CI does not run `cargo tauten proofs` yet; the site's proofs page is rendered from `claims.json` |
 | M3 | Proof tier for users (Aeneas/Lean template from writfold) | **exercised** (local and GitHub CI) | see P5; `proofs.yml` green on main 2026-11-19 (93 claims, 36 mutants, gate 928 s) |
 | M4 | Benchmark harness: host, 4 dev tasks, runner, analysis, admission gate | **exercised with built-in agents only** | `bench/README.md` (validation table); `scripts/bench-validate` in the gate |
 | M4 | Pilot with a real agent (dev split) | **exercised** | `bench/reports/2026-11-18-pilot`: 36 trials, Sonnet 5.5. Ceiling: 0 escaped defects in every arm; enforcement removed unchecked arithmetic (A 6/12, B 5/12, C 0/12 trials). Held-out suite being designed |
@@ -88,8 +89,12 @@ published. One pilot on the dev split has been run with a real agent; nothing he
   A held-out suite (20 tasks, 3 hosts, per-trial containers) is built on the
   local branch `bench-heldout` and kept unpublished until it has run; running
   it needs the owner's budget approval.
+- `#[refined]` wraps only `tauten::refine::Frozen` types (primitives,
+  `String`, std containers of those): interior mutability or a user-written
+  `Clone` could break a checked predicate (external review, 2026-11-19).
+  Predicates are arbitrary closures, not a checked fragment.
 - Contracts do not yet support `async fn` or generic newtypes; they have no
   Kani (`cfg(kani)`) lowering yet.
-- **Only a dev-split pilot has measured agent behaviour, and it could not
-  separate the arms. Nothing here supports a claim that agents make fewer
-  mistakes.**
+- **Development pilot completed; held-out benefit not established.** The
+  dev-split pilot could not separate the arms on escaped defects; nothing
+  here supports a claim that agents make fewer mistakes.
