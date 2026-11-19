@@ -88,3 +88,145 @@ pub fn run(ws: &Loaded, write: bool) -> Result<()> {
     }
     Ok(())
 }
+
+/// The proofs template (`crates/cargo-tauten/templates/proofs`): published
+/// path, contents. `{{...}}` placeholders are filled per crate.
+const PROOFS_TEMPLATE: &[(&str, &str)] = &[
+    (
+        "proofs/claims.toml",
+        include_str!("../templates/proofs/claims.toml"),
+    ),
+    (
+        "proofs/README.md",
+        include_str!("../templates/proofs/README.md"),
+    ),
+    (
+        "proofs/TRUST.md",
+        include_str!("../templates/proofs/TRUST.md"),
+    ),
+    ("proofs/run.sh", include_str!("../templates/proofs/run.sh")),
+    (
+        "proofs/compose.yaml",
+        include_str!("../templates/proofs/compose.yaml"),
+    ),
+    (
+        "proofs/container.sh",
+        include_str!("../templates/proofs/container.sh"),
+    ),
+    (
+        "proofs/extract.sh",
+        include_str!("../templates/proofs/extract.sh"),
+    ),
+    (
+        "proofs/refresh.sh",
+        include_str!("../templates/proofs/refresh.sh"),
+    ),
+    (
+        "proofs/gate.py",
+        include_str!("../templates/proofs/gate.py"),
+    ),
+    (
+        "proofs/lakefile.toml",
+        include_str!("../templates/proofs/lakefile.toml"),
+    ),
+    (
+        "proofs/lean-toolchain",
+        include_str!("../templates/proofs/lean-toolchain"),
+    ),
+    (
+        "proofs/lake-manifest.json",
+        include_str!("../templates/proofs/lake-manifest.json"),
+    ),
+    (
+        "proofs/Audit.lean",
+        include_str!("../templates/proofs/Audit.lean"),
+    ),
+    (
+        "proofs/Proofs.lean",
+        include_str!("../templates/proofs/Proofs.lean"),
+    ),
+    (
+        "proofs/Proofs/{{MODULE}}.lean",
+        include_str!("../templates/proofs/Proofs/Module.lean"),
+    ),
+    (
+        "proofs/.gitignore",
+        include_str!("../templates/proofs/gitignore"),
+    ),
+];
+
+/// `LedgerKernel` for `ledger-kernel`: the name Aeneas gives the
+/// translation file, and the theorem module.
+fn camel(name: &str) -> String {
+    name.split(['-', '_'])
+        .map(|part| {
+            let mut chars = part.chars();
+            chars.next().map_or_else(String::new, |first| {
+                first.to_uppercase().chain(chars).collect()
+            })
+        })
+        .collect()
+}
+
+/// The template's files for `krate`, placeholders filled.
+fn proofs_files(krate: &str, crate_dir: &str) -> Vec<(String, String)> {
+    let module = camel(krate);
+    let fill = |text: &str| {
+        text.replace("{{CRATE_DIR}}", crate_dir)
+            .replace("{{CRATE_SNAKE}}", &krate.replace('-', "_"))
+            .replace("{{CRATE}}", krate)
+            .replace("{{LEAN_FILE}}", &module)
+            .replace("{{MODULE}}", &module)
+    };
+    PROOFS_TEMPLATE
+        .iter()
+        .map(|(path, text)| (fill(path), fill(text)))
+        .collect()
+}
+
+/// `cargo tauten init --proofs <crate>`: write the proofs template for a
+/// kernel crate. Prints the plan; writes only with `--write`, and never
+/// over an existing `proofs/`.
+pub fn proofs(ws: &Loaded, krate: &str, write: bool) -> Result<()> {
+    let Some(member) = ws.model.members.iter().find(|m| m.name == krate) else {
+        anyhow::bail!("no workspace member named `{krate}`");
+    };
+    if member.tier() != Some(Tier::Kernel) {
+        println!(
+            "note: `{krate}` is not declared `kernel`; Charon/Aeneas need dependency-free, \
+             plain code, and only kernel crates get proof subsumption of N001/P003"
+        );
+    }
+    let crate_dir = std::path::Path::new(&member.manifest)
+        .parent()
+        .map_or_else(String::new, |p| p.to_string_lossy().replace('\\', "/"));
+    let target = ws.root().join("proofs");
+    if target.exists() {
+        anyhow::bail!(
+            "{} already exists; nothing written (copy the files of \
+             crates/cargo-tauten/templates/proofs by hand to merge)",
+            target.display()
+        );
+    }
+    let files = proofs_files(krate, &crate_dir);
+    for (path, _) in &files {
+        println!("{path}");
+    }
+    if !write {
+        println!("\nNothing written. Re-run with --write to create these files.");
+        return Ok(());
+    }
+    for (path, text) in &files {
+        let full = ws.root().join(path);
+        if let Some(parent) = full.parent() {
+            fs::create_dir_all(parent).with_context(|| format!("creating {}", parent.display()))?;
+        }
+        fs::write(&full, text).with_context(|| format!("writing {}", full.display()))?;
+    }
+    println!("\nNext (see proofs/README.md):");
+    println!("  1. sh proofs/refresh.sh      # translate {crate_dir} into proofs/Extracted/");
+    println!("  2. write theorems in proofs/Proofs/{}.lean", camel(krate));
+    println!("  3. list them in proofs/claims.toml, with a mutant each");
+    println!("  4. cargo tauten proofs       # run the gate, record proofs/claims.json");
+    Ok(())
+}

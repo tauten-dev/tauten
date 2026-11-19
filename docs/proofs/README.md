@@ -2,10 +2,12 @@
 
 Lean 4 theorems about the decision code of the checker, stated over the
 Charon/Aeneas translation of the shipped Rust. Plan: `docs/PROOF-PLAN.md`.
-P0 (toolchain probe): `docs/proofs/probe.md`. This page covers P1, P2
-and P3 (the macros' generated code, for listed instances).
+P0 (toolchain probe): `docs/proofs/probe.md`. This page covers P1, P2,
+P3 (the macros' generated code, for listed instances), P4 (rule-table
+well-formedness) and P5 (the proof tier for users' kernel crates,
+subsumption of arithmetic and indexing lints, badge data).
 
-## What is proved (P1, P2)
+## What is proved (P1, P2, P4, P5)
 
 The proved code is `crates/tauten-check-kernel`: a dependency-free
 `no_std` crate in the `kernel` tier. `tauten-check` calls it for each of
@@ -20,6 +22,8 @@ these decisions. Its public API did not change.
 | `ratchet::stale` | `baseline::apply` (one TAU-R001 per key returned) | `ratchet_stale_iff`, `ratchet_passes_iff`, `ratchet_example` |
 | `ratchet::count_errors` (with `zeros`, `add_error`, `add_error_at`) | `Baseline::from_findings` | `count_errors_counts`, `regenerated_baseline_never_grows` |
 | `ratchet::increases` (with `grows_at`) | `Baseline::increases` (`cargo tauten baseline` refuses growth) | `increases_flags`, `increases_none_iff`, `regenerated_baseline_never_grows`, `increase_example` |
+| `subsume::subsumes` | `proofs::subsume` (`cargo tauten check`, P5) | `subsumes_spec`, `stale_proof_never_subsumes`, `subsumes_only_in_kernel`, `subsumes_only_arithmetic_and_indexing` (P5, below) |
+| `table::validate` (with `duplicate`, `first_duplicate`, `first_missing`, `find_before`, `contains`, `absent`, `repeat_at`, `missing_at`, `is_at`, `owner_at`) | `Profile::parse` (every rule table, the embedded one included) | `validate_ok_iff`, `validate_examples` (P4, below) |
 
 The P1 theorems are proved directly against the extracted definitions,
 none derived from another, so a mutant breaks each P1 claim it falsifies.
@@ -75,6 +79,51 @@ derived from another theorem. So a mutant of the Rust source breaks each
 claim it falsifies, and `proofs/mutants.py` records exactly which claims
 each mutant breaks.
 
+### Rule-table well-formedness (P4)
+
+`Profile::parse` reads the TOML rule table, then interns every rule ID it
+sees (each rule's own ID, the rule each API ban names, and the IDs the
+checker emits itself, `EMITTED_BY_CODE`) to one index per distinct string,
+and every lint name likewise. It passes the kernel the rules' IDs, the
+flattened lint list with each lint's owning rule, the API bans' rules and
+the required IDs; `table::validate` returns the first problem, and the
+shell maps its positions back to names for the unchanged `ProfileError`.
+
+| Claim | Statement |
+|---|---|
+| `validate_ok_iff` | `validate` never panics, and returns `Ok` iff the rule IDs are pairwise distinct, the lints are pairwise distinct (no lint owned by two rules, or twice by one), every API ban names a rule ID of the table, and every required ID is a rule ID |
+| `validate_examples` | non-vacuity: a small table is accepted; the same table is rejected with a repeated ID, with a lint owned twice, with an API ban naming an unknown rule, and with a required ID missing (the case of a table without TAU-R001) |
+
+Each extracted function has a lemma (`find_before_spec`,
+`first_duplicate_spec`, `first_missing_spec`, `duplicate_spec`, ...; the
+loops by invariants) and the claims are proved from them, so a mutant of
+any table function breaks both claims. Which problem is reported first
+(the table's reading order: rule by rule, its ID before its lints; then API
+bans; then required IDs, in `EMITTED_BY_CODE` order) is not a theorem. The
+old `BTreeSet`/`BTreeMap` checks are kept as `profile/reference.rs`, and a
+differential test compares the full error text on 3,000 randomly edited
+copies of the embedded table (rules dropped, duplicated and renamed, lints
+inserted and repeated, API bans renamed; each of the six outcomes, `Ok`,
+duplicate ID, lint repeated within one rule, lint owned by two rules,
+unknown rule and missing rule, must occur at least 50 times).
+
+Reject fixture: `fixtures/profiles/rej-missing-r001.toml` defines every ID
+the checker emits except TAU-R001. `profile::tests::rejects_the_fixture_without_r001`
+requires the error "rule table lacks TAU-R001, which the checker emits",
+and that the fixture plus a TAU-R001 rule is accepted.
+
+Trusted for P4: the interning (equal strings, equal index), which the
+differential test covers; the mapping of positions back to names; and that
+the table read by `toml`/`serde` is the one the user wrote.
+
+| Mutant | Change | Claims that must break | Failing lemma |
+|---|---|---|---|
+| `duplicate-ids-accepted` | the ID duplicate check never fires | `validate_ok_iff`, `validate_examples` | `duplicate_spec` |
+| `duplicate-lints-accepted` | a lint owned twice passes when no ID repeats | `validate_ok_iff`, `validate_examples` | `duplicate_spec` |
+| `unknown-api-rule-accepted` | API bans not checked | `validate_ok_iff`, `validate_examples` | — |
+| `required-id-missing-accepted` | missing required IDs ignored (a table without TAU-R001 passes) | `validate_ok_iff`, `validate_examples` | — |
+| `search-stops-short` | `find_before` stops one position early | `validate_ok_iff`, `validate_examples` | `find_before_spec` |
+
 What is trusted, not proved:
 - Ratchet interning (`baseline::Interned`): one index per distinct key, in
   key order, and of duplicate baseline entries the later count. The shell's
@@ -96,8 +145,8 @@ What is trusted, not proved:
   (`kernel_excuse_agrees_with_the_reference_on_every_profile_lint`).
 - The toolchain: Charon, Aeneas and its Lean library, Lean, and rustc.
 
-This is not a proof of tauten. It covers three small decisions and the
-ratchet's counting, and (P3, below) the code the macros generated for a
+This is not a proof of tauten. It covers three small decisions, the
+ratchet's counting, the rule table's well-formedness (P4), and (P3, below) the code the macros generated for a
 list of instances. Scanning, diagnostic mapping, interning and rendering
 are not covered.
 
@@ -237,9 +286,181 @@ What is trusted, not proved, for P3:
   pin the strings the macro emits today).
 - The toolchain, as for P1 and P2.
 
+## The proof tier for users (P5, milestone M3)
+
+The setup above, folded into a template that a project instantiates for its
+own kernel crate, and the same reporting for tauten's own proofs.
+
+### `proofs/claims.toml`
+
+```toml
+version = 1
+
+[gate]
+command = ["sh", "proofs/run.sh"]          # run from the workspace root
+crates = ["crates/ledger-kernel"]          # what the gate translates
+
+[[claim]]
+crate = "ledger-kernel"                    # package
+file = "crates/ledger-kernel/src/lib.rs"   # workspace-relative
+function = "apply"                         # `name`, `Type::name` or `module::name`
+lean = "ledger_kernel.apply"               # the extracted definition
+theorems = ["Proofs.LedgerKernel.apply_spec"]
+total = "Proofs.LedgerKernel.apply_spec"   # optional: never fails, for every input
+subsumes = ["TAU-N001", "TAU-P003"]        # optional, needs `total`
+mutants = ["deposit-wraps", "withdraw-reports-overflow"]
+
+[[mutant]]                                 # read by the template's gate.py
+name = "deposit-wraps"
+file = "crates/ledger-kernel/src/lib.rs"
+before = "balance.checked_add(amount).ok_or(Rejection::Overflow)"  # exactly once
+after = "Some(balance.wrapping_add(amount)).ok_or(Rejection::Overflow)"
+```
+
+`tauten_check::proofs::ClaimsFile::parse` rejects a claim without a theorem
+or without a mutant (the badge rule needs a killed mutant), a `total` that
+is not among its theorems, a `subsumes` rule other than TAU-N001/TAU-P003 or
+without `total`, and a function claimed twice.
+
+### `cargo tauten proofs`
+
+Runs `[gate] command` from the workspace root, passes its output through to
+stderr, and reads the lines that start with `TAUTEN-PROOFS ` followed by
+JSON: stages (`{"stage": "drift", "status": "ok"}`; stages `tools`,
+`extract`, `drift`, `build`, `audit`, `mutants`; status `ok`, `fail` or,
+for tools, `missing`), audited theorems (`{"theorem": …, "status": "ok"}`),
+total theorems (`{"total": …, "function": …}`) and mutants
+(`{"mutant": …, "status": "killed", "broken": [theorems]}`). It prints one
+JSON line per claim (the claim's fields plus `outcome`, `detail` and
+`fingerprint`), writes them to `proofs/claims.json` (unless `--no-write`)
+and exits 0 only if every claim is proved. The outcome
+(`tauten_check::proofs::outcome`, unit-tested for each value):
+
+| Outcome | When |
+|---|---|
+| `tool-missing` | the command cannot start, the gate reports `tools: missing` (no Docker, no daemon, no image; `run.sh` checks), or the gate printed no stage at all |
+| `build-failed` | `extract` or `build` failed (or did not run) |
+| `drift` | the committed `proofs/Extracted/` differs from a fresh translation, or the sources changed while the gate ran (fingerprints before and after) |
+| `audit-failed` | the audit failed, a claim theorem was not audited with the standard axioms, or the `total` theorem was not confirmed to have the total shape |
+| `mutant-survived` | a listed mutant has no `killed` result that broke one of the claim's theorems |
+| `proved` | none of the above |
+
+A missing line is never read as a pass: every stage up to `audit` must be
+reported `ok`, every theorem audited, every mutant reported killed.
+
+### Lint subsumption, bound to a fresh proof
+
+`cargo tauten check` (and `baseline`) reads `proofs/claims.json` if it
+exists. For a TAU-N001 or TAU-P003 finding it finds the innermost function
+around the finding's line (`syn`), and the claim for that crate, file and
+function. The proved kernel function `subsume::subsumes(tier, finding,
+listed, proved, fresh)` decides; the finding is then reported with
+severity `warning` and `"subsumed_by": "<total theorem>"` (human output:
+`subsumed[TAU-N001] … = subsumed by proof <theorem>`, and a count in the
+summary), so it fails neither the check nor the baseline.
+
+- `proved`: the recorded outcome is `proved` and the claim has a `total`
+  theorem. The template's `Audit.lean` reports a theorem as total only if
+  its statement is `∀ (x₁ : α₁) … (xₙ : αₙ), f x₁ … xₙ ⦃ _ ⦄` with no `αᵢ` a
+  proposition and `f` applied to exactly those variables. Aeneas's `⦃ ⦄`
+  (`WP.spec`) is false for `fail` (panic, overflow, out of bounds) and
+  `div`, so such a theorem says `f` never fails, for every input. A theorem
+  with a hypothesis does not qualify (the fixture's `double` shows it).
+- `fresh`: the fingerprint recorded by `cargo tauten proofs` (FNV-1a 64 over
+  every file of the claim's crate directory, of the directories of the
+  workspace members it depends on (transitively), and of `proofs/`, except
+  `claims.json`, hidden entries, `target` and `__pycache__`) equals the
+  fingerprint of the current files. Any edit to the crate or to the proofs
+  brings the findings back until the gate runs again.
+- `listed`: the claim names the finding's rule under `subsumes`.
+- Only kernel crates, only TAU-N001 and TAU-P003.
+
+| Claim (`Tauten/Subsume.lean`) | Statement |
+|---|---|
+| `subsumes_spec` | `subsumes` returns true iff the tier is kernel, the finding is arithmetic or indexing, and `listed`, `proved` and `fresh` all hold; never fails |
+| `stale_proof_never_subsumes` | with `fresh = false` the result is false, whatever else holds |
+| `subsumes_only_in_kernel` | core and edge crates: always false |
+| `subsumes_only_arithmetic_and_indexing` | any other rule: false; arithmetic and indexing with everything else true: true (non-vacuity) |
+
+| Mutant | Change | Claims that must break |
+|---|---|---|
+| `stale-proof-subsumes` | `fresh` ignored | `subsumes_spec`, `stale_proof_never_subsumes` |
+| `core-subsumed` | core crates subsumed | `subsumes_spec`, `subsumes_only_in_kernel` |
+| `any-finding-subsumed` | every rule subsumable | `subsumes_spec`, `subsumes_only_arithmetic_and_indexing` |
+| `unlisted-rule-subsumed` | `listed` ignored | `subsumes_spec` |
+
+Trusted for subsumption (`proofs/TRUST.md`): the function lookup by line
+span, the fingerprint as change detection (not tamper protection:
+`claims.json` is committed and reviewed like a baseline), and the outcome
+mapping (unit tests).
+
+Fixture: `fixtures/proofs-subsume` (a kernel crate, its `proofs/` from the
+template, and a `claims.json` recorded by a real gate run: `add_capped` and
+`first_or_zero` proved total, `double` audit-failed because its theorem has
+a hypothesis, `triple` unclaimed). `crates/cargo-tauten/tests/proofs.rs`
+checks that exactly the three findings of the two proved functions are
+subsumed, that an edit to the Rust source or to a theorem makes all five
+findings errors again, that a gate command that is absent, silent or
+reports missing tools gives `tool-missing` for every claim (and then
+nothing is subsumed), and that `init --proofs` writes the template once.
+
+### The template and `cargo tauten init --proofs`
+
+`crates/cargo-tauten/templates/proofs/` (inside the published crate, so
+`cargo install cargo-tauten` carries it). `cargo tauten init --proofs
+<crate>` prints the files; with `--write` it writes them to `proofs/`,
+filling in the crate's name and directory, and never over an existing
+`proofs/`. The files: `claims.toml`, `README.md` (workflow and
+writing-for-Aeneas rules), `TRUST.md`, `run.sh` (host: checks Docker and
+the image, runs Compose), `compose.yaml`, `container.sh`, `extract.sh`
+(tauten's, also rendering non-string inherited `[workspace.package]` keys
+such as `publish = false`), `refresh.sh`, `gate.py` (the gate in Python:
+tools, extract, drift, `lake build Extracted Proofs`, `lake build Audit`,
+mutants from `claims.toml`, each printing result lines), `lakefile.toml`,
+`lean-toolchain`, `lake-manifest.json` (the same pins and package name as
+tauten's, so the image's prebuilt dependencies apply), `Audit.lean` (axiom
+audit of every theorem in the `Proofs` library and the total-shape check),
+`Proofs.lean` and `Proofs/<Crate>.lean`.
+
+The template's mutant rule is looser than tauten's own calibration: a
+mutant counts as killed when it breaks at least one of the claim's
+theorems (its own proof fails, or it depends on one that does) and causes
+no error outside `Proofs/`; it does not require the exact set.
+
+### Worked example: `bench/hosts/ledger`
+
+`cargo tauten init --proofs ledger-kernel --write`, then `sh
+proofs/refresh.sh` (no change to the crate was needed: Charon/Aeneas
+translate `apply`, its enums and their derives as written), one theorem,
+`Proofs.LedgerKernel.apply_spec`: for every balance and entry, `apply`
+returns the exact sum or `Overflow`, the exact difference or
+`Insufficient`, and never fails (total, so it would subsume N001/P003 in
+`apply`). Mutants `deposit-wraps` and `withdraw-reports-overflow` both
+break it. `cargo tauten proofs --manifest-path
+bench/hosts/ledger/Cargo.toml`: `proved`, recorded in
+`bench/hosts/ledger/proofs/claims.json`. The benchmark's trial copies of
+the host leave out `proofs/` (`bench/run.py`), so trials see the host
+exactly as before.
+
+### Badge data
+
+`proofs/claims.toml` lists tauten's own 20 claims (12 kernel functions, 4
+refined constructors, 4 contract functions; the theorems as above, the
+mutants from `proofs/mutants.py`). `gate.sh`, `report.py` and
+`mutants.py` print the result lines, so `cargo tauten proofs` in this
+repository runs the full gate and writes `proofs/claims.json`: per
+function, theorems, mutants and outcome. The website shows "Proved" for a
+`proved` claim of `tauten-check-kernel` and "Proved for listed instances"
+for one of `tauten-proof-instances`, linking the statement and `TRUST.md`;
+the list is generated from that file, not written by hand. `mutants.py`
+reports a mutant whose calibration fails (it breaks more or fewer claims
+than named) as `survived`, so a miscalibrated mutant withholds the badge.
+
 ## The gate
 
-`proofs/gate.sh` runs in the pinned proofs image and has four steps:
+`proofs/gate.sh` runs in the pinned proofs image and has four steps. It
+prints a `TAUTEN-PROOFS` result line per stage, `proofs/report.py` one per
+audited theorem, and `proofs/mutants.py` one per mutant (P5):
 
 1. **Extract.** `proofs/extract-all.sh` runs `proofs/extract.sh` (Charon
    then Aeneas, `-abort-on-error`) on `crates/tauten-check-kernel`
@@ -254,21 +475,21 @@ What is trusted, not proved, for P3:
    - every theorem under `Tauten` uses no axioms beyond `propext`,
      `Classical.choice` and `Quot.sound` (the transitive closure, so
      `sorryAx` or an Aeneas `axiom` for an opaque function fails it);
-   - all 87 required claims exist (27 kernel, 50 instance, 10 schematic);
+   - all 93 required claims exist (33 kernel, 50 instance, 10 schematic);
    - constructor enumeration (P3, above);
-   - every extracted function (27 from `tauten_check_kernel`, counting
+   - every extracted function (45 from `tauten_check_kernel`, counting
      loops and loop bodies; 59 from `tauten_proof_instances`, counting
      closures, derives and the transparent runtime helpers) is on a
      reviewed list and is stated in a required claim or called, through
      the extracted definitions and trait-instance records, by a function
      that is.
-4. **Mutants.** `proofs/mutants.py` applies 17 mutations to the kernel's
+4. **Mutants.** `proofs/mutants.py` applies 26 mutations to the kernel's
    Rust source and 10 to the macros' source (P3, above). For each one it
    re-extracts, rebuilds, and requires the
    build to break exactly the named claims (a claim breaks when its proof
    fails or depends on a failed lemma; helper lemmas may fail) and no
    error outside the theorem files. Every theorem a mutant names must be a
-   required claim. Each of the 77 claims stated over the extraction is
+   required claim. Each of the 83 claims stated over the extraction is
    broken by at least one mutant; the 10 schematic claims
    (`Tauten.Macros`) mention no extracted function, so no mutant of the
    Rust source can break them.
@@ -315,6 +536,7 @@ writfold's pins: Lean v4.35.0, Aeneas `nightly-2026.11.07-c5eb4a2`, Charon
 `proofs/lake-manifest.json`. A local build of that stage is the same image.
 
 ```sh
+cargo tauten proofs                                        # the whole gate, one outcome per claim, records proofs/claims.json
 docker compose -f compose.proofs.yaml run --rm proofs     # the whole gate
 sh proofs/refresh.sh                                       # regenerate proofs/Extracted/ after a kernel change
 docker compose -f compose.proofs.yaml run --rm proofs \
@@ -394,6 +616,23 @@ P3 (2026-11-18, load average about 3 to 7):
 |---|---|---|---|---|---|
 | Cold container (`docker compose … run --rm proofs`), 26 mutants (before `attributes-dropped` was added) | 17 s (includes crates.io fetch of `syn` and Charon's sysroot setup) | <1 s | 12 s | 256 s | 285 s (286 s wall time) |
 | Warm (long-lived container, `proofs/container.sh`), all 27 mutants | 5 s | <1 s | 1 s | 265 s | 271 s |
+
+P4 (2026-11-18, load average about 10 to 20):
+
+| Run | Extract (both crates) | Drift | `lake build` + audit | 32 mutants | Total |
+|---|---|---|---|---|---|
+| Warm (long-lived container, `proofs/container.sh`) | 5 s | <1 s | 11 s | 323 s | 339 s |
+
+P5 (2026-11-18/19, load average about 10 to 25; every run through
+`cargo tauten proofs`, a fresh `docker compose run` container each time):
+
+| Run | Claims | Mutants | Wall time | Outcome |
+|---|---|---|---|---|
+| tauten (`proofs/claims.toml`), first run | 20 | 36 | 430 s (extract 19 s, `lake build` + audit 13 s, mutants 396 s; two other gates ran alongside) | gate OK, every claim `drift`: `proofs/TRUST.md` was edited while it ran (the before/after fingerprint check working as intended) |
+| tauten, final run | 20 | 36 | 409 s (extract 17 s, `lake build` + audit 13 s, mutants 377 s) | all 20 `proved`; audit: 182 theorems, 93 required claims; coverage: 104 functions; 36 mutants calibrated |
+| `bench/hosts/ledger` (template) | 1 | 2 | 53 s and 62 s | `proved` |
+| `fixtures/proofs-subsume` (template) | 3 | 3 | 60 s and 68 s | 2 `proved`, 1 `audit-failed` (by design) |
+| any, without Docker or the image | | | < 1 s | every claim `tool-missing` |
 
 A macro mutant re-translates the instance crate through the mutated
 macros (it compiles `syn` again in a fresh shadow workspace) and rebuilds

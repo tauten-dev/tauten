@@ -1,8 +1,9 @@
 //! The rule table: parsing, validation and per-tier lint configuration.
 
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeMap;
 
 use serde::Deserialize;
+use tauten_check_kernel::table::{self as kernel, Invalid};
 
 use crate::diag::EnforcedBy;
 use crate::tier::{Level, Tier};
@@ -148,6 +149,70 @@ pub enum ProfileError {
     Render(#[from] toml::ser::Error),
 }
 
+/// Names interned to indices for the kernel: one index per distinct string.
+#[derive(Default)]
+struct Names<'a>(BTreeMap<&'a str, usize>);
+
+impl<'a> Names<'a> {
+    fn index(&mut self, name: &'a str) -> usize {
+        let next = self.0.len();
+        *self.0.entry(name).or_insert(next)
+    }
+}
+
+/// The text at `position` of `items`, or an empty string for a position
+/// the kernel never returns.
+fn text_at<T>(items: &[T], position: usize, text: impl Fn(&T) -> &str) -> String {
+    items
+        .get(position)
+        .map_or_else(String::new, |item| text(item).to_owned())
+}
+
+/// Interns the table's rule IDs and lint names and asks the proved kernel
+/// whether it is well formed; maps the first problem back to names.
+fn validate(raw: &RawProfile) -> Result<(), ProfileError> {
+    let mut ids = Names::default();
+    let mut lint_names = Names::default();
+    let rule_ids: Vec<usize> = raw.rule.iter().map(|rule| ids.index(&rule.id)).collect();
+    let mut lint_rules = Vec::new();
+    let mut lints = Vec::new();
+    let mut lint_text = Vec::new();
+    for (position, rule) in raw.rule.iter().enumerate() {
+        for lint in &rule.lints {
+            lint_rules.push(position);
+            lints.push(lint_names.index(lint));
+            lint_text.push(lint.as_str());
+        }
+    }
+    let api_rules: Vec<usize> = raw.api.iter().map(|api| ids.index(&api.rule)).collect();
+    let required: Vec<usize> = EMITTED_BY_CODE.iter().map(|id| ids.index(id)).collect();
+    let rule_id = |position: usize| text_at(&raw.rule, position, |rule| &rule.id);
+    let owner = |lint: usize| {
+        lint_rules
+            .get(lint)
+            .map_or_else(String::new, |&r| rule_id(r))
+    };
+    match kernel::validate(&rule_ids, &lint_rules, &lints, &api_rules, &required) {
+        Ok(()) => Ok(()),
+        Err(Invalid::DuplicateId(rule)) => Err(ProfileError::DuplicateId(rule_id(rule))),
+        Err(Invalid::DuplicateLint(first, second)) => Err(ProfileError::DuplicateLint {
+            lint: text_at(&lint_text, second, |lint| lint),
+            first: owner(first),
+            second: owner(second),
+        }),
+        Err(Invalid::UnknownRule(api)) => {
+            Err(ProfileError::UnknownRule(text_at(&raw.api, api, |ban| {
+                &ban.rule
+            })))
+        }
+        Err(Invalid::MissingRule(id)) => Err(ProfileError::MissingRule(text_at(
+            EMITTED_BY_CODE,
+            id,
+            |id| id,
+        ))),
+    }
+}
+
 impl Profile {
     /// Load the profile embedded in this crate.
     ///
@@ -167,33 +232,14 @@ impl Profile {
         if raw.version != 1 {
             return Err(ProfileError::Version(raw.version));
         }
-        let mut ids = BTreeSet::new();
+        // The well-formedness decision is the proved kernel's
+        // (`tauten_check_kernel::table::validate`, `validate_ok_iff`).
+        validate(&raw)?;
         let mut lint_owner = BTreeMap::new();
         for (index, rule) in raw.rule.iter().enumerate() {
-            if !ids.insert(rule.id.clone()) {
-                return Err(ProfileError::DuplicateId(rule.id.clone()));
-            }
             for lint in &rule.lints {
-                if let Some(previous) = lint_owner.insert(lint.clone(), index) {
-                    let first = raw
-                        .rule
-                        .get(previous)
-                        .map_or_else(String::new, |r| r.id.clone());
-                    return Err(ProfileError::DuplicateLint {
-                        lint: lint.clone(),
-                        first,
-                        second: rule.id.clone(),
-                    });
-                }
+                lint_owner.insert(lint.clone(), index);
             }
-        }
-        if let Some(bad) = raw.api.iter().find(|api| !ids.contains(&api.rule)) {
-            return Err(ProfileError::UnknownRule(bad.rule.clone()));
-        }
-        // A missing structural rule would make its check silently report
-        // nothing (for example, stale baselines would pass without TAU-R001).
-        if let Some(missing) = EMITTED_BY_CODE.iter().find(|id| !ids.contains(**id)) {
-            return Err(ProfileError::MissingRule((*missing).to_owned()));
         }
         Ok(Self {
             rules: raw.rule,
@@ -310,6 +356,9 @@ impl Profile {
             .flat_map(|rule| rule.lints.iter().map(String::as_str))
     }
 }
+
+#[cfg(test)]
+mod reference;
 
 #[cfg(test)]
 mod tests {
@@ -461,6 +510,26 @@ fix = "f"
             Profile::parse(text),
             Err(ProfileError::DuplicateLint { .. })
         ));
+    }
+
+    #[test]
+    fn rejects_the_fixture_without_r001() {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../fixtures/profiles/rej-missing-r001.toml");
+        let text = std::fs::read_to_string(path).expect("fixture");
+        let error = Profile::parse(&text).expect_err("a table without TAU-R001 is rejected");
+        assert_eq!(
+            error.to_string(),
+            "rule table lacks TAU-R001, which the checker emits"
+        );
+        let with_r001 = format!(
+            "{text}\n[[rule]]\nid = \"TAU-R001\"\ntitle = \"t\"\nlints = []\n\
+             levels = {{ core = \"deny\" }}\nenforced_by = \"tauten\"\nwhy = \"w\"\nfix = \"f\"\n"
+        );
+        assert!(
+            Profile::parse(&with_r001).is_ok(),
+            "control: the fixture plus TAU-R001 is valid"
+        );
     }
 
     #[test]

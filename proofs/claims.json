@@ -1,0 +1,438 @@
+{
+  "version": 1,
+  "generated_by": "cargo tauten proofs",
+  "claims": [
+    {
+      "crate": "tauten-check-kernel",
+      "file": "crates/tauten-check-kernel/src/tiers.rs",
+      "function": "rank",
+      "lean": "tauten_check_kernel.tiers.rank",
+      "theorems": [
+        "Tauten.Kernel.rank_spec"
+      ],
+      "total": null,
+      "subsumes": [],
+      "mutants": [
+        "core-edge-swapped",
+        "kernel-ranks-as-core"
+      ],
+      "outcome": "proved",
+      "fingerprint": "fnv1a64:852d89df0595b35d"
+    },
+    {
+      "crate": "tauten-check-kernel",
+      "file": "crates/tauten-check-kernel/src/tiers.rs",
+      "function": "may_depend_on",
+      "lean": "tauten_check_kernel.tiers.may_depend_on",
+      "theorems": [
+        "Tauten.Kernel.may_depend_on_spec",
+        "Tauten.Kernel.may_depend_on_refl",
+        "Tauten.Kernel.may_depend_on_trans",
+        "Tauten.Kernel.may_depend_on_total",
+        "Tauten.Kernel.may_depend_on_antisymm",
+        "Tauten.Kernel.kernel_depends_only_on_kernel"
+      ],
+      "total": null,
+      "subsumes": [],
+      "mutants": [
+        "same-tier-refused",
+        "one-step-outward",
+        "core-edge-swapped",
+        "kernel-ranks-as-core"
+      ],
+      "outcome": "proved",
+      "fingerprint": "fnv1a64:852d89df0595b35d"
+    },
+    {
+      "crate": "tauten-check-kernel",
+      "file": "crates/tauten-check-kernel/src/severity.rs",
+      "function": "is_blocking",
+      "lean": "tauten_check_kernel.severity.is_blocking",
+      "theorems": [
+        "Tauten.Kernel.is_blocking_spec"
+      ],
+      "total": null,
+      "subsumes": [],
+      "mutants": [
+        "warn-blocks"
+      ],
+      "outcome": "proved",
+      "fingerprint": "fnv1a64:852d89df0595b35d"
+    },
+    {
+      "crate": "tauten-check-kernel",
+      "file": "crates/tauten-check-kernel/src/severity.rs",
+      "function": "severity",
+      "lean": "tauten_check_kernel.severity.severity",
+      "theorems": [
+        "Tauten.Kernel.severity_spec"
+      ],
+      "total": null,
+      "subsumes": [],
+      "mutants": [
+        "warn-blocks",
+        "no-level-is-error"
+      ],
+      "outcome": "proved",
+      "fingerprint": "fnv1a64:852d89df0595b35d"
+    },
+    {
+      "crate": "tauten-check-kernel",
+      "file": "crates/tauten-check-kernel/src/exception.rs",
+      "function": "permitted",
+      "lean": "tauten_check_kernel.exception.permitted",
+      "theorems": [
+        "Tauten.Kernel.permitted_spec"
+      ],
+      "total": null,
+      "subsumes": [],
+      "mutants": [
+        "kernel-excuses",
+        "rule-flag-ignored"
+      ],
+      "outcome": "proved",
+      "fingerprint": "fnv1a64:852d89df0595b35d"
+    },
+    {
+      "crate": "tauten-check-kernel",
+      "file": "crates/tauten-check-kernel/src/exception.rs",
+      "function": "excuse",
+      "lean": "tauten_check_kernel.exception.excuse",
+      "theorems": [
+        "Tauten.Kernel.exception_spec",
+        "Tauten.Kernel.kernel_never_excuses_levelled_rule",
+        "Tauten.Kernel.no_exceptions_never_excused"
+      ],
+      "total": null,
+      "subsumes": [],
+      "mutants": [
+        "warn-blocks",
+        "kernel-excuses",
+        "rule-flag-ignored",
+        "crate-wide-any"
+      ],
+      "outcome": "proved",
+      "fingerprint": "fnv1a64:852d89df0595b35d"
+    },
+    {
+      "crate": "tauten-check-kernel",
+      "file": "crates/tauten-check-kernel/src/ratchet.rs",
+      "function": "apply",
+      "lean": "tauten_check_kernel.ratchet.apply",
+      "theorems": [
+        "Tauten.Kernel.apply_conserves",
+        "Tauten.Kernel.apply_covered_iff",
+        "Tauten.Kernel.apply_cover_count",
+        "Tauten.Kernel.apply_suppressed_le_accepted",
+        "Tauten.Kernel.apply_left_spec",
+        "Tauten.Kernel.ratchet_headroom",
+        "Tauten.Kernel.ratchet_example"
+      ],
+      "total": null,
+      "subsumes": [],
+      "mutants": [
+        "warnings-covered",
+        "headroom-ignored",
+        "cover-not-consumed",
+        "covered-flag-dropped",
+        "stale-needs-two",
+        "missing-key-accepts-one"
+      ],
+      "outcome": "proved",
+      "fingerprint": "fnv1a64:852d89df0595b35d"
+    },
+    {
+      "crate": "tauten-check-kernel",
+      "file": "crates/tauten-check-kernel/src/ratchet.rs",
+      "function": "stale",
+      "lean": "tauten_check_kernel.ratchet.stale",
+      "theorems": [
+        "Tauten.Kernel.ratchet_stale_iff",
+        "Tauten.Kernel.ratchet_passes_iff"
+      ],
+      "total": null,
+      "subsumes": [],
+      "mutants": [
+        "warnings-covered",
+        "headroom-ignored",
+        "cover-not-consumed",
+        "covered-flag-dropped",
+        "stale-needs-two",
+        "missing-key-accepts-one"
+      ],
+      "outcome": "proved",
+      "fingerprint": "fnv1a64:852d89df0595b35d"
+    },
+    {
+      "crate": "tauten-check-kernel",
+      "file": "crates/tauten-check-kernel/src/ratchet.rs",
+      "function": "count_errors",
+      "lean": "tauten_check_kernel.ratchet.count_errors",
+      "theorems": [
+        "Tauten.Kernel.count_errors_counts"
+      ],
+      "total": null,
+      "subsumes": [],
+      "mutants": [
+        "warnings-counted"
+      ],
+      "outcome": "proved",
+      "fingerprint": "fnv1a64:852d89df0595b35d"
+    },
+    {
+      "crate": "tauten-check-kernel",
+      "file": "crates/tauten-check-kernel/src/ratchet.rs",
+      "function": "increases",
+      "lean": "tauten_check_kernel.ratchet.increases",
+      "theorems": [
+        "Tauten.Kernel.increases_flags",
+        "Tauten.Kernel.increases_none_iff",
+        "Tauten.Kernel.regenerated_baseline_never_grows",
+        "Tauten.Kernel.increase_example"
+      ],
+      "total": null,
+      "subsumes": [],
+      "mutants": [
+        "warnings-counted",
+        "equal-is-growth",
+        "missing-key-accepts-one"
+      ],
+      "outcome": "proved",
+      "fingerprint": "fnv1a64:852d89df0595b35d"
+    },
+    {
+      "crate": "tauten-check-kernel",
+      "file": "crates/tauten-check-kernel/src/table.rs",
+      "function": "validate",
+      "lean": "tauten_check_kernel.table.validate",
+      "theorems": [
+        "Tauten.Kernel.validate_ok_iff",
+        "Tauten.Kernel.validate_examples"
+      ],
+      "total": null,
+      "subsumes": [],
+      "mutants": [
+        "duplicate-ids-accepted",
+        "duplicate-lints-accepted",
+        "unknown-api-rule-accepted",
+        "required-id-missing-accepted",
+        "search-stops-short"
+      ],
+      "outcome": "proved",
+      "fingerprint": "fnv1a64:852d89df0595b35d"
+    },
+    {
+      "crate": "tauten-check-kernel",
+      "file": "crates/tauten-check-kernel/src/subsume.rs",
+      "function": "subsumes",
+      "lean": "tauten_check_kernel.subsume.subsumes",
+      "theorems": [
+        "Tauten.Kernel.subsumes_spec",
+        "Tauten.Kernel.stale_proof_never_subsumes",
+        "Tauten.Kernel.subsumes_only_in_kernel",
+        "Tauten.Kernel.subsumes_only_arithmetic_and_indexing"
+      ],
+      "total": null,
+      "subsumes": [],
+      "mutants": [
+        "stale-proof-subsumes",
+        "core-subsumed",
+        "any-finding-subsumed",
+        "unlisted-rule-subsumed"
+      ],
+      "outcome": "proved",
+      "fingerprint": "fnv1a64:852d89df0595b35d"
+    },
+    {
+      "crate": "tauten-proof-instances",
+      "file": "crates/tauten-proof-instances/src/refined.rs",
+      "function": "Percent::try_new",
+      "lean": "tauten_proof_instances.refined.__tauten_percent.Percent.try_new",
+      "theorems": [
+        "Tauten.Instances.percent_try_new_shape",
+        "Tauten.Instances.percent_try_new_ok_iff",
+        "Tauten.Instances.percent_try_new_sound",
+        "Tauten.Instances.percent_try_new_err_iff",
+        "Tauten.Instances.percent_try_from_spec",
+        "Tauten.Instances.percent_derived_spec",
+        "Tauten.Instances.percent_boundaries"
+      ],
+      "total": null,
+      "subsumes": [],
+      "mutants": [
+        "refined-check-inverted",
+        "try-from-unchecked",
+        "attributes-dropped"
+      ],
+      "outcome": "proved",
+      "fingerprint": "fnv1a64:480b50662a86d2f6"
+    },
+    {
+      "crate": "tauten-proof-instances",
+      "file": "crates/tauten-proof-instances/src/refined.rs",
+      "function": "Port::try_new",
+      "lean": "tauten_proof_instances.refined.__tauten_port.Port.try_new",
+      "theorems": [
+        "Tauten.Instances.port_try_new_shape",
+        "Tauten.Instances.port_try_new_ok_iff",
+        "Tauten.Instances.port_try_new_sound",
+        "Tauten.Instances.port_try_new_err_iff",
+        "Tauten.Instances.port_try_from_spec",
+        "Tauten.Instances.port_derived_spec",
+        "Tauten.Instances.port_boundaries"
+      ],
+      "total": null,
+      "subsumes": [],
+      "mutants": [
+        "refined-check-inverted",
+        "try-from-unchecked",
+        "attributes-dropped"
+      ],
+      "outcome": "proved",
+      "fingerprint": "fnv1a64:480b50662a86d2f6"
+    },
+    {
+      "crate": "tauten-proof-instances",
+      "file": "crates/tauten-proof-instances/src/refined.rs",
+      "function": "Offset::try_new",
+      "lean": "tauten_proof_instances.refined.__tauten_offset.Offset.try_new",
+      "theorems": [
+        "Tauten.Instances.offset_try_new_shape",
+        "Tauten.Instances.offset_try_new_ok_iff",
+        "Tauten.Instances.offset_try_new_sound",
+        "Tauten.Instances.offset_try_new_err_iff",
+        "Tauten.Instances.offset_try_from_spec",
+        "Tauten.Instances.offset_derived_spec",
+        "Tauten.Instances.offset_boundaries"
+      ],
+      "total": null,
+      "subsumes": [],
+      "mutants": [
+        "refined-check-inverted",
+        "try-from-unchecked",
+        "attributes-dropped"
+      ],
+      "outcome": "proved",
+      "fingerprint": "fnv1a64:480b50662a86d2f6"
+    },
+    {
+      "crate": "tauten-proof-instances",
+      "file": "crates/tauten-proof-instances/src/refined.rs",
+      "function": "Count::try_new",
+      "lean": "tauten_proof_instances.refined.__tauten_count.Count.try_new",
+      "theorems": [
+        "Tauten.Instances.count_try_new_shape",
+        "Tauten.Instances.count_try_new_ok_iff",
+        "Tauten.Instances.count_try_new_sound",
+        "Tauten.Instances.count_try_new_err_iff",
+        "Tauten.Instances.count_try_from_spec",
+        "Tauten.Instances.count_derived_spec",
+        "Tauten.Instances.count_boundaries"
+      ],
+      "total": null,
+      "subsumes": [],
+      "mutants": [
+        "refined-check-inverted",
+        "try-from-unchecked",
+        "attributes-dropped"
+      ],
+      "outcome": "proved",
+      "fingerprint": "fnv1a64:480b50662a86d2f6"
+    },
+    {
+      "crate": "tauten-proof-instances",
+      "file": "crates/tauten-proof-instances/src/contracts.rs",
+      "function": "deposit",
+      "lean": "tauten_proof_instances.contracts.deposit",
+      "theorems": [
+        "Tauten.Instances.deposit_shape",
+        "Tauten.Instances.deposit_requires_iff",
+        "Tauten.Instances.deposit_never_ensures",
+        "Tauten.Instances.deposit_ok",
+        "Tauten.Instances.deposit_overflow"
+      ],
+      "total": null,
+      "subsumes": [],
+      "mutants": [
+        "requires-inverted",
+        "requires-dropped",
+        "requires-after-body",
+        "ensures-skipped",
+        "ensures-reported-as-requires"
+      ],
+      "outcome": "proved",
+      "fingerprint": "fnv1a64:480b50662a86d2f6"
+    },
+    {
+      "crate": "tauten-proof-instances",
+      "file": "crates/tauten-proof-instances/src/contracts.rs",
+      "function": "withdraw",
+      "lean": "tauten_proof_instances.contracts.withdraw",
+      "theorems": [
+        "Tauten.Instances.withdraw_shape",
+        "Tauten.Instances.withdraw_requires_iff",
+        "Tauten.Instances.withdraw_requires_keeps_balance",
+        "Tauten.Instances.withdraw_never_ensures",
+        "Tauten.Instances.withdraw_ok",
+        "Tauten.Instances.withdraw_insufficient"
+      ],
+      "total": null,
+      "subsumes": [],
+      "mutants": [
+        "requires-inverted",
+        "requires-dropped",
+        "requires-after-body",
+        "snapshot-after-body",
+        "ensures-skipped",
+        "ensures-reported-as-requires"
+      ],
+      "outcome": "proved",
+      "fingerprint": "fnv1a64:480b50662a86d2f6"
+    },
+    {
+      "crate": "tauten-proof-instances",
+      "file": "crates/tauten-proof-instances/src/contracts.rs",
+      "function": "scale",
+      "lean": "tauten_proof_instances.contracts.scale",
+      "theorems": [
+        "Tauten.Instances.scale_shape",
+        "Tauten.Instances.scale_requires_iff",
+        "Tauten.Instances.scale_ensures_iff",
+        "Tauten.Instances.scale_ok",
+        "Tauten.Instances.scale_overflow"
+      ],
+      "total": null,
+      "subsumes": [],
+      "mutants": [
+        "requires-inverted",
+        "requires-dropped",
+        "requires-after-body",
+        "ensures-skipped",
+        "ensures-reported-as-requires"
+      ],
+      "outcome": "proved",
+      "fingerprint": "fnv1a64:480b50662a86d2f6"
+    },
+    {
+      "crate": "tauten-proof-instances",
+      "file": "crates/tauten-proof-instances/src/contracts.rs",
+      "function": "share",
+      "lean": "tauten_proof_instances.contracts.share",
+      "theorems": [
+        "Tauten.Instances.share_shape",
+        "Tauten.Instances.share_requires_skips_body",
+        "Tauten.Instances.share_requires_iff",
+        "Tauten.Instances.share_ok"
+      ],
+      "total": null,
+      "subsumes": [],
+      "mutants": [
+        "requires-inverted",
+        "requires-dropped",
+        "requires-after-body"
+      ],
+      "outcome": "proved",
+      "fingerprint": "fnv1a64:480b50662a86d2f6"
+    }
+  ]
+}

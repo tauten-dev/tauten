@@ -80,6 +80,10 @@ pub struct Diagnostic {
     pub enforced_by: EnforcedBy,
     /// The underlying lint or check name.
     pub source: String,
+    /// The theorem that subsumes this finding (a proved kernel function,
+    /// see [`crate::proofs`]); such a finding never fails the check.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub subsumed_by: Option<String>,
 }
 
 impl Diagnostic {
@@ -106,6 +110,7 @@ impl Diagnostic {
             fix: Some(rule.fix.clone()),
             enforced_by: rule.enforced_by,
             source: "tauten".to_owned(),
+            subsumed_by: None,
         }
     }
 
@@ -187,6 +192,7 @@ pub fn from_compiler(
             fix: None,
             enforced_by: EnforcedBy::Rustc,
             source: code.unwrap_or_else(|| "rustc".to_owned()),
+            subsumed_by: None,
         },
     };
     Some(diag.at(msg.file.clone(), msg.line, msg.column))

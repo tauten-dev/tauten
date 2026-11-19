@@ -1,0 +1,64 @@
+# Proof claims (tauten proof tier; `cargo tauten init --proofs` generated
+# this file). `cargo tauten proofs` runs the gate below and records one
+# outcome per claim in proofs/claims.json: proved, drift, build-failed,
+# audit-failed, mutant-survived or tool-missing.
+version = 1
+
+[gate]
+# Run from the workspace root. proofs/run.sh checks for Docker and the
+# pinned image, then runs proofs/gate.py in it.
+command = ["sh", "proofs/run.sh"]
+# Crate directories the gate translates with Charon/Aeneas.
+crates = ["sub-kernel"]
+
+# Proved total: the N001 findings inside `add_capped` are subsumed.
+[[claim]]
+crate = "sub-kernel"
+file = "sub-kernel/src/lib.rs"
+function = "add_capped"
+lean = "sub_kernel.add_capped"
+theorems = ["Proofs.SubKernel.add_capped_spec"]
+total = "Proofs.SubKernel.add_capped_spec"
+subsumes = ["TAU-N001"]
+mutants = ["guard-dropped"]
+
+# Proved total: the P003 finding inside `first_or_zero` is subsumed.
+[[claim]]
+crate = "sub-kernel"
+file = "sub-kernel/src/lib.rs"
+function = "first_or_zero"
+lean = "sub_kernel.first_or_zero"
+theorems = ["Proofs.SubKernel.first_or_zero_spec"]
+total = "Proofs.SubKernel.first_or_zero_spec"
+subsumes = ["TAU-P003"]
+mutants = ["second-value"]
+
+# `double_spec` has a hypothesis, so it is not total: the audit does not
+# confirm it, the claim is audit-failed, and the N001 finding stays.
+[[claim]]
+crate = "sub-kernel"
+file = "sub-kernel/src/lib.rs"
+function = "double"
+lean = "sub_kernel.double"
+theorems = ["Proofs.SubKernel.double_spec"]
+total = "Proofs.SubKernel.double_spec"
+subsumes = ["TAU-N001"]
+mutants = ["quadruple"]
+
+[[mutant]]
+name = "guard-dropped"
+file = "sub-kernel/src/lib.rs"
+before = "if a > u32::MAX - b { u32::MAX } else { a + b }"
+after = "a + b"
+
+[[mutant]]
+name = "second-value"
+file = "sub-kernel/src/lib.rs"
+before = "values[0]"
+after = "values[1]"
+
+[[mutant]]
+name = "quadruple"
+file = "sub-kernel/src/lib.rs"
+before = "a * 2"
+after = "a * 4"

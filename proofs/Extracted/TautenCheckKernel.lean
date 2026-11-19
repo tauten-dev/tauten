@@ -436,6 +436,295 @@ def severity.severity
     then ok severity.Severity.Error
     else ok severity.Severity.Warning
 
+/-- [tauten_check_kernel::subsume::Finding]
+    Source: 'crates/tauten-check-kernel/src/subsume.rs', lines 14:0-21:1
+    Visibility: public -/
+@[discriminant isize]
+inductive subsume.Finding where
+| Arithmetic : subsume.Finding
+| Indexing : subsume.Finding
+| Other : subsume.Finding
+
+/-- [tauten_check_kernel::subsume::subsumes]:
+    Source: 'crates/tauten-check-kernel/src/subsume.rs', lines 31:0-47:1
+    Visibility: public -/
+def subsume.subsumes
+  (tier : tiers.Tier) (finding : subsume.Finding) (listed : Bool)
+  (proved : Bool) (fresh : Bool) :
+  Result Bool
+  := do
+  let kind ←
+    match finding with
+    | subsume.Finding.Arithmetic => ok true
+    | subsume.Finding.Indexing => ok true
+    | subsume.Finding.Other => ok false
+  let kernel ←
+    match tier with
+    | tiers.Tier.Kernel => ok true
+    | tiers.Tier.Core => ok false
+    | tiers.Tier.Edge => ok false
+  if kernel
+  then
+    if kind
+    then if listed
+         then if proved
+              then ok fresh
+              else ok false
+         else ok false
+    else ok false
+  else ok false
+
+/-- [tauten_check_kernel::table::Invalid]
+    Source: 'crates/tauten-check-kernel/src/table.rs', lines 16:0-26:1
+    Visibility: public -/
+@[discriminant isize]
+inductive table.Invalid where
+| DuplicateId : Std.Usize → table.Invalid
+| DuplicateLint : Std.Usize → Std.Usize → table.Invalid
+| UnknownRule : Std.Usize → table.Invalid
+| MissingRule : Std.Usize → table.Invalid
+
+/-- [tauten_check_kernel::table::is_at]:
+    Source: 'crates/tauten-check-kernel/src/table.rs', lines 30:0-35:1
+    Visibility: public -/
+def table.is_at
+  (names : Slice Std.Usize) (i : Std.Usize) («name» : Std.Usize) :
+  Result Bool
+  := do
+  let o ←
+    core.slice.Slice.get (core.slice.index.SliceIndexUsizeSlice Std.Usize)
+      names i
+  match o with
+  | none => ok false
+  | some here => ok (here = «name»)
+
+/-- [tauten_check_kernel::table::find_before]: loop body 0:
+    Source: 'crates/tauten-check-kernel/src/table.rs', lines 41:4-48:1
+    Visibility: public -/
+@[rust_loop_body]
+def table.find_before_loop.body
+  (names : Slice Std.Usize) («end» : Std.Usize) («name» : Std.Usize)
+  (i : Std.Usize) :
+  Result (ControlFlow Std.Usize (Option Std.Usize))
+  := do
+  if i < «end»
+  then
+    let b ← table.is_at names i «name»
+    if b
+    then ok (done (some i))
+    else let i1 ← lift (core.num.Usize.saturating_add i 1#usize)
+         ok (cont i1)
+  else ok (done none)
+
+/-- [tauten_check_kernel::table::find_before]: loop 0:
+    Source: 'crates/tauten-check-kernel/src/table.rs', lines 41:4-48:1
+    Visibility: public -/
+@[rust_loop]
+def table.find_before_loop
+  (names : Slice Std.Usize) («end» : Std.Usize) («name» : Std.Usize)
+  (i : Std.Usize) :
+  Result (Option Std.Usize)
+  := do
+  loop
+    (fun i1 => table.find_before_loop.body names «end» «name» i1)
+    i
+
+/-- [tauten_check_kernel::table::find_before]:
+    Source: 'crates/tauten-check-kernel/src/table.rs', lines 39:0-48:1
+    Visibility: public -/
+@[reducible]
+def table.find_before
+  (names : Slice Std.Usize) («end» : Std.Usize) («name» : Std.Usize) :
+  Result (Option Std.Usize)
+  := do
+  table.find_before_loop names «end» «name» 0#usize
+
+/-- [tauten_check_kernel::table::contains]:
+    Source: 'crates/tauten-check-kernel/src/table.rs', lines 56:0-61:1
+    Visibility: public -/
+def table.contains
+  (names : Slice Std.Usize) («name» : Std.Usize) : Result Bool := do
+  let i := Slice.len names
+  let o ← table.find_before names i «name»
+  match o with
+  | none => ok false
+  | some _ => ok true
+
+/-- [tauten_check_kernel::table::repeat_at]:
+    Source: 'crates/tauten-check-kernel/src/table.rs', lines 65:0-70:1
+    Visibility: public -/
+def table.repeat_at
+  (names : Slice Std.Usize) (j : Std.Usize) : Result (Option Std.Usize) := do
+  let o ←
+    core.slice.Slice.get (core.slice.index.SliceIndexUsizeSlice Std.Usize)
+      names j
+  match o with
+  | none => ok none
+  | some «name» => table.find_before names j «name»
+
+/-- [tauten_check_kernel::table::first_duplicate]: loop body 0:
+    Source: 'crates/tauten-check-kernel/src/table.rs', lines 76:4-83:1
+    Visibility: public -/
+@[rust_loop_body]
+def table.first_duplicate_loop.body
+  (names : Slice Std.Usize) (j : Std.Usize) :
+  Result (ControlFlow Std.Usize (Option (Std.Usize × Std.Usize)))
+  := do
+  let i := Slice.len names
+  if j < i
+  then
+    let o ← table.repeat_at names j
+    match o with
+    | none =>
+      let j1 ← lift (core.num.Usize.saturating_add j 1#usize)
+      ok (cont j1)
+    | some i1 => ok (done (some (i1, j)))
+  else ok (done none)
+
+/-- [tauten_check_kernel::table::first_duplicate]: loop 0:
+    Source: 'crates/tauten-check-kernel/src/table.rs', lines 76:4-83:1
+    Visibility: public -/
+@[rust_loop]
+def table.first_duplicate_loop
+  (names : Slice Std.Usize) (j : Std.Usize) :
+  Result (Option (Std.Usize × Std.Usize))
+  := do
+  loop
+    (fun j1 => table.first_duplicate_loop.body names j1)
+    j
+
+/-- [tauten_check_kernel::table::first_duplicate]:
+    Source: 'crates/tauten-check-kernel/src/table.rs', lines 74:0-83:1
+    Visibility: public -/
+@[reducible]
+def table.first_duplicate
+  (names : Slice Std.Usize) : Result (Option (Std.Usize × Std.Usize)) := do
+  table.first_duplicate_loop names 0#usize
+
+/-- [tauten_check_kernel::table::absent]:
+    Source: 'crates/tauten-check-kernel/src/table.rs', lines 87:0-89:1
+    Visibility: public -/
+def table.absent
+  (names : Slice Std.Usize) («name» : Std.Usize) : Result Bool := do
+  let b ← table.contains names «name»
+  ok (¬ b)
+
+/-- [tauten_check_kernel::table::missing_at]:
+    Source: 'crates/tauten-check-kernel/src/table.rs', lines 93:0-98:1
+    Visibility: public -/
+def table.missing_at
+  (present : Slice Std.Usize) (wanted : Slice Std.Usize) (j : Std.Usize) :
+  Result Bool
+  := do
+  let o ←
+    core.slice.Slice.get (core.slice.index.SliceIndexUsizeSlice Std.Usize)
+      wanted j
+  match o with
+  | none => ok false
+  | some «name» => table.absent present «name»
+
+/-- [tauten_check_kernel::table::first_missing]: loop body 0:
+    Source: 'crates/tauten-check-kernel/src/table.rs', lines 104:4-111:1
+    Visibility: public -/
+@[rust_loop_body]
+def table.first_missing_loop.body
+  (present : Slice Std.Usize) (wanted : Slice Std.Usize) (j : Std.Usize) :
+  Result (ControlFlow Std.Usize (Option Std.Usize))
+  := do
+  let i := Slice.len wanted
+  if j < i
+  then
+    let b ← table.missing_at present wanted j
+    if b
+    then ok (done (some j))
+    else let j1 ← lift (core.num.Usize.saturating_add j 1#usize)
+         ok (cont j1)
+  else ok (done none)
+
+/-- [tauten_check_kernel::table::first_missing]: loop 0:
+    Source: 'crates/tauten-check-kernel/src/table.rs', lines 104:4-111:1
+    Visibility: public -/
+@[rust_loop]
+def table.first_missing_loop
+  (present : Slice Std.Usize) (wanted : Slice Std.Usize) (j : Std.Usize) :
+  Result (Option Std.Usize)
+  := do
+  loop
+    (fun j1 => table.first_missing_loop.body present wanted j1)
+    j
+
+/-- [tauten_check_kernel::table::first_missing]:
+    Source: 'crates/tauten-check-kernel/src/table.rs', lines 102:0-111:1
+    Visibility: public -/
+@[reducible]
+def table.first_missing
+  (present : Slice Std.Usize) (wanted : Slice Std.Usize) :
+  Result (Option Std.Usize)
+  := do
+  table.first_missing_loop present wanted 0#usize
+
+/-- [tauten_check_kernel::table::owner_at]:
+    Source: 'crates/tauten-check-kernel/src/table.rs', lines 116:0-121:1
+    Visibility: public -/
+def table.owner_at
+  (lint_rules : Slice Std.Usize) (k : Std.Usize) : Result Std.Usize := do
+  let o ←
+    core.slice.Slice.get (core.slice.index.SliceIndexUsizeSlice Std.Usize)
+      lint_rules k
+  match o with
+  | none => ok 0#usize
+  | some rule => ok rule
+
+/-- [tauten_check_kernel::table::duplicate]:
+    Source: 'crates/tauten-check-kernel/src/table.rs', lines 130:0-144:1
+    Visibility: public -/
+def table.duplicate
+  (ids : Slice Std.Usize) (lint_rules : Slice Std.Usize)
+  (lints : Slice Std.Usize) :
+  Result (Option table.Invalid)
+  := do
+  let lint ← table.first_duplicate lints
+  let o ← table.first_duplicate ids
+  match o with
+  | none =>
+    match lint with
+    | none => ok none
+    | some p =>
+      let (first, second) := p
+      ok (some (table.Invalid.DuplicateLint first second))
+  | some p =>
+    let (_, rule) := p
+    match lint with
+    | none => ok (some (table.Invalid.DuplicateId rule))
+    | some p1 =>
+      let (first, second) := p1
+      let i ← table.owner_at lint_rules second
+      if i < rule
+      then ok (some (table.Invalid.DuplicateLint first second))
+      else ok (some (table.Invalid.DuplicateId rule))
+
+/-- [tauten_check_kernel::table::validate]:
+    Source: 'crates/tauten-check-kernel/src/table.rs', lines 156:0-173:1
+    Visibility: public -/
+def table.validate
+  (ids : Slice Std.Usize) (lint_rules : Slice Std.Usize)
+  (lints : Slice Std.Usize) (api_rules : Slice Std.Usize)
+  (required : Slice Std.Usize) :
+  Result (core.result.Result Unit table.Invalid)
+  := do
+  let o ← table.duplicate ids lint_rules lints
+  match o with
+  | none =>
+    let o1 ← table.first_missing ids api_rules
+    match o1 with
+    | none =>
+      let o2 ← table.first_missing ids required
+      match o2 with
+      | none => ok (core.result.Result.Ok ())
+      | some id => ok (core.result.Result.Err (table.Invalid.MissingRule id))
+    | some api => ok (core.result.Result.Err (table.Invalid.UnknownRule api))
+  | some invalid => ok (core.result.Result.Err invalid)
+
 /-- [tauten_check_kernel::tiers::rank]:
     Source: 'crates/tauten-check-kernel/src/tiers.rs', lines 16:0-22:1
     Visibility: public -/

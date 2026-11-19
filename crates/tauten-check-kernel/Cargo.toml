@@ -1,6 +1,6 @@
 [package]
 name = "tauten-check-kernel"
-description = "The decisions of the tauten checker (tier order, severity, lint exceptions, baseline ratchet) in plain no_std Rust, translated to Lean 4 by Charon/Aeneas and proved."
+description = "The decisions of the tauten checker (tier order, severity, lint exceptions, baseline ratchet, rule-table validation, proof subsumption) in plain no_std Rust, translated to Lean 4 by Charon/Aeneas and proved."
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -37,6 +37,18 @@ start_from = [
     "tauten_check_kernel::ratchet::count_errors",
     "tauten_check_kernel::ratchet::grows_at",
     "tauten_check_kernel::ratchet::increases",
+    "tauten_check_kernel::subsume::subsumes",
+    "tauten_check_kernel::table::is_at",
+    "tauten_check_kernel::table::find_before",
+    "tauten_check_kernel::table::contains",
+    "tauten_check_kernel::table::repeat_at",
+    "tauten_check_kernel::table::first_duplicate",
+    "tauten_check_kernel::table::absent",
+    "tauten_check_kernel::table::missing_at",
+    "tauten_check_kernel::table::first_missing",
+    "tauten_check_kernel::table::owner_at",
+    "tauten_check_kernel::table::duplicate",
+    "tauten_check_kernel::table::validate",
 ]
 
 # Stated locally, not inherited: the proofs gate translates this crate in a

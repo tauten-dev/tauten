@@ -1,0 +1,8 @@
+[package]
+name = "sub-kernel"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[package.metadata.tauten]
+tier = "kernel"
