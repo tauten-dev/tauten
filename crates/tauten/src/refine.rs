@@ -10,6 +10,10 @@
 //! `&'static` references of `Frozen` types. Richer types need an explicit
 //! preservation argument and are not supported yet.
 
+use alloc::boxed::Box;
+use alloc::string::String;
+use alloc::vec::Vec;
+
 mod sealed {
     pub trait Sealed {}
 }

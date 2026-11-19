@@ -1,0 +1,9 @@
+error[E0502]: cannot borrow `table.slots` as mutable because it is also borrowed as immutable
+  --> tests/ui/evidence_stale.rs:29:5
+   |
+28 |     let Some(ev) = table.check(0) else { return };
+   |                    ----- immutable borrow occurs here
+29 |     table.slots.clear();
+   |     ^^^^^^^^^^^^^^^^^^^ mutable borrow occurs here
+30 |     table.clear_slot(ev.redeem());
+   |                      -- immutable borrow later used here

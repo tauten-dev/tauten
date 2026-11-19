@@ -1,6 +1,6 @@
 [package]
 name = "tauten"
-description = "Capability tokens, refinement types and checked contracts for the tauten Rust strictness profile."
+description = "The tauten discipline for Rust: explicit capabilities, effects in signatures, checked evidence, refinement types and contracts."
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -14,8 +14,11 @@ homepage.workspace = true
 tier = "edge"
 
 [features]
-default = []
-fs = ["dep:cap-std"]
+default = ["std"]
+# The ambient-authority wrappers (`Authority`, `SystemClock`, `Env`). Without
+# it the crate is `no_std` + `alloc`, for kernel crates.
+std = []
+fs = ["std", "dep:cap-std"]
 
 [dependencies]
 cap-std = { version = "4.0.3", optional = true }
@@ -23,3 +26,6 @@ tauten-macros = { path = "../tauten-macros", version = "0.0.3" }
 
 [dev-dependencies]
 trybuild = "1.0.125"
+
+[package.metadata.docs.rs]
+all-features = true

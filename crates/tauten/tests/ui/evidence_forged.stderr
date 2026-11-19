@@ -1,0 +1,5 @@
+error[E0451]: field `n` of struct `Checked` is private
+  --> tests/ui/evidence_forged.rs:13:30
+   |
+13 |     let _ = table::Checked { n: 1 };
+   |                              ^ private field

@@ -1,0 +1,22 @@
+error[E0277]: `u32` is not a capability (`tauten::cap::Cap`)
+ --> tests/ui/cap_field.rs:8:18
+  |
+8 |     pub retries: u32,
+  |                  ^^^ the trait `Cap` is not implemented for `u32`
+  |
+  = note: a `#[derive(Cap)]` struct may hold only capabilities: `&impl Clock`, `&Env`, a directory, or another `#[derive(Cap)]` bundle; pass plain data as ordinary parameters
+  = help: the following other types implement trait `Cap`:
+            &T
+            &mut T
+            Caps<'a, C>
+            Env
+            ManualClock
+            SystemClock
+            cap_std::fs::dir::Dir
+            tauten::cap::ReadDir
+note: required by a bound in `__tauten_is_cap`
+ --> tests/ui/cap_field.rs:5:10
+  |
+5 | #[derive(Cap)]
+  |          ^^^ required by this bound in `__tauten_is_cap`
+  = note: this error originates in the derive macro `Cap` (in Nightly builds, run with -Z macro-backtrace for more info)

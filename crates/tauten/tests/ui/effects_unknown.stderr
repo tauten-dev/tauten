@@ -1,0 +1,5 @@
+error: unknown effect `time`; known effects: clock, env, fs_read, fs_write, net, fail, suspend
+ --> tests/ui/effects_unknown.rs:2:26
+  |
+2 | #[tauten::effects(clock, time)]
+  |                          ^^^^

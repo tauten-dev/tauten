@@ -1,5 +1,9 @@
 //! Procedural macros for tauten. Use them through the `tauten` crate.
 //!
+//! * `#[derive(Cap)]`: a capability bundle whose fields are all capabilities.
+//! * `#[evidence(subject = State)]`: a fact only its module can mint.
+//! * `#[effects(..)]`: a function's declared effect row.
+//!
 //! * `#[newtype]` / `#[refined(|v| predicate)]` on a one-field tuple struct:
 //!   the struct is defined in a private module, so even code next to it can
 //!   build values only through `new` / `try_new`.
@@ -348,6 +352,230 @@ fn expand_contracts(kind: Contract, first: Expr, mut item: ItemFn) -> syn::Resul
             __tauten_result
         }
     })
+}
+
+/// `#[derive(Cap)]`: a capability bundle. Implements `tauten::cap::Cap` and
+/// asserts, field by field, that every field is itself a capability.
+#[proc_macro_derive(Cap)]
+pub fn derive_cap(item: TokenStream) -> TokenStream {
+    let item = parse_macro_input!(item as syn::DeriveInput);
+    expand_cap(&item)
+        .unwrap_or_else(|e| e.to_compile_error())
+        .into()
+}
+
+fn expand_cap(item: &syn::DeriveInput) -> syn::Result<Tokens> {
+    let syn::Data::Struct(data) = &item.data else {
+        return Err(syn::Error::new_spanned(
+            &item.ident,
+            "#[derive(Cap)] applies to structs whose fields are all capabilities",
+        ));
+    };
+    let name = &item.ident;
+    let (impl_generics, ty_generics, where_clause) = item.generics.split_for_impl();
+    let checks = data.fields.iter().enumerate().map(|(index, field)| {
+        let access = field.ident.as_ref().map_or_else(
+            || {
+                let index = syn::Index::from(index);
+                quote!(#index)
+            },
+            |ident| quote!(#ident),
+        );
+        let ty = &field.ty;
+        quote::quote_spanned! {syn::spanned::Spanned::span(ty)=>
+            __tauten_is_cap::<#ty>(&value.#access);
+        }
+    });
+    Ok(quote! {
+        impl #impl_generics ::tauten::cap::Cap for #name #ty_generics #where_clause {}
+
+        const _: () = {
+            #[allow(dead_code, reason = "compile-time check that every field is a capability")]
+            fn __tauten_fields_are_caps #impl_generics (value: &#name #ty_generics) #where_clause {
+                fn __tauten_is_cap<T: ::tauten::cap::Cap + ?Sized>(_: &T) {}
+                #(#checks)*
+            }
+        };
+    })
+}
+
+/// Derives a fact may carry: none of them can build a value.
+const EVIDENCE_DERIVES: &[&str] = &["Debug", "PartialEq", "Eq"];
+
+/// `#[evidence(subject = State)]` on a struct with named fields: a fact
+/// about `State` that only the declaring module can create, as
+/// `tauten::origin::Evidence<'_, Self>`, through the generated `mint`.
+#[proc_macro_attribute]
+pub fn evidence(args: TokenStream, item: TokenStream) -> TokenStream {
+    let args = parse_macro_input!(args as syn::MetaNameValue);
+    let item = parse_macro_input!(item as ItemStruct);
+    expand_evidence(&args, &item)
+        .unwrap_or_else(|e| e.to_compile_error())
+        .into()
+}
+
+fn expand_evidence(args: &syn::MetaNameValue, item: &ItemStruct) -> syn::Result<Tokens> {
+    if !args.path.is_ident("subject") {
+        return Err(syn::Error::new_spanned(
+            &args.path,
+            "expected `#[evidence(subject = StateType)]`",
+        ));
+    }
+    let subject = &args.value;
+    let Fields::Named(fields) = &item.fields else {
+        return Err(syn::Error::new_spanned(
+            item,
+            "#[evidence] needs a struct with named fields (they become the fact's parameters)",
+        ));
+    };
+    if !item.generics.params.is_empty() {
+        return Err(syn::Error::new_spanned(
+            &item.generics,
+            "generic evidence types are not supported yet",
+        ));
+    }
+    for field in &fields.named {
+        if !matches!(field.vis, Visibility::Inherited) {
+            return Err(syn::Error::new_spanned(
+                &field.vis,
+                "evidence fields must be private: a public field would let callers forge the fact",
+            ));
+        }
+    }
+    for attr in &item.attrs {
+        let path = attr.path();
+        if path.is_ident("derive") {
+            let derives = attr.parse_args_with(
+                syn::punctuated::Punctuated::<syn::Path, syn::Token![,]>::parse_terminated,
+            )?;
+            for derive in &derives {
+                let last = derive.segments.last().map(|s| s.ident.to_string());
+                if !last.is_some_and(|n| EVIDENCE_DERIVES.contains(&n.as_str())) {
+                    return Err(syn::Error::new_spanned(
+                        derive,
+                        "evidence may derive only Debug, PartialEq and Eq: one check, one use \
+                         (no Clone/Copy) and no construction outside `mint` (no Default/Deserialize)",
+                    ));
+                }
+            }
+        } else if !path.is_ident("doc") {
+            return Err(syn::Error::new_spanned(
+                attr,
+                "attribute not allowed on an #[evidence] type (allowed: doc, and derives of Debug, PartialEq, Eq)",
+            ));
+        }
+    }
+    let name = &item.ident;
+    let vis = &item.vis;
+    let attrs = &item.attrs;
+    let module = format_ident!("__tauten_evidence_{}", name.to_string().to_lowercase());
+    let field_defs = fields.named.iter().map(|f| {
+        let ident = &f.ident;
+        let ty = &f.ty;
+        let fattrs = &f.attrs;
+        quote!(#(#fattrs)* #ident: #ty)
+    });
+    let params = fields.named.iter().map(|f| {
+        let ident = &f.ident;
+        let ty = &f.ty;
+        quote!(#ident: #ty)
+    });
+    let inits = fields.named.iter().map(|f| f.ident.as_ref());
+    let getters = fields.named.iter().map(|f| {
+        let ident = &f.ident;
+        let ty = &f.ty;
+        quote! {
+            #[doc = concat!("The `", stringify!(#ident), "` the fact was checked for.")]
+            #[must_use]
+            pub const fn #ident(&self) -> &#ty {
+                &self.#ident
+            }
+        }
+    });
+    Ok(quote! {
+        #[doc(hidden)]
+        mod #module {
+            #[allow(unused_imports, reason = "field and subject types may refer to the parent module")]
+            use super::*;
+
+            #(#attrs)*
+            pub struct #name {
+                #(#field_defs,)*
+            }
+
+            impl ::tauten::origin::Proposition for #name {
+                type Subject = #subject;
+            }
+
+            impl #name {
+                /// Record that the fact holds for `subject`. Callable only
+                /// from the module that declares the fact, where its check
+                /// lives.
+                pub(super) const fn mint(
+                    subject: &#subject,
+                    #(#params,)*
+                ) -> ::tauten::origin::Evidence<'_, Self> {
+                    ::tauten::origin::Evidence::__mint(Self { #(#inits,)* }, subject)
+                }
+
+                #(#getters)*
+            }
+        }
+        #vis use #module::#name;
+    })
+}
+
+/// `#[effects(label, ...)]` on a function: its effect row. The labels are
+/// validated here and listed in the function's docs; `cargo tauten check`
+/// compares them with the signature (TAU-F001).
+#[proc_macro_attribute]
+pub fn effects(args: TokenStream, item: TokenStream) -> TokenStream {
+    let labels = parse_macro_input!(args with syn::punctuated::Punctuated::<syn::Ident, syn::Token![,]>::parse_terminated);
+    let item = parse_macro_input!(item as ItemFn);
+    expand_effects(&labels, item)
+        .unwrap_or_else(|e| e.to_compile_error())
+        .into()
+}
+
+/// Kept in step with `tauten::effects::LABELS`.
+const EFFECT_LABELS: &[&str] = &[
+    "clock", "env", "fs_read", "fs_write", "net", "fail", "suspend",
+];
+
+fn expand_effects(
+    labels: &syn::punctuated::Punctuated<syn::Ident, syn::Token![,]>,
+    item: ItemFn,
+) -> syn::Result<Tokens> {
+    let mut seen: Vec<String> = Vec::new();
+    for label in labels {
+        let text = label.to_string();
+        if !EFFECT_LABELS.contains(&text.as_str()) {
+            return Err(syn::Error::new_spanned(
+                label,
+                format!(
+                    "unknown effect `{text}`; known effects: {}",
+                    EFFECT_LABELS.join(", ")
+                ),
+            ));
+        }
+        if seen.contains(&text) {
+            return Err(syn::Error::new_spanned(
+                label,
+                format!("effect `{text}` listed twice"),
+            ));
+        }
+        seen.push(text);
+    }
+    let row = if seen.is_empty() {
+        "none".to_owned()
+    } else {
+        seen.join(", ")
+    };
+    let doc = format!("Effects: `{{{row}}}`");
+    let mut item = item;
+    item.attrs.push(syn::parse_quote!(#[doc = ""]));
+    item.attrs.push(syn::parse_quote!(#[doc = #doc]));
+    Ok(quote!(#item))
 }
 
 fn returns_result(ty: &Type) -> bool {

@@ -1,0 +1,5 @@
+error: evidence may derive only Debug, PartialEq and Eq: one check, one use (no Clone/Copy) and no construction outside `mint` (no Default/Deserialize)
+ --> tests/ui/evidence_clone.rs:5:10
+  |
+5 | #[derive(Clone)]
+  |          ^^^^^
