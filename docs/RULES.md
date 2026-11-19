@@ -28,6 +28,7 @@
 | [TAU-A000](#tau-a000) | Banned API in this tier | deny | deny | - | no | `#[expect]` + reason | Clippy |
 | [TAU-A001](#tau-a001) | No ambient authority | deny | deny | - | no | `#[expect]` + reason | Clippy |
 | [TAU-A002](#tau-a002) | Authority minted outside the edge | deny | deny | - | yes | `#[expect]` + reason | Clippy |
+| [TAU-F001](#tau-f001) | Declared effects match the signature | warn | warn | warn | yes | never | Tauten |
 | [TAU-G001](#tau-g001) | No hidden global state | deny | deny | - | no | `#[expect]` + reason | Clippy |
 | [TAU-C001](#tau-c001) | Structured concurrency only | deny | deny | - | no | `#[expect]` + reason | Clippy |
 | [TAU-C002](#tau-c002) | Async hazards | deny | deny | deny | yes | `#[expect]` + reason | Clippy |
@@ -289,6 +290,14 @@ Capabilities may only be created at startup in edge crates; minting them deeper 
 **Fix:** Accept the capability as a parameter and create it in the edge crate's `main`.
 
 Banned in kernel, core (mints authority; only an edge crate may): `tauten::cap::Authority::acquire`
+
+## TAU-F001
+
+**Declared effects match the signature**
+
+A function's capability parameters, `Result` return and `async` bound what it can do; `#[effects(..)]` states that row so readers and agents see it without reading the body. The decision is proved (tauten_check_kernel::effects::verdict); classifying parameter types is by name, so a type tauten cannot classify only ever warns.
+
+**Fix:** Make `#[effects(..)]` list exactly the labels the signature grants (the message names the missing and extra ones), or change the signature. In a crate with `effects = "required"` under `[package.metadata.tauten]`, every `pub fn` needs `#[effects(..)]`; mismatches there are errors.
 
 ## TAU-G001
 

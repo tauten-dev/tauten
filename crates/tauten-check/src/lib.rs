@@ -7,6 +7,7 @@
 
 pub mod baseline;
 pub mod diag;
+pub mod effects;
 pub mod profile;
 pub mod proofs;
 pub mod scan;

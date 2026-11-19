@@ -453,6 +453,7 @@ name = "tauten"
 version = "0.0.3"
 dependencies = [
  "cap-std",
+ "tauten",
  "tauten-macros",
  "trybuild",
 ]
@@ -462,9 +463,11 @@ name = "tauten-check"
 version = "0.0.3"
 dependencies = [
  "proc-macro2",
+ "quote",
  "serde",
  "serde_json",
  "syn",
+ "tauten",
  "tauten-check-kernel",
  "thiserror",
  "toml",

@@ -2,9 +2,11 @@
 
 use std::collections::BTreeMap;
 
+use tauten_check_kernel::effects::{self as kernel_effects, Verdict};
 use tauten_check_kernel::exception::{self, Excuse};
 
 use crate::diag::{Diagnostic, Severity};
+use crate::effects;
 use crate::profile::Profile;
 use crate::scan;
 use crate::tier::{Level, Tier};
@@ -48,6 +50,9 @@ pub struct Member {
     pub manifest_lints: Vec<ManifestLint>,
     /// Source files under the package's `src/`.
     pub sources: Vec<SourceFile>,
+    /// `[package.metadata.tauten] effects = "required"`: every `pub fn`
+    /// declares `#[effects(..)]`, and mismatches are errors (TAU-F001).
+    pub effects_required: bool,
 }
 
 impl Member {
@@ -88,6 +93,7 @@ pub fn check(profile: &Profile, workspace: &Workspace) -> Vec<Diagnostic> {
         ctx.kernel_deps(tier);
         ctx.manifest_lints(tier);
         ctx.sources(tier);
+        ctx.effects(tier);
     }
     out
 }
@@ -240,6 +246,64 @@ impl Ctx<'_> {
         }
     }
 
+    /// TAU-F001: facts from [`effects::facts`], decided by the proved
+    /// [`kernel_effects::verdict`].
+    fn effects(&mut self, tier: Tier) {
+        let texts: Vec<&str> = self
+            .member
+            .sources
+            .iter()
+            .map(|f| f.text.as_str())
+            .collect();
+        for fact in effects::facts(&texts) {
+            let derived = kernel_effects::derive(&fact.sources, fact.fallible, fact.asynchronous);
+            let resolved = fact.unresolved.is_empty();
+            let severity = match kernel_effects::verdict(
+                fact.declared,
+                derived,
+                self.member.effects_required,
+                resolved,
+            ) {
+                Verdict::Silent => continue,
+                Verdict::Warning => Severity::Warning,
+                Verdict::Error => Severity::Error,
+            };
+            let grants = effects::labels_of(derived).join(", ");
+            let mut message = match fact.declared {
+                None => format!(
+                    "`{}` has no `#[effects(..)]`; its signature grants `#[effects({grants})]`",
+                    fact.name
+                ),
+                Some(declared) => {
+                    let list = |row| effects::labels_of(row).join(", ");
+                    let missing = list(kernel_effects::missing(declared, derived));
+                    let extra = list(kernel_effects::extra(declared, derived));
+                    let mut parts = Vec::new();
+                    if !missing.is_empty() {
+                        parts.push(format!("missing `{missing}`"));
+                    }
+                    if !extra.is_empty() {
+                        parts.push(format!("declared but not granted `{extra}`"));
+                    }
+                    format!("effects of `{}`: {}", fact.name, parts.join("; "))
+                }
+            };
+            if !resolved {
+                message.push_str(&format!(
+                    " (could not classify `{}`, so this is a warning)",
+                    fact.unresolved.join("`, `")
+                ));
+            }
+            let Some(rule) = self.profile.rule("TAU-F001") else {
+                return;
+            };
+            let file = self.member.sources.get(fact.file).map(|f| f.path.clone());
+            let diag = Diagnostic::for_rule(rule, severity, &self.member.name, Some(tier), message)
+                .at(file, Some(fact.at.line), Some(fact.at.column));
+            self.out.push(diag);
+        }
+    }
+
     /// Lint exceptions, decided by the proved kernel
     /// ([`exception::excuse`]). A lint has exactly one owning rule (the
     /// profile rejects shared ownership), so the lint is blocking in `tier`
@@ -299,6 +363,7 @@ mod tests {
             kernel_dep_allowlist: Vec::new(),
             manifest_lints: Vec::new(),
             sources: Vec::new(),
+            effects_required: false,
         }
     }
 

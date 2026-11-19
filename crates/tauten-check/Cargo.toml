@@ -14,8 +14,12 @@ tier = "core"
 [dependencies]
 tauten-check-kernel.workspace = true
 proc-macro2 = { version = "1.0.107", features = ["span-locations"] }
+quote = "1.0.47"
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.154"
 syn = { version = "3.0.10", features = ["full", "visit", "extra-traits", "parsing"] }
 thiserror = "2.0.21"
 toml = "1.2.1"
+
+[dev-dependencies]
+tauten = { path = "../tauten", default-features = false }

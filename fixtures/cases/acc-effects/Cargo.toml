@@ -1,0 +1,17 @@
+[package]
+name = "acc-effects"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[package.metadata.tauten]
+tier = "core"
+effects = "required"
+
+# Every pub fn declares exactly the effects its signature grants: a clock
+# bound, a read-only directory, a capability bundle, `Result` and `async`.
+[package.metadata.fixture]
+expect = []
+
+[dependencies]
+tauten = { path = "../../../crates/tauten", features = ["fs"] }

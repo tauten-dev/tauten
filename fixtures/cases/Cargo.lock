@@ -18,6 +18,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "acc-effects"
+version = "0.0.0"
+dependencies = [
+ "tauten",
+]
+
+[[package]]
 name = "acc-kernel"
 version = "0.0.0"
 
@@ -188,6 +195,13 @@ dependencies = [
 [[package]]
 name = "rej-detached-thread"
 version = "0.0.0"
+
+[[package]]
+name = "rej-effects"
+version = "0.0.0"
+dependencies = [
+ "tauten",
+]
 
 [[package]]
 name = "rej-file-allow"

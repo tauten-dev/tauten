@@ -26,6 +26,8 @@ tauten-macros = { path = "../tauten-macros", version = "0.0.3" }
 
 [dev-dependencies]
 trybuild = "1.0.125"
+# Tests always see every capability, so compile-fail output is stable.
+tauten = { path = ".", features = ["fs"] }
 
 [package.metadata.docs.rs]
 all-features = true

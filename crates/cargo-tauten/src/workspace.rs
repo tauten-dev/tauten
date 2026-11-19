@@ -84,6 +84,8 @@ fn member(
                 .collect()
         })
         .unwrap_or_default();
+    let effects_required =
+        meta.and_then(|m| m.get("effects")).and_then(|e| e.as_str()) == Some("required");
     let normal = package
         .dependencies
         .iter()
@@ -113,6 +115,7 @@ fn member(
         kernel_dep_allowlist,
         manifest_lints,
         sources,
+        effects_required,
     })
 }
 
