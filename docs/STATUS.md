@@ -73,9 +73,12 @@ published. One pilot on the dev split has been run with a real agent; nothing he
   with a recorded, current, total proof; writfold has not adopted the
   claims format yet, so its 231 findings are unchanged until it does.
 - S002 (placeholder comments) is a heuristic.
-- The benchmark has 4 dev tasks on one host. The plan needs about 24 across
-  3 hosts, with ≥ 16 held out. The dev-split pilot hit a ceiling, so harder held-out tasks are needed.
+- The benchmark's dev split (4 tasks, one host) hit a ceiling in the pilot.
+  A held-out suite (20 tasks, 3 hosts, per-trial containers) is built on the
+  local branch `bench-heldout` and kept unpublished until it has run; running
+  it needs the owner's budget approval.
 - Contracts do not yet support `async fn` or generic newtypes; they have no
   Kani (`cfg(kani)`) lowering yet.
-- **No measurement of agent behaviour yet. Nothing here supports a claim that
-  agents make fewer mistakes.**
+- **Only a dev-split pilot has measured agent behaviour, and it could not
+  separate the arms. Nothing here supports a claim that agents make fewer
+  mistakes.**
