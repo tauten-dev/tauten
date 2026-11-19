@@ -274,3 +274,11 @@ function = "same_bytes"
 lean = "tauten_check_kernel.binding.same_bytes"
 theorems = ["Tauten.Kernel.same_bytes_spec"]
 mutants = ["last-byte-ignored", "length-ignored"]
+
+[[claim]]
+crate = "tauten-check-kernel"
+file = "crates/tauten-check-kernel/src/badge.rs"
+function = "badge"
+lean = "tauten_check_kernel.badge.badge"
+theorems = ["Tauten.Kernel.badge_spec", "Tauten.Kernel.badge_proved_iff", "Tauten.Kernel.badge_proved_under_iff", "Tauten.Kernel.non_lean_never_proved", "Tauten.Kernel.model_only_never_proved", "Tauten.Kernel.stale_never_established", "Tauten.Kernel.badge_monotone"]
+mutants = ["assumptions-ignored", "stale-shows-proved", "bounded-shows-proved", "model-shows-proved"]

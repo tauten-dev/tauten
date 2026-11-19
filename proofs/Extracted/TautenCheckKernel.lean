@@ -20,6 +20,87 @@ set_option maxRecDepth 2048
 
 namespace tauten_check_kernel
 
+/-- [tauten_check_kernel::badge::Method]
+    Source: 'crates/tauten-check-kernel/src/badge.rs', lines 12:0-21:1
+    Visibility: public -/
+@[discriminant isize]
+inductive badge.Method where
+| Lean : badge.Method
+| Bounded : badge.Method
+| Test : badge.Method
+| Review : badge.Method
+
+/-- [tauten_check_kernel::badge::Relation]
+    Source: 'crates/tauten-check-kernel/src/badge.rs', lines 25:0-30:1
+    Visibility: public -/
+@[discriminant isize]
+inductive badge.Relation where
+| Extracted : badge.Relation
+| ModelOnly : badge.Relation
+
+/-- [tauten_check_kernel::badge::Badge]
+    Source: 'crates/tauten-check-kernel/src/badge.rs', lines 34:0-51:1
+    Visibility: public -/
+@[discriminant isize]
+inductive badge.Badge where
+| Proved : badge.Badge
+| ProvedUnder : badge.Badge
+| ModelProved : badge.Badge
+| Bounded : badge.Badge
+| Tested : badge.Badge
+| Reviewed : badge.Badge
+| Pending : badge.Badge
+| NotEstablished : badge.Badge
+
+/-- [tauten_check_kernel::badge::badge]:
+    Source: 'crates/tauten-check-kernel/src/badge.rs', lines 59:0-85:1
+    Visibility: public -/
+def badge.badge
+  (established : Bool) (fresh : Bool) (method : badge.Method)
+  (relation : badge.Relation) (assumes : Bool) :
+  Result badge.Badge
+  := do
+  if established
+  then
+    if fresh
+    then
+      match method with
+      | badge.Method.Lean =>
+        match relation with
+        | badge.Relation.Extracted =>
+          if assumes
+          then ok badge.Badge.ProvedUnder
+          else ok badge.Badge.Proved
+        | badge.Relation.ModelOnly => ok badge.Badge.ModelProved
+      | badge.Method.Bounded =>
+        match relation with
+        | badge.Relation.Extracted => ok badge.Badge.Bounded
+        | badge.Relation.ModelOnly => ok badge.Badge.Bounded
+      | badge.Method.Test =>
+        match relation with
+        | badge.Relation.Extracted => ok badge.Badge.Tested
+        | badge.Relation.ModelOnly => ok badge.Badge.Tested
+      | badge.Method.Review =>
+        match relation with
+        | badge.Relation.Extracted => ok badge.Badge.Reviewed
+        | badge.Relation.ModelOnly => ok badge.Badge.Reviewed
+    else ok badge.Badge.Pending
+  else ok badge.Badge.NotEstablished
+
+/-- [tauten_check_kernel::badge::rank]:
+    Source: 'crates/tauten-check-kernel/src/badge.rs', lines 89:0-100:1
+    Visibility: public -/
+def badge.rank (b : badge.Badge) : Result Std.U8 := do
+  match b with
+  | badge.Badge.Proved => ok 7#u8
+  | badge.Badge.ProvedUnder => ok 6#u8
+  | badge.Badge.ModelProved => ok 5#u8
+  | badge.Badge.Bounded => ok 4#u8
+  | badge.Badge.Tested => ok 3#u8
+  | badge.Badge.Reviewed => ok 2#u8
+  | badge.Badge.Pending => ok 1#u8
+  | badge.Badge.NotEstablished => ok 0#u8
+
 /-- [tauten_check_kernel::binding::Binding]
     Source: 'crates/tauten-check-kernel/src/binding.rs', lines 19:0-24:1
     Visibility: public -/

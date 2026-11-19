@@ -277,32 +277,32 @@ CONTROL_MUTANTS = (
     Mutant("timeout-counts-as-kill", "control.rs",
            "        (Expect::Pass, Seen::Pass) | (Expect::Fail, Seen::FailNamed) => true,",
            "        (Expect::Pass, Seen::Pass) | (Expect::Fail, Seen::FailNamed) => true,\n        (Expect::Fail, Seen::Timeout) => true,",
-           (T + "control_ok_spec", T + "admit_spec", T + "admit_ok_iff", T + "admit_infrastructure_refused")),
+           (T + "control_ok_spec", T + "admit_spec", T + "admit_ok_iff", T + "admit_infrastructure_refused", T + "of_run_proved_iff")),
     # control: a negative control that failed for another reason counts
     Mutant("unnamed-failure-accepted", "control.rs",
            "        (Expect::Pass, Seen::Pass) | (Expect::Fail, Seen::FailNamed) => true,",
            "        (Expect::Pass, Seen::Pass) | (Expect::Fail, Seen::FailNamed) => true,\n        (Expect::Fail, Seen::FailOther) => true,",
-           (T + "control_ok_spec", T + "admit_spec", T + "admit_ok_iff", T + "admit_infrastructure_refused")),
+           (T + "control_ok_spec", T + "admit_spec", T + "admit_ok_iff", T + "admit_infrastructure_refused", T + "of_run_proved_iff")),
     # control: a control observed twice is accepted
     Mutant("duplicate-accepted", "control.rs",
            "count_id(observed, o.id) == 1",
            "count_id(observed, o.id) >= 1",
-           (T + "admit_spec", T + "admit_ok_iff", T + "admit_infrastructure_refused")),
+           (T + "admit_spec", T + "admit_ok_iff", T + "admit_infrastructure_refused", T + "of_run_proved_iff")),
     # control: an empty inventory is admitted
     Mutant("empty-inventory-accepted", "control.rs",
            "    !required.is_empty() && observations_ok(required, observed)",
            "    observations_ok(required, observed)",
-           (T + "admit_spec", T + "admit_ok_iff", T + "admit_infrastructure_refused")),
+           (T + "admit_spec", T + "admit_ok_iff", T + "admit_infrastructure_refused", T + "of_run_proved_iff")),
     # control: a required control that was never observed is accepted
     Mutant("missing-observation-accepted", "control.rs",
            "            ok = ok && met(observed, c.id, c.expect);",
            "            ok = ok && (met(observed, c.id, c.expect) || count_id(observed, c.id) == 0);",
-           (T + "admit_spec", T + "admit_ok_iff", T + "admit_infrastructure_refused")),
+           (T + "admit_spec", T + "admit_ok_iff", T + "admit_infrastructure_refused", T + "of_run_proved_iff")),
     # control: an observation of a control nobody required is accepted
     Mutant("unexpected-accepted", "control.rs",
            "            ok = ok && count_id(observed, o.id) == 1 && required_id(required, o.id);",
            "            ok = ok && count_id(observed, o.id) == 1;",
-           (T + "admit_spec", T + "admit_ok_iff", T + "admit_infrastructure_refused")),
+           (T + "admit_spec", T + "admit_ok_iff", T + "admit_infrastructure_refused", T + "of_run_proved_iff")),
 )
 
 BINDING_MUTANTS = (
@@ -331,6 +331,29 @@ BINDING_MUTANTS = (
            "            ok = ok && (b.key != key || same_bytes(&b.bytes, bytes));",
            "            ok = ok && (b.key != key || b.bytes.len() == bytes.len());",
            (T + "fresh_iff", T + "missing_key_never_fresh", T + "extra_key_never_fresh", T + "changed_never_fresh")),
+)
+
+BADGE_MUTANTS = (
+    # badge: a claim with assumptions shows as proved outright
+    Mutant("assumptions-ignored", "badge.rs",
+           "            if assumes {\n                Badge::ProvedUnder",
+           "            if false {\n                Badge::ProvedUnder",
+           (T + "badge_spec", T + "badge_proved_iff", T + "badge_proved_under_iff")),
+    # badge: a stale claim keeps its badge
+    Mutant("stale-shows-proved", "badge.rs",
+           "    if !fresh {\n        return Badge::Pending;",
+           "    if false {\n        return Badge::Pending;",
+           (T + "badge_spec", T + "badge_proved_iff", T + "badge_proved_under_iff")),
+    # badge: a bounded search shows as a proof
+    Mutant("bounded-shows-proved", "badge.rs",
+           "        (Method::Bounded, Relation::Extracted | Relation::ModelOnly) => Badge::Bounded,",
+           "        (Method::Bounded, Relation::Extracted | Relation::ModelOnly) => Badge::Proved,",
+           (T + "badge_spec", T + "badge_proved_iff", T + "badge_proved_under_iff")),
+    # badge: a theorem about a model shows as proved about the code
+    Mutant("model-shows-proved", "badge.rs",
+           "        (Method::Lean, Relation::ModelOnly) => Badge::ModelProved,",
+           "        (Method::Lean, Relation::ModelOnly) => Badge::Proved,",
+           (T + "badge_spec", T + "badge_proved_iff", T + "badge_proved_under_iff")),
 )
 
 MUTANTS = (
@@ -384,7 +407,7 @@ MUTANTS = (
            "    if crate_wide && blocking {",
            "    if crate_wide || blocking {",
            (T + "exception_spec",)),
-) + RATCHET_MUTANTS + TABLE_MUTANTS + SUBSUME_MUTANTS + EFFECTS_MUTANTS + OUTCOME_MUTANTS + SPAN_MUTANTS + CONTROL_MUTANTS + BINDING_MUTANTS
+) + RATCHET_MUTANTS + TABLE_MUTANTS + SUBSUME_MUTANTS + EFFECTS_MUTANTS + OUTCOME_MUTANTS + SPAN_MUTANTS + CONTROL_MUTANTS + BINDING_MUTANTS + BADGE_MUTANTS
 
 I = "Tauten.Instances."
 REFINED_TYPES = ("percent", "port", "offset", "count")
