@@ -6,7 +6,7 @@ Updated 2026-11-19 (morning). Settled items are kept at the bottom for the recor
 
 | # | Decision | What it unblocks | Recommendation |
 |---|---|---|---|
-| 1 | **Writfold adoption branch** (`tauten-adoption` in `~/workspace/writfold-tauten`, not pushed). | Merging into writfold | Review `docs/writfold/tauten-adoption.md` there: tiers, the xtask `#[expect]` fix (needs a quality gate run on main), the `#![expect]` style, and the proof claims (the choices are settled below). |
+| 1 | **Writfold adoption branch** (`tauten-adoption` in `~/workspace/writfold-tauten`, not pushed). | Merging into writfold | Review `docs/writfold/tauten-adoption.md` there: tiers, the xtask `#[expect]` fix (needs a quality gate run on main), the `#![expect]` style, the proof claims, and the total rewrites of `newer`, `better`, `char_step`, `path_step` (commit `b61532c`; out-of-precondition results are documented there). |
 | 2 | **Publish the held-out suite only after it runs.** The branch stays local so the hidden oracles are not public before the run. | Honest held-out results | Merge and publish it together with the results. |
 | 3 | **Revoke the one-off crates.io token** used for the kernel crate's first publish (the local copy is deleted). | Hygiene | Revoke it at crates.io → Account settings → API tokens. |
 

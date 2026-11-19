@@ -29,7 +29,7 @@ completed; held-out benefit not established.
 | M4 | Pilot with a real agent (dev split) | **exercised** | `bench/reports/2026-11-18-pilot`: 36 trials, Sonnet 5.5. Ceiling: 0 escaped defects in every arm; enforcement removed unchecked arithmetic (A 6/12, B 5/12, C 0/12 trials). Held-out suite being designed |
 | M5 | Repo (public), CI gate, tag-driven release workflow with crates.io trusted publishing (no stored token) | **exercised** | 0.0.1 (stored token) and 0.0.2 (trusted publishing) of all four crates published 2026-11-18 by `release.yml` after the gate passed. `tauten-check-kernel` first published 0.0.2 with a one-off token (2026-11-19), then trusted publishing; 0.0.3 of all five crates by `release.yml` |
 | M7 | Website (tauten.dev) | **exercised** (live) | `tauten-dev/tauten-dev.github.io`, generated from a pinned commit with drift checks; benchmark section shows the dev-split pilot |
-| M8 | Writfold adoption | **exercised** (worktree, not merged) | branch `tauten-adoption` in a separate worktree: tiers, 19 reasoned expects, baseline 712 → 679, then proof claims (151 claims proved, 96-minute gate) subsume 130 of 159 kernel N001/P003 findings → baseline 549; `scripts/tauten-check` passes. Awaiting the owner's review |
+| M8 | Writfold adoption | **exercised** (worktree, not merged) | branch `tauten-adoption` in a separate worktree: tiers, 19 reasoned expects, baseline 712 → 679, then proof claims subsume 130 of 159 kernel N001/P003 findings → baseline 549; then four helpers rewritten to be total and re-proved (151 claims proved, 105-minute gate) → 142 subsumed, baseline 527; `scripts/tauten-check` passes with cargo-tauten 0.0.3 from crates.io. Awaiting the owner's review |
 | — | Plyward review | done | `docs/reviews/plyward-2026-11-18.md`; three defects fixed in `e7fbc8c` |
 
 ## Quality
@@ -72,9 +72,10 @@ completed; held-out benefit not established.
 - The kernel's arithmetic and indexing rules duplicate what an Aeneas proof
   already establishes (dry-run report). P5 subsumes them only for functions
   with a recorded, current, total proof. Writfold's adoption branch
-  subsumes 130 of its 159 extracted-kernel findings this way; the other 29
-  are in functions whose theorems need preconditions (`i < len`, a cursor
-  invariant, a capacity bound).
+  subsumes 142 of its 159 extracted-kernel findings this way, after
+  rewriting four helpers to be total (`get` instead of indexing; 10 more
+  findings disappeared with the indexing). The remaining 7 are in `splice`,
+  whose only panic is a length overflow past `usize::MAX`.
 - No credit through callers: a helper with a precondition gets no
   subsumption even when every caller is proved total.
 - tauten trusts the project's gate output, including its total-shape check;
