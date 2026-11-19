@@ -239,6 +239,24 @@ OUTCOME_MUTANTS = (
             T + "outcome_mutant_survived_iff", T + "outcome_examples")),
 )
 
+SPAN_MUTANTS = (
+    # span: a later span of equal width replaces the first
+    Mutant("tie-takes-later", "span.rs",
+           "        Some(current) if width(*current) <= width(*candidate) => best,",
+           "        Some(current) if width(*current) < width(*candidate) => best,",
+           (T + "innermost_spec",)),
+    # span: the widest covering span wins
+    Mutant("widest-wins", "span.rs",
+           "        Some(current) if width(*current) <= width(*candidate) => best,",
+           "        Some(current) if width(*current) >= width(*candidate) => best,",
+           (T + "innermost_spec",)),
+    # span: a span ending before the line still covers it
+    Mutant("covers-ignores-end", "span.rs",
+           "    lines.0 <= line && line <= lines.1",
+           "    lines.0 <= line",
+           (T + "innermost_spec",)),
+)
+
 MUTANTS = (
     # tiers: a tier may depend on its own tier; `<` refuses same-tier edges
     Mutant("same-tier-refused", "tiers.rs",
@@ -290,7 +308,7 @@ MUTANTS = (
            "    if crate_wide && blocking {",
            "    if crate_wide || blocking {",
            (T + "exception_spec",)),
-) + RATCHET_MUTANTS + TABLE_MUTANTS + SUBSUME_MUTANTS + EFFECTS_MUTANTS + OUTCOME_MUTANTS
+) + RATCHET_MUTANTS + TABLE_MUTANTS + SUBSUME_MUTANTS + EFFECTS_MUTANTS + OUTCOME_MUTANTS + SPAN_MUTANTS
 
 I = "Tauten.Instances."
 REFINED_TYPES = ("percent", "port", "offset", "count")

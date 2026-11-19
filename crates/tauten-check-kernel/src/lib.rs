@@ -21,6 +21,7 @@ pub mod exception;
 pub mod outcome;
 pub mod ratchet;
 pub mod severity;
+pub mod span;
 pub mod subsume;
 pub mod table;
 pub mod tiers;

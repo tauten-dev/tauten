@@ -773,6 +773,96 @@ def severity.severity
     then ok severity.Severity.Error
     else ok severity.Severity.Warning
 
+/-- [tauten_check_kernel::span::covers]:
+    Source: 'crates/tauten-check-kernel/src/span.rs', lines 12:0-14:1
+    Visibility: public -/
+def span.covers
+  (lines : (Std.U32 × Std.U32)) (line : Std.U32) : Result Bool := do
+  let (i, i1) := lines
+  if i <= line
+  then ok (line <= i1)
+  else ok false
+
+/-- [tauten_check_kernel::span::width]:
+    Source: 'crates/tauten-check-kernel/src/span.rs', lines 18:0-20:1
+    Visibility: public -/
+def span.width (lines : (Std.U32 × Std.U32)) : Result Std.U32 := do
+  let (i, i1) := lines
+  ok (core.num.U32.saturating_sub i1 i)
+
+/-- [tauten_check_kernel::span::consider]:
+    Source: 'crates/tauten-check-kernel/src/span.rs', lines 24:0-38:1
+    Visibility: public -/
+def span.consider
+  (spans : Slice (Std.U32 × Std.U32)) (line : Std.U32)
+  (best : Option Std.Usize) (i : Std.Usize) :
+  Result (Option Std.Usize)
+  := do
+  let o ←
+    core.slice.Slice.get (core.slice.index.SliceIndexUsizeSlice (Std.U32 ×
+      Std.U32)) spans i
+  match o with
+  | none => ok best
+  | some candidate =>
+    let b ← span.covers candidate line
+    if b
+    then
+      match best with
+      | none => ok (some i)
+      | some b1 =>
+        let o1 ←
+          core.slice.Slice.get (core.slice.index.SliceIndexUsizeSlice (Std.U32
+            × Std.U32)) spans b1
+        match o1 with
+        | none => ok (some i)
+        | some current =>
+          let i1 ← span.width current
+          let i2 ← span.width candidate
+          if i1 <= i2
+          then ok best
+          else ok (some i)
+    else ok best
+
+/-- [tauten_check_kernel::span::innermost]: loop body 0:
+    Source: 'crates/tauten-check-kernel/src/span.rs', lines 46:4-49:5
+    Visibility: public -/
+@[rust_loop_body]
+def span.innermost_loop.body
+  (spans : Slice (Std.U32 × Std.U32)) (line : Std.U32)
+  (best : Option Std.Usize) (i : Std.Usize) :
+  Result (ControlFlow ((Option Std.Usize) × Std.Usize) (Option Std.Usize))
+  := do
+  let i1 := Slice.len spans
+  if i < i1
+  then
+    let best1 ← span.consider spans line best i
+    let i2 ← lift (core.num.Usize.saturating_add i 1#usize)
+    ok (cont (best1, i2))
+  else ok (done best)
+
+/-- [tauten_check_kernel::span::innermost]: loop 0:
+    Source: 'crates/tauten-check-kernel/src/span.rs', lines 46:4-49:5
+    Visibility: public -/
+@[rust_loop]
+def span.innermost_loop
+  (spans : Slice (Std.U32 × Std.U32)) (line : Std.U32)
+  (best : Option Std.Usize) (i : Std.Usize) :
+  Result (Option Std.Usize)
+  := do
+  loop
+    (fun (best1, i1) => span.innermost_loop.body spans line best1 i1)
+    (best, i)
+
+/-- [tauten_check_kernel::span::innermost]:
+    Source: 'crates/tauten-check-kernel/src/span.rs', lines 43:0-51:1
+    Visibility: public -/
+@[reducible]
+def span.innermost
+  (spans : Slice (Std.U32 × Std.U32)) (line : Std.U32) :
+  Result (Option Std.Usize)
+  := do
+  span.innermost_loop spans line none 0#usize
+
 /-- [tauten_check_kernel::subsume::Finding]
     Source: 'crates/tauten-check-kernel/src/subsume.rs', lines 14:0-21:1
     Visibility: public -/

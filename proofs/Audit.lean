@@ -91,6 +91,9 @@ def claims : List Name := [
   ``Tauten.Kernel.outcome_tool_missing_iff,
   ``Tauten.Kernel.outcome_mutant_survived_iff,
   ``Tauten.Kernel.outcome_examples,
+  -- the function a finding is in (T3)
+  ``Tauten.Kernel.innermost_spec,
+  ``Tauten.Kernel.innermost_examples,
   -- the macros' generated code, per instance (P3)
   ``Tauten.Instances.percent_try_new_shape,
   ``Tauten.Instances.percent_try_new_ok_iff,
@@ -198,6 +201,12 @@ def reviewedFunctions : List Name := [
   ``tauten_check_kernel.effects.verdict,
   ``tauten_check_kernel.outcome.passed,
   ``tauten_check_kernel.outcome.outcome,
+  ``tauten_check_kernel.span.covers,
+  ``tauten_check_kernel.span.width,
+  ``tauten_check_kernel.span.consider,
+  ``tauten_check_kernel.span.innermost,
+  ``tauten_check_kernel.span.innermost_loop,
+  ``tauten_check_kernel.span.innermost_loop.body,
   ``tauten_check_kernel.table.is_at,
   ``tauten_check_kernel.table.find_before,
   ``tauten_check_kernel.table.find_before_loop,

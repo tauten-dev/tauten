@@ -60,6 +60,10 @@ start_from = [
     "tauten_check_kernel::effects::verdict",
     "tauten_check_kernel::outcome::passed",
     "tauten_check_kernel::outcome::outcome",
+    "tauten_check_kernel::span::covers",
+    "tauten_check_kernel::span::width",
+    "tauten_check_kernel::span::consider",
+    "tauten_check_kernel::span::innermost",
 ]
 
 # Stated locally, not inherited: the proofs gate translates this crate in a

@@ -156,6 +156,14 @@ theorems = ["Tauten.Kernel.outcome_proved_iff", "Tauten.Kernel.outcome_tool_miss
 mutants = ["changed-ignored", "mutants-ignored", "absent-passes"]
 
 [[claim]]
+crate = "tauten-check-kernel"
+file = "crates/tauten-check-kernel/src/span.rs"
+function = "innermost"
+lean = "tauten_check_kernel.span.innermost"
+theorems = ["Tauten.Kernel.innermost_spec", "Tauten.Kernel.innermost_examples"]
+mutants = ["tie-takes-later", "widest-wins", "covers-ignores-end"]
+
+[[claim]]
 crate = "tauten-proof-instances"
 file = "crates/tauten-proof-instances/src/refined.rs"
 function = "Percent::try_new"

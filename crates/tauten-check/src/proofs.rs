@@ -588,12 +588,12 @@ pub fn functions(source: &str) -> Vec<FunctionSpan> {
     visitor.found
 }
 
-/// The innermost function containing `line`.
+/// The innermost function containing `line`, chosen by the proved
+/// [`tauten_check_kernel::span::innermost`] (narrowest covering span,
+/// first on a tie).
 fn enclosing(spans: &[FunctionSpan], line: u32) -> Option<&FunctionSpan> {
-    spans
-        .iter()
-        .filter(|span| span.start <= line && line <= span.end)
-        .min_by_key(|span| span.end.saturating_sub(span.start))
+    let lines: Vec<(u32, u32)> = spans.iter().map(|s| (s.start, s.end)).collect();
+    tauten_check_kernel::span::innermost(&lines, line).and_then(|i| spans.get(i))
 }
 
 /// A recorded claim and whether its fingerprint matches the current source.
