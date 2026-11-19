@@ -97,4 +97,4 @@ completed; held-out benefit not established.
   Kani (`cfg(kani)`) lowering yet.
 - **Development pilot completed; held-out benefit not established.** The
   dev-split pilot could not separate the arms on escaped defects; nothing
-  here supports a claim that agents make fewer mistakes.
+  here supports a claim that the profile reduces escaped defects.
