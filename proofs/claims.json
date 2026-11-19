@@ -17,7 +17,8 @@
         "kernel-ranks-as-core"
       ],
       "outcome": "proved",
-      "fingerprint": "fnv1a64:b6d7db829e0dd0da"
+      "badge": "proved",
+      "fingerprint": "fnv1a64:a66c8587ab5413fc"
     },
     {
       "crate": "tauten-check-kernel",
@@ -41,7 +42,8 @@
         "kernel-ranks-as-core"
       ],
       "outcome": "proved",
-      "fingerprint": "fnv1a64:b6d7db829e0dd0da"
+      "badge": "proved",
+      "fingerprint": "fnv1a64:a66c8587ab5413fc"
     },
     {
       "crate": "tauten-check-kernel",
@@ -57,7 +59,8 @@
         "warn-blocks"
       ],
       "outcome": "proved",
-      "fingerprint": "fnv1a64:b6d7db829e0dd0da"
+      "badge": "proved",
+      "fingerprint": "fnv1a64:a66c8587ab5413fc"
     },
     {
       "crate": "tauten-check-kernel",
@@ -74,7 +77,8 @@
         "no-level-is-error"
       ],
       "outcome": "proved",
-      "fingerprint": "fnv1a64:b6d7db829e0dd0da"
+      "badge": "proved",
+      "fingerprint": "fnv1a64:a66c8587ab5413fc"
     },
     {
       "crate": "tauten-check-kernel",
@@ -91,7 +95,8 @@
         "rule-flag-ignored"
       ],
       "outcome": "proved",
-      "fingerprint": "fnv1a64:b6d7db829e0dd0da"
+      "badge": "proved",
+      "fingerprint": "fnv1a64:a66c8587ab5413fc"
     },
     {
       "crate": "tauten-check-kernel",
@@ -112,7 +117,8 @@
         "crate-wide-any"
       ],
       "outcome": "proved",
-      "fingerprint": "fnv1a64:b6d7db829e0dd0da"
+      "badge": "proved",
+      "fingerprint": "fnv1a64:a66c8587ab5413fc"
     },
     {
       "crate": "tauten-check-kernel",
@@ -139,7 +145,8 @@
         "missing-key-accepts-one"
       ],
       "outcome": "proved",
-      "fingerprint": "fnv1a64:b6d7db829e0dd0da"
+      "badge": "proved",
+      "fingerprint": "fnv1a64:a66c8587ab5413fc"
     },
     {
       "crate": "tauten-check-kernel",
@@ -161,7 +168,8 @@
         "missing-key-accepts-one"
       ],
       "outcome": "proved",
-      "fingerprint": "fnv1a64:b6d7db829e0dd0da"
+      "badge": "proved",
+      "fingerprint": "fnv1a64:a66c8587ab5413fc"
     },
     {
       "crate": "tauten-check-kernel",
@@ -177,7 +185,8 @@
         "warnings-counted"
       ],
       "outcome": "proved",
-      "fingerprint": "fnv1a64:b6d7db829e0dd0da"
+      "badge": "proved",
+      "fingerprint": "fnv1a64:a66c8587ab5413fc"
     },
     {
       "crate": "tauten-check-kernel",
@@ -198,7 +207,8 @@
         "missing-key-accepts-one"
       ],
       "outcome": "proved",
-      "fingerprint": "fnv1a64:b6d7db829e0dd0da"
+      "badge": "proved",
+      "fingerprint": "fnv1a64:a66c8587ab5413fc"
     },
     {
       "crate": "tauten-check-kernel",
@@ -219,7 +229,8 @@
         "search-stops-short"
       ],
       "outcome": "proved",
-      "fingerprint": "fnv1a64:b6d7db829e0dd0da"
+      "badge": "proved",
+      "fingerprint": "fnv1a64:a66c8587ab5413fc"
     },
     {
       "crate": "tauten-check-kernel",
@@ -241,7 +252,145 @@
         "unlisted-rule-subsumed"
       ],
       "outcome": "proved",
-      "fingerprint": "fnv1a64:b6d7db829e0dd0da"
+      "badge": "proved",
+      "fingerprint": "fnv1a64:a66c8587ab5413fc"
+    },
+    {
+      "crate": "tauten-check-kernel",
+      "file": "crates/tauten-check-kernel/src/effects.rs",
+      "function": "derive",
+      "lean": "tauten_check_kernel.effects.derive",
+      "theorems": [
+        "Tauten.Kernel.derive_spec",
+        "Tauten.Kernel.f001_decision"
+      ],
+      "total": null,
+      "subsumes": [],
+      "mutants": [
+        "dir-not-write",
+        "readdir-writes",
+        "fail-ignored"
+      ],
+      "outcome": "proved",
+      "badge": "proved",
+      "fingerprint": "fnv1a64:a66c8587ab5413fc"
+    },
+    {
+      "crate": "tauten-check-kernel",
+      "file": "crates/tauten-check-kernel/src/effects.rs",
+      "function": "missing",
+      "lean": "tauten_check_kernel.effects.missing",
+      "theorems": [
+        "Tauten.Kernel.missing_spec"
+      ],
+      "total": null,
+      "subsumes": [],
+      "mutants": [
+        "missing-net-swapped"
+      ],
+      "outcome": "proved",
+      "badge": "proved",
+      "fingerprint": "fnv1a64:a66c8587ab5413fc"
+    },
+    {
+      "crate": "tauten-check-kernel",
+      "file": "crates/tauten-check-kernel/src/effects.rs",
+      "function": "extra",
+      "lean": "tauten_check_kernel.effects.extra",
+      "theorems": [
+        "Tauten.Kernel.extra_spec"
+      ],
+      "total": null,
+      "subsumes": [],
+      "mutants": [
+        "missing-net-swapped"
+      ],
+      "outcome": "proved",
+      "badge": "proved",
+      "fingerprint": "fnv1a64:a66c8587ab5413fc"
+    },
+    {
+      "crate": "tauten-check-kernel",
+      "file": "crates/tauten-check-kernel/src/effects.rs",
+      "function": "agrees",
+      "lean": "tauten_check_kernel.effects.agrees",
+      "theorems": [
+        "Tauten.Kernel.agrees_spec",
+        "Tauten.Kernel.f001_decision",
+        "Tauten.Kernel.f001_examples"
+      ],
+      "total": null,
+      "subsumes": [],
+      "mutants": [
+        "agrees-ignores-extra",
+        "missing-net-swapped"
+      ],
+      "outcome": "proved",
+      "badge": "proved",
+      "fingerprint": "fnv1a64:a66c8587ab5413fc"
+    },
+    {
+      "crate": "tauten-check-kernel",
+      "file": "crates/tauten-check-kernel/src/effects.rs",
+      "function": "verdict",
+      "lean": "tauten_check_kernel.effects.verdict",
+      "theorems": [
+        "Tauten.Kernel.verdict_spec",
+        "Tauten.Kernel.f001_error_iff",
+        "Tauten.Kernel.f001_silent_iff"
+      ],
+      "total": null,
+      "subsumes": [],
+      "mutants": [
+        "unresolved-blocks",
+        "undeclared-always-blocks"
+      ],
+      "outcome": "proved",
+      "badge": "proved",
+      "fingerprint": "fnv1a64:a66c8587ab5413fc"
+    },
+    {
+      "crate": "tauten-check-kernel",
+      "file": "crates/tauten-check-kernel/src/outcome.rs",
+      "function": "outcome",
+      "lean": "tauten_check_kernel.outcome.outcome",
+      "theorems": [
+        "Tauten.Kernel.outcome_proved_iff",
+        "Tauten.Kernel.outcome_tool_missing_iff",
+        "Tauten.Kernel.outcome_mutant_survived_iff",
+        "Tauten.Kernel.outcome_examples"
+      ],
+      "total": null,
+      "subsumes": [],
+      "mutants": [
+        "changed-ignored",
+        "mutants-ignored",
+        "absent-passes"
+      ],
+      "outcome": "proved",
+      "badge": "proved",
+      "fingerprint": "fnv1a64:a66c8587ab5413fc"
+    },
+    {
+      "crate": "tauten-check-kernel",
+      "file": "crates/tauten-check-kernel/src/span.rs",
+      "function": "innermost",
+      "lean": "tauten_check_kernel.span.innermost",
+      "theorems": [
+        "Tauten.Kernel.innermost_spec",
+        "Tauten.Kernel.innermost_examples"
+      ],
+      "total": null,
+      "subsumes": [],
+      "mutants": [
+        "tie-takes-later",
+        "widest-wins",
+        "covers-ignores-end",
+        "skips-first-span"
+      ],
+      "outcome": "proved",
+      "badge": "proved",
+      "fingerprint": "fnv1a64:a66c8587ab5413fc"
     },
     {
       "crate": "tauten-proof-instances",
@@ -265,7 +414,8 @@
         "attributes-dropped"
       ],
       "outcome": "proved",
-      "fingerprint": "fnv1a64:1bff54124ec66580"
+      "badge": "proved",
+      "fingerprint": "fnv1a64:6e467f9cdd32a183"
     },
     {
       "crate": "tauten-proof-instances",
@@ -289,7 +439,8 @@
         "attributes-dropped"
       ],
       "outcome": "proved",
-      "fingerprint": "fnv1a64:1bff54124ec66580"
+      "badge": "proved",
+      "fingerprint": "fnv1a64:6e467f9cdd32a183"
     },
     {
       "crate": "tauten-proof-instances",
@@ -313,7 +464,8 @@
         "attributes-dropped"
       ],
       "outcome": "proved",
-      "fingerprint": "fnv1a64:1bff54124ec66580"
+      "badge": "proved",
+      "fingerprint": "fnv1a64:6e467f9cdd32a183"
     },
     {
       "crate": "tauten-proof-instances",
@@ -337,7 +489,8 @@
         "attributes-dropped"
       ],
       "outcome": "proved",
-      "fingerprint": "fnv1a64:1bff54124ec66580"
+      "badge": "proved",
+      "fingerprint": "fnv1a64:6e467f9cdd32a183"
     },
     {
       "crate": "tauten-proof-instances",
@@ -361,7 +514,8 @@
         "ensures-reported-as-requires"
       ],
       "outcome": "proved",
-      "fingerprint": "fnv1a64:1bff54124ec66580"
+      "badge": "proved",
+      "fingerprint": "fnv1a64:6e467f9cdd32a183"
     },
     {
       "crate": "tauten-proof-instances",
@@ -387,7 +541,8 @@
         "ensures-reported-as-requires"
       ],
       "outcome": "proved",
-      "fingerprint": "fnv1a64:1bff54124ec66580"
+      "badge": "proved",
+      "fingerprint": "fnv1a64:6e467f9cdd32a183"
     },
     {
       "crate": "tauten-proof-instances",
@@ -411,7 +566,8 @@
         "ensures-reported-as-requires"
       ],
       "outcome": "proved",
-      "fingerprint": "fnv1a64:1bff54124ec66580"
+      "badge": "proved",
+      "fingerprint": "fnv1a64:6e467f9cdd32a183"
     },
     {
       "crate": "tauten-proof-instances",
@@ -432,7 +588,154 @@
         "requires-after-body"
       ],
       "outcome": "proved",
-      "fingerprint": "fnv1a64:1bff54124ec66580"
+      "badge": "proved",
+      "fingerprint": "fnv1a64:6e467f9cdd32a183"
+    },
+    {
+      "crate": "tauten-check-kernel",
+      "file": "crates/tauten-check-kernel/src/control.rs",
+      "function": "admit",
+      "lean": "tauten_check_kernel.control.admit",
+      "theorems": [
+        "Tauten.Kernel.admit_spec",
+        "Tauten.Kernel.admit_ok_iff",
+        "Tauten.Kernel.admit_infrastructure_refused",
+        "Tauten.Kernel.admit_examples"
+      ],
+      "total": null,
+      "subsumes": [],
+      "mutants": [
+        "duplicate-accepted",
+        "empty-inventory-accepted",
+        "missing-observation-accepted",
+        "unexpected-accepted",
+        "timeout-counts-as-kill",
+        "unnamed-failure-accepted"
+      ],
+      "outcome": "proved",
+      "badge": "proved",
+      "fingerprint": "fnv1a64:a66c8587ab5413fc"
+    },
+    {
+      "crate": "tauten-check-kernel",
+      "file": "crates/tauten-check-kernel/src/control.rs",
+      "function": "control_ok",
+      "lean": "tauten_check_kernel.control.control_ok",
+      "theorems": [
+        "Tauten.Kernel.control_ok_spec",
+        "Tauten.Kernel.infrastructure_never_passes"
+      ],
+      "total": null,
+      "subsumes": [],
+      "mutants": [
+        "timeout-counts-as-kill",
+        "unnamed-failure-accepted"
+      ],
+      "outcome": "proved",
+      "badge": "proved",
+      "fingerprint": "fnv1a64:a66c8587ab5413fc"
+    },
+    {
+      "crate": "tauten-check-kernel",
+      "file": "crates/tauten-check-kernel/src/control.rs",
+      "function": "named",
+      "lean": "tauten_check_kernel.control.named",
+      "theorems": [
+        "Tauten.Kernel.named_iff"
+      ],
+      "total": null,
+      "subsumes": [],
+      "mutants": [
+        "named-any-broken"
+      ],
+      "outcome": "proved",
+      "badge": "proved",
+      "fingerprint": "fnv1a64:a66c8587ab5413fc"
+    },
+    {
+      "crate": "tauten-check-kernel",
+      "file": "crates/tauten-check-kernel/src/outcome.rs",
+      "function": "of_run",
+      "lean": "tauten_check_kernel.outcome.of_run",
+      "theorems": [
+        "Tauten.Kernel.of_run_proved_iff"
+      ],
+      "total": null,
+      "subsumes": [],
+      "mutants": [
+        "of-run-mutants-ignored"
+      ],
+      "outcome": "proved",
+      "badge": "proved",
+      "fingerprint": "fnv1a64:a66c8587ab5413fc"
+    },
+    {
+      "crate": "tauten-check-kernel",
+      "file": "crates/tauten-check-kernel/src/binding.rs",
+      "function": "fresh",
+      "lean": "tauten_check_kernel.binding.fresh",
+      "theorems": [
+        "Tauten.Kernel.fresh_iff",
+        "Tauten.Kernel.missing_key_never_fresh",
+        "Tauten.Kernel.extra_key_never_fresh",
+        "Tauten.Kernel.changed_never_fresh"
+      ],
+      "total": null,
+      "subsumes": [],
+      "mutants": [
+        "missing-key-accepted",
+        "extra-key-accepted",
+        "changed-accepted",
+        "last-byte-ignored",
+        "length-ignored"
+      ],
+      "outcome": "proved",
+      "badge": "proved",
+      "fingerprint": "fnv1a64:a66c8587ab5413fc"
+    },
+    {
+      "crate": "tauten-check-kernel",
+      "file": "crates/tauten-check-kernel/src/binding.rs",
+      "function": "same_bytes",
+      "lean": "tauten_check_kernel.binding.same_bytes",
+      "theorems": [
+        "Tauten.Kernel.same_bytes_spec"
+      ],
+      "total": null,
+      "subsumes": [],
+      "mutants": [
+        "last-byte-ignored",
+        "length-ignored"
+      ],
+      "outcome": "proved",
+      "badge": "proved",
+      "fingerprint": "fnv1a64:a66c8587ab5413fc"
+    },
+    {
+      "crate": "tauten-check-kernel",
+      "file": "crates/tauten-check-kernel/src/badge.rs",
+      "function": "badge",
+      "lean": "tauten_check_kernel.badge.badge",
+      "theorems": [
+        "Tauten.Kernel.badge_spec",
+        "Tauten.Kernel.badge_proved_iff",
+        "Tauten.Kernel.badge_proved_under_iff",
+        "Tauten.Kernel.non_lean_never_proved",
+        "Tauten.Kernel.model_only_never_proved",
+        "Tauten.Kernel.stale_never_established",
+        "Tauten.Kernel.badge_monotone"
+      ],
+      "total": null,
+      "subsumes": [],
+      "mutants": [
+        "assumptions-ignored",
+        "stale-shows-proved",
+        "bounded-shows-proved",
+        "model-shows-proved"
+      ],
+      "outcome": "proved",
+      "badge": "proved",
+      "fingerprint": "fnv1a64:a66c8587ab5413fc"
     }
   ]
 }
