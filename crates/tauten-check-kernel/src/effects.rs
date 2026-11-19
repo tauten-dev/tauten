@@ -145,6 +145,57 @@ pub const fn agrees(declared: Row, derived: Row) -> bool {
     is_empty(missing(declared, derived)) && is_empty(extra(declared, derived))
 }
 
+/// What TAU-F001 reports for one function.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Verdict {
+    /// Nothing to report.
+    Silent,
+    /// A finding that does not block: the crate does not require effects,
+    /// or a parameter type could not be classified.
+    Warning,
+    /// A blocking finding.
+    Error,
+}
+
+/// The finding for one function.
+///
+/// * `declared`: the row of its `#[effects(..)]`, or `None` without one.
+/// * `derived`: [`derive`] of its signature.
+/// * `required`: the crate sets `effects = "required"`.
+/// * `resolved`: every parameter type was classified; an unclassified type
+///   (a bundle from another crate, an unbounded generic) may grant
+///   anything, so a mismatch is then only a warning.
+///
+/// Without a declaration a function is reported only when the crate
+/// requires one, and then always as an error: the absence does not depend
+/// on classification.
+#[must_use]
+pub const fn verdict(
+    declared: Option<Row>,
+    derived: Row,
+    required: bool,
+    resolved: bool,
+) -> Verdict {
+    match declared {
+        None => {
+            if required {
+                Verdict::Error
+            } else {
+                Verdict::Silent
+            }
+        }
+        Some(d) => {
+            if agrees(d, derived) {
+                Verdict::Silent
+            } else if required && resolved {
+                Verdict::Error
+            } else {
+                Verdict::Warning
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -166,5 +217,11 @@ mod tests {
         assert!(agrees(r, r));
         assert!(derive(&[Source::Dir], false, false).fs_write);
         assert!(is_empty(derive(&[], false, false)));
+        assert_eq!(verdict(Some(r), r, true, false), Verdict::Silent);
+        assert_eq!(verdict(Some(declared), r, true, true), Verdict::Error);
+        assert_eq!(verdict(Some(declared), r, true, false), Verdict::Warning);
+        assert_eq!(verdict(Some(declared), r, false, true), Verdict::Warning);
+        assert_eq!(verdict(None, r, true, false), Verdict::Error);
+        assert_eq!(verdict(None, r, false, true), Verdict::Silent);
     }
 }

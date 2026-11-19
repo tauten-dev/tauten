@@ -197,13 +197,27 @@ EFFECTS_MUTANTS = (
     Mutant("agrees-ignores-extra", "effects.rs",
            "    is_empty(missing(declared, derived)) && is_empty(extra(declared, derived))",
            "    is_empty(missing(declared, derived))",
-           (T + "agrees_spec", T + "f001_decision", T + "f001_examples")),
+           (T + "agrees_spec", T + "f001_decision", T + "f001_examples", T + "verdict_spec", T + "f001_error_iff", T + "f001_silent_iff")),
     # effects: `missing` reports `net` the wrong way round
     Mutant("missing-net-swapped", "effects.rs",
            "        net: derived.net && !declared.net,",
            "        net: declared.net && !derived.net,",
            (T + "missing_spec", T + "extra_spec", T + "agrees_spec", T + "f001_decision",
-            T + "f001_examples")),
+            T + "f001_examples", T + "verdict_spec", T + "f001_error_iff", T + "f001_silent_iff")),
+    # effects: an unclassified parameter type can block
+    Mutant("unresolved-blocks", "effects.rs",
+           "            } else if required && resolved {",
+           "            } else if required {",
+           (T + "verdict_spec", T + "f001_error_iff", T + "f001_silent_iff")),
+    # effects: a missing declaration blocks even when effects are optional
+    Mutant("undeclared-always-blocks", "effects.rs",
+           """            if required {
+                Verdict::Error
+            } else {
+                Verdict::Silent
+            }""",
+           """            Verdict::Error""",
+           (T + "verdict_spec", T + "f001_error_iff", T + "f001_silent_iff")),
 )
 
 MUTANTS = (

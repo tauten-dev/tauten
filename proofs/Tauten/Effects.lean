@@ -13,9 +13,14 @@ Proved here, over the extracted functions:
   grants it (`clock`, `env`, `net` from their sources; `fs_read` from `Dir`
   or `ReadDir`; `fs_write` from `Dir` only), plus `fail` and `suspend` from
   the signature's `Result` and `async`.
-* `agrees_iff`: no finding exactly when the declared row equals the derived
-  row, so a matching declaration is never reported (no false positive) and a
-  differing one always is (no false negative).
+* `agrees_spec`, `f001_decision`: no finding exactly when the declared row
+  equals the derived row, so a matching declaration is never reported (no
+  false positive) and a differing one always is (no false negative).
+* `derive_perm`, `derive_mono`: parameter order does not matter, and adding
+  parameters never removes a label.
+* `f001_error_iff`, `f001_silent_iff`: the verdict blocks exactly when the
+  crate requires effects and the declaration is absent, or differs from a
+  fully classified signature; an unclassified parameter can only warn.
 * `missing_spec`, `extra_spec`: the finding names exactly the labels the
   signature grants but the declaration omits, and the reverse.
 
@@ -200,5 +205,64 @@ theorem f001_examples :
   refine ⟨by decide, by decide, by decide, ?_⟩
   rw [agrees_spec]
   simp [rowEq, deriveN, grantsClock, grantsEnv, grantsRead, grantsWrite, grantsNet]
+
+/-- Order does not matter: permuting the parameters derives the same row. -/
+theorem derive_perm {ss ts : List effects.Source} (h : ss.Perm ts) (fallible asynchronous : Bool) :
+    deriveN ss fallible asynchronous = deriveN ts fallible asynchronous := by
+  have hany : ∀ p : effects.Source → Bool, ss.any p = ts.any p := by
+    intro p
+    apply Bool.eq_iff_iff.mpr
+    simp only [List.any_eq_true]
+    exact ⟨fun ⟨x, hx, px⟩ => ⟨x, h.mem_iff.mp hx, px⟩,
+      fun ⟨x, hx, px⟩ => ⟨x, h.mem_iff.mpr hx, px⟩⟩
+  simp [deriveN, hany]
+
+/-- Monotone: every label granted by a parameter list is still granted
+when parameters are added. -/
+theorem derive_mono {ss ts : List effects.Source} (h : ∀ x, x ∈ ss → x ∈ ts)
+    (p : effects.Source → Bool) :
+    ss.any p = true → ts.any p = true := by
+  simp only [List.any_eq_true]
+  exact fun ⟨x, hx, px⟩ => ⟨x, h x hx, px⟩
+
+/-- The verdict as a function. -/
+def verdictN (declared : Option effects.Row) (derived : effects.Row) (required resolved : Bool) :
+    effects.Verdict :=
+  match declared with
+  | none => if required then .Error else .Silent
+  | some d => if rowEq d derived then .Silent else if required && resolved then .Error else .Warning
+
+theorem verdict_spec (declared : Option effects.Row) (derived : effects.Row) (required resolved : Bool) :
+    effects.verdict declared derived required resolved = ok (verdictN declared derived required resolved) := by
+  cases declared with
+  | none => cases required <;> simp [effects.verdict, verdictN]
+  | some d =>
+    simp only [effects.verdict, verdictN, agrees_spec, bind_ok]
+    cases rowEq d derived <;> cases required <;> cases resolved <;> simp
+
+/-- A blocking finding exactly when the crate requires effects and the
+function either declares none, or declares a row that differs from its
+fully classified signature. -/
+theorem f001_error_iff (declared : Option effects.Row) (derived : effects.Row) (required resolved : Bool) :
+    effects.verdict declared derived required resolved = ok .Error ↔
+      required = true ∧ (declared = none ∨ (resolved = true ∧ declared ≠ some derived)) := by
+  rw [verdict_spec]
+  cases declared with
+  | none => cases required <;> simp [verdictN]
+  | some d =>
+    have h := rowEq_iff d derived
+    cases hr : rowEq d derived <;> cases required <;> cases resolved <;> simp_all [verdictN]
+
+/-- Silent exactly when the declaration matches, or there is none and none
+is required: a matching declaration is never reported. -/
+theorem f001_silent_iff (declared : Option effects.Row) (derived : effects.Row) (required resolved : Bool) :
+    effects.verdict declared derived required resolved = ok .Silent ↔
+      declared = some derived ∨ (declared = none ∧ required = false) := by
+  rw [verdict_spec]
+  cases declared with
+  | none => cases required <;> simp [verdictN]
+  | some d =>
+    have h := rowEq_iff d derived
+    cases hr : rowEq d derived <;> cases required <;> cases resolved <;> simp_all [verdictN]
 
 end Tauten.Kernel

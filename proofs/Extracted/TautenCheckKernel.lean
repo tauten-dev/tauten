@@ -238,6 +238,40 @@ def effects.agrees
        effects.is_empty r1
   else ok false
 
+/-- [tauten_check_kernel::effects::Verdict]
+    Source: 'crates/tauten-check-kernel/src/effects.rs', lines 150:0-158:1
+    Visibility: public -/
+@[discriminant isize]
+inductive effects.Verdict where
+| Silent : effects.Verdict
+| Warning : effects.Verdict
+| Error : effects.Verdict
+
+/-- [tauten_check_kernel::effects::verdict]:
+    Source: 'crates/tauten-check-kernel/src/effects.rs', lines 173:0-197:1
+    Visibility: public -/
+def effects.verdict
+  (declared : Option effects.Row) (derived : effects.Row) (required : Bool)
+  (resolved : Bool) :
+  Result effects.Verdict
+  := do
+  match declared with
+  | none =>
+    if required
+    then ok effects.Verdict.Error
+    else ok effects.Verdict.Silent
+  | some d =>
+    let b ← effects.agrees d derived
+    if b
+    then ok effects.Verdict.Silent
+    else
+      if required
+      then
+        if resolved
+        then ok effects.Verdict.Error
+        else ok effects.Verdict.Warning
+      else ok effects.Verdict.Warning
+
 /-- [tauten_check_kernel::exception::Excuse]
     Source: 'crates/tauten-check-kernel/src/exception.rs', lines 9:0-16:1
     Visibility: public -/
