@@ -17,7 +17,7 @@
         "kernel-ranks-as-core"
       ],
       "outcome": "proved",
-      "fingerprint": "fnv1a64:852d89df0595b35d"
+      "fingerprint": "fnv1a64:ae4ca99fb47520b8"
     },
     {
       "crate": "tauten-check-kernel",
@@ -41,7 +41,7 @@
         "kernel-ranks-as-core"
       ],
       "outcome": "proved",
-      "fingerprint": "fnv1a64:852d89df0595b35d"
+      "fingerprint": "fnv1a64:ae4ca99fb47520b8"
     },
     {
       "crate": "tauten-check-kernel",
@@ -57,7 +57,7 @@
         "warn-blocks"
       ],
       "outcome": "proved",
-      "fingerprint": "fnv1a64:852d89df0595b35d"
+      "fingerprint": "fnv1a64:ae4ca99fb47520b8"
     },
     {
       "crate": "tauten-check-kernel",
@@ -74,7 +74,7 @@
         "no-level-is-error"
       ],
       "outcome": "proved",
-      "fingerprint": "fnv1a64:852d89df0595b35d"
+      "fingerprint": "fnv1a64:ae4ca99fb47520b8"
     },
     {
       "crate": "tauten-check-kernel",
@@ -91,7 +91,7 @@
         "rule-flag-ignored"
       ],
       "outcome": "proved",
-      "fingerprint": "fnv1a64:852d89df0595b35d"
+      "fingerprint": "fnv1a64:ae4ca99fb47520b8"
     },
     {
       "crate": "tauten-check-kernel",
@@ -112,7 +112,7 @@
         "crate-wide-any"
       ],
       "outcome": "proved",
-      "fingerprint": "fnv1a64:852d89df0595b35d"
+      "fingerprint": "fnv1a64:ae4ca99fb47520b8"
     },
     {
       "crate": "tauten-check-kernel",
@@ -139,7 +139,7 @@
         "missing-key-accepts-one"
       ],
       "outcome": "proved",
-      "fingerprint": "fnv1a64:852d89df0595b35d"
+      "fingerprint": "fnv1a64:ae4ca99fb47520b8"
     },
     {
       "crate": "tauten-check-kernel",
@@ -161,7 +161,7 @@
         "missing-key-accepts-one"
       ],
       "outcome": "proved",
-      "fingerprint": "fnv1a64:852d89df0595b35d"
+      "fingerprint": "fnv1a64:ae4ca99fb47520b8"
     },
     {
       "crate": "tauten-check-kernel",
@@ -177,7 +177,7 @@
         "warnings-counted"
       ],
       "outcome": "proved",
-      "fingerprint": "fnv1a64:852d89df0595b35d"
+      "fingerprint": "fnv1a64:ae4ca99fb47520b8"
     },
     {
       "crate": "tauten-check-kernel",
@@ -198,7 +198,7 @@
         "missing-key-accepts-one"
       ],
       "outcome": "proved",
-      "fingerprint": "fnv1a64:852d89df0595b35d"
+      "fingerprint": "fnv1a64:ae4ca99fb47520b8"
     },
     {
       "crate": "tauten-check-kernel",
@@ -219,7 +219,7 @@
         "search-stops-short"
       ],
       "outcome": "proved",
-      "fingerprint": "fnv1a64:852d89df0595b35d"
+      "fingerprint": "fnv1a64:ae4ca99fb47520b8"
     },
     {
       "crate": "tauten-check-kernel",
@@ -241,7 +241,7 @@
         "unlisted-rule-subsumed"
       ],
       "outcome": "proved",
-      "fingerprint": "fnv1a64:852d89df0595b35d"
+      "fingerprint": "fnv1a64:ae4ca99fb47520b8"
     },
     {
       "crate": "tauten-proof-instances",
@@ -265,7 +265,7 @@
         "attributes-dropped"
       ],
       "outcome": "proved",
-      "fingerprint": "fnv1a64:480b50662a86d2f6"
+      "fingerprint": "fnv1a64:64c6a2530b1d9a59"
     },
     {
       "crate": "tauten-proof-instances",
@@ -289,7 +289,7 @@
         "attributes-dropped"
       ],
       "outcome": "proved",
-      "fingerprint": "fnv1a64:480b50662a86d2f6"
+      "fingerprint": "fnv1a64:64c6a2530b1d9a59"
     },
     {
       "crate": "tauten-proof-instances",
@@ -313,7 +313,7 @@
         "attributes-dropped"
       ],
       "outcome": "proved",
-      "fingerprint": "fnv1a64:480b50662a86d2f6"
+      "fingerprint": "fnv1a64:64c6a2530b1d9a59"
     },
     {
       "crate": "tauten-proof-instances",
@@ -337,7 +337,7 @@
         "attributes-dropped"
       ],
       "outcome": "proved",
-      "fingerprint": "fnv1a64:480b50662a86d2f6"
+      "fingerprint": "fnv1a64:64c6a2530b1d9a59"
     },
     {
       "crate": "tauten-proof-instances",
@@ -361,7 +361,7 @@
         "ensures-reported-as-requires"
       ],
       "outcome": "proved",
-      "fingerprint": "fnv1a64:480b50662a86d2f6"
+      "fingerprint": "fnv1a64:64c6a2530b1d9a59"
     },
     {
       "crate": "tauten-proof-instances",
@@ -387,7 +387,7 @@
         "ensures-reported-as-requires"
       ],
       "outcome": "proved",
-      "fingerprint": "fnv1a64:480b50662a86d2f6"
+      "fingerprint": "fnv1a64:64c6a2530b1d9a59"
     },
     {
       "crate": "tauten-proof-instances",
@@ -411,7 +411,7 @@
         "ensures-reported-as-requires"
       ],
       "outcome": "proved",
-      "fingerprint": "fnv1a64:480b50662a86d2f6"
+      "fingerprint": "fnv1a64:64c6a2530b1d9a59"
     },
     {
       "crate": "tauten-proof-instances",
@@ -432,7 +432,7 @@
         "requires-after-body"
       ],
       "outcome": "proved",
-      "fingerprint": "fnv1a64:480b50662a86d2f6"
+      "fingerprint": "fnv1a64:64c6a2530b1d9a59"
     }
   ]
 }

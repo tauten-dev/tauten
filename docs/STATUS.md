@@ -28,7 +28,7 @@ published. One pilot on the dev split has been run with a real agent; nothing he
 | M4 | Pilot with a real agent (dev split) | **exercised** | `bench/reports/2026-11-18-pilot`: 36 trials, Sonnet 5.5. Ceiling: 0 escaped defects in every arm; enforcement removed unchecked arithmetic (A 6/12, B 5/12, C 0/12 trials). Held-out suite being designed |
 | M5 | Repo (public), CI gate, tag-driven release workflow with crates.io trusted publishing (no stored token) | **exercised** | 0.0.1 (stored token) and 0.0.2 (trusted publishing) of all four crates published 2026-11-18 by `release.yml` after the gate passed. A new crate's first publish still needs a token |
 | M7 | Website (tauten.dev) | **exercised** (live) | `tauten-dev/tauten-dev.github.io`, generated from a pinned commit with drift checks; benchmark section shows the dev-split pilot |
-| M8 | Writfold adoption | not started | |
+| M8 | Writfold adoption | **exercised** (worktree, not merged) | branch `tauten-adoption` in a separate worktree: tiers, 19 reasoned expects, baseline 712 → 679, then proof claims (151 claims proved, 96-minute gate) subsume 130 of 159 kernel N001/P003 findings → baseline 549; `scripts/tauten-check` passes. Awaiting the owner's review |
 | — | Plyward review | done | `docs/reviews/plyward-2026-11-18.md`; three defects fixed in `e7fbc8c` |
 
 ## Quality
@@ -70,8 +70,19 @@ published. One pilot on the dev split has been run with a real agent; nothing he
 - The capability rule is discipline, not confinement (see MAPPING.md).
 - The kernel's arithmetic and indexing rules duplicate what an Aeneas proof
   already establishes (dry-run report). P5 subsumes them only for functions
-  with a recorded, current, total proof; writfold has not adopted the
-  claims format yet, so its 231 findings are unchanged until it does.
+  with a recorded, current, total proof. Writfold's adoption branch
+  subsumes 130 of its 159 extracted-kernel findings this way; the other 29
+  are in functions whose theorems need preconditions (`i < len`, a cursor
+  invariant, a capacity bound).
+- No credit through callers: a helper with a precondition gets no
+  subsumption even when every caller is proved total.
+- tauten trusts the project's gate output, including its total-shape check;
+  it does not re-check the Lean theorems itself.
+- Any edit under a claimed crate or `proofs/` stales every claim of that
+  crate (writfold: a 1.5 h re-run). The workspace manifest (without its
+  `version` lines) and the toolchain pin count too, since 2026-11-19.
+- Mutant counting differs: writfold's gate counts only direct proof
+  failures, tauten's also counts theorems that depend on a broken one.
 - S002 (placeholder comments) is a heuristic.
 - The benchmark's dev split (4 tasks, one host) hit a ceiling in the pilot.
   A held-out suite (20 tasks, 3 hosts, per-trial containers) is built on the
