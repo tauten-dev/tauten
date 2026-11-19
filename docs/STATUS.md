@@ -3,8 +3,9 @@
 Updated 2026-11-19. Name final: tauten; license MIT; code at github.com/tauten-dev/tauten (public). Every line says how far an item got:
 **specified → implemented → exercised**. "Exercised" means it ran against
 real input in this repository, and the evidence is named. Versions 0.0.1
-0.0.2 and 0.0.3 are on crates.io; the site is at tauten.dev. Development pilot
-completed; held-out benefit not established.
+0.0.2 and 0.0.3 are on crates.io; the site is at tauten.dev. Benchmark: no
+defect-reduction benefit established (ceiling; held-out run stopped by its
+go/no-go rule; audited findings were not defects).
 
 ## Milestones (see PLAN.md §6)
 
@@ -26,7 +27,7 @@ completed; held-out benefit not established.
 | P5 | Proof tier for users (M3): `proofs/claims.toml`; `cargo tauten proofs` (JSON outcome per claim: proved, drift, build-failed, audit-failed, mutant-survived, tool-missing; records `proofs/claims.json` with a source fingerprint); template `crates/cargo-tauten/templates/proofs` + `cargo tauten init --proofs`; N001/P003 findings in kernel functions with a fresh, total, proved claim reported as subsumed (kernel `subsume::subsumes`, 4 claims, 4 mutants); `proofs/TRUST.md`; badge data `proofs/claims.json` | **exercised** (local and GitHub CI) | Worked example `bench/hosts/ledger` (`apply_spec`, 2 mutants, `proved`, gate 53 s cold); fixture `fixtures/proofs-subsume` with a recorded gate run and `tests/proofs.rs` (fresh/stale/non-total/unclaimed, tool-missing without the toolchain); tauten's own gate via `cargo tauten proofs`: 20 of 20 claims `proved` (93 audited claims, 36 mutants, 409 s cold). CI does not run `cargo tauten proofs` yet; the site's proofs page is rendered from `claims.json` |
 | M3 | Proof tier for users (Aeneas/Lean template from writfold) | **exercised** (local and GitHub CI) | see P5; `proofs.yml` green on main 2026-11-19 (93 claims, 36 mutants, gate 928 s) |
 | M4 | Benchmark harness: host, 4 dev tasks, runner, analysis, admission gate | **exercised with built-in agents only** | `bench/README.md` (validation table); `scripts/bench-validate` in the gate |
-| M4 | Pilot with a real agent (dev split) | **exercised** | `bench/reports/2026-11-18-pilot`: 36 trials, Sonnet 5.5. Ceiling: 0 escaped defects in every arm; enforcement removed unchecked arithmetic (A 6/12, B 5/12, C 0/12 trials). Held-out suite being designed |
+| M4 | Pilot with a real agent (dev split) | **exercised** | `bench/reports/2026-11-18-pilot`: 36 trials, Sonnet 5.5. Ceiling: 0 escaped defects in every arm; enforcement removed unchecked arithmetic (A 6/12, B 5/12, C 0/12 trials). Calibration rounds 1-3 (200 trials, 2 escaped) and the E1 audit: see Known gaps |
 | M5 | Repo (public), CI gate, tag-driven release workflow with crates.io trusted publishing (no stored token) | **exercised** | 0.0.1 (stored token) and 0.0.2 (trusted publishing) of all four crates published 2026-11-18 by `release.yml` after the gate passed. `tauten-check-kernel` first published 0.0.2 with a one-off token (2026-11-19), then trusted publishing; 0.0.3 of all five crates by `release.yml` |
 | M7 | Website (tauten.dev) | **exercised** (live) | `tauten-dev/tauten-dev.github.io`, generated from a pinned commit with drift checks; benchmark section shows the dev-split pilot |
 | M8 | Writfold adoption | **exercised** (worktree, not merged) | branch `tauten-adoption` in a separate worktree: tiers, 19 reasoned expects, baseline 712 → 679, then proof claims subsume 130 of 159 kernel N001/P003 findings → baseline 549; then four helpers rewritten to be total and re-proved (151 claims proved, 105-minute gate) → 142 subsumed, baseline 527; `scripts/tauten-check` passes with cargo-tauten 0.0.3 from crates.io. Awaiting the owner's review |
@@ -86,16 +87,25 @@ completed; held-out benefit not established.
 - Mutant counting differs: writfold's gate counts only direct proof
   failures, tauten's also counts theorems that depend on a broken one.
 - S002 (placeholder comments) is a heuristic.
-- The benchmark's dev split (4 tasks, one host) hit a ceiling in the pilot.
-  A held-out suite (20 tasks, 3 hosts, per-trial containers) is built on the
-  local branch `bench-heldout` and kept unpublished until it has run; running
-  it needs the owner's budget approval.
+- The benchmark hits a ceiling. Three calibration rounds without the
+  profile (200 trials, Sonnet 5.5 and Haiku 5.5, 7 tasks on 3 hosts, hidden
+  oracles in dev and release builds) had 2 escaped defects. The
+  preregistered go/no-go rule (10-26 of 40 on the probe tasks) came out
+  no-go (Sonnet 1/40, Haiku 0/40), so the held-out run was not started.
+- Finding validity (audit E1, registered before classifying): of 120
+  sampled deny-level findings in that agent-written code, two independent
+  classifiers confirmed **0** as reachable defects (exact 95% interval
+  0-3.0%); 118 refuted with a written bound argument, 2 undetermined. Neither
+  escaped defect was on a flagged line. On these hosts the profile's
+  findings are predominantly not defects. Untested: whether those bounds
+  survive later edits (maintenance chains, not run).
 - `#[refined]` wraps only `tauten::refine::Frozen` types (primitives,
   `String`, std containers of those): interior mutability or a user-written
   `Clone` could break a checked predicate (external review, 2026-11-19).
   Predicates are arbitrary closures, not a checked fragment.
 - Contracts do not yet support `async fn` or generic newtypes; they have no
   Kani (`cfg(kani)`) lowering yet.
-- **Development pilot completed; held-out benefit not established.** The
-  dev-split pilot could not separate the arms on escaped defects; nothing
-  here supports a claim that the profile reduces escaped defects.
+- **No defect-reduction benefit established.** The pilot could not
+  separate the arms, the held-out run was stopped by its own go/no-go rule,
+  and audited findings were not defects; nothing here supports a claim that
+  the profile reduces escaped defects.
