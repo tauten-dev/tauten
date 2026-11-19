@@ -49,6 +49,14 @@ start_from = [
     "tauten_check_kernel::table::owner_at",
     "tauten_check_kernel::table::duplicate",
     "tauten_check_kernel::table::validate",
+    "tauten_check_kernel::effects::empty",
+    "tauten_check_kernel::effects::add",
+    "tauten_check_kernel::effects::add_at",
+    "tauten_check_kernel::effects::derive",
+    "tauten_check_kernel::effects::missing",
+    "tauten_check_kernel::effects::extra",
+    "tauten_check_kernel::effects::is_empty",
+    "tauten_check_kernel::effects::agrees",
 ]
 
 # Stated locally, not inherited: the proofs gate translates this crate in a

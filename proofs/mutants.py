@@ -177,6 +177,35 @@ SUBSUME_MUTANTS = (
            (T + "subsumes_spec",)),
 )
 
+EFFECTS_MUTANTS = (
+    # effects: a writable directory no longer grants writing
+    Mutant("dir-not-write", "effects.rs",
+           "        Source::Dir => (false, false, true, true, false),",
+           "        Source::Dir => (false, false, true, false, false),",
+           (T + "derive_spec", T + "f001_decision")),
+    # effects: a read-only directory grants writing
+    Mutant("readdir-writes", "effects.rs",
+           "        Source::ReadDir => (false, false, true, false, false),",
+           "        Source::ReadDir => (false, false, true, true, false),",
+           (T + "derive_spec", T + "f001_decision")),
+    # effects: a `Result` return no longer derives `fail`
+    Mutant("fail-ignored", "effects.rs",
+           "        fail: fallible,",
+           "        fail: false,",
+           (T + "derive_spec", T + "f001_decision")),
+    # effects: a declared label nothing grants is accepted
+    Mutant("agrees-ignores-extra", "effects.rs",
+           "    is_empty(missing(declared, derived)) && is_empty(extra(declared, derived))",
+           "    is_empty(missing(declared, derived))",
+           (T + "agrees_spec", T + "f001_decision", T + "f001_examples")),
+    # effects: `missing` reports `net` the wrong way round
+    Mutant("missing-net-swapped", "effects.rs",
+           "        net: derived.net && !declared.net,",
+           "        net: declared.net && !derived.net,",
+           (T + "missing_spec", T + "extra_spec", T + "agrees_spec", T + "f001_decision",
+            T + "f001_examples")),
+)
+
 MUTANTS = (
     # tiers: a tier may depend on its own tier; `<` refuses same-tier edges
     Mutant("same-tier-refused", "tiers.rs",
@@ -228,7 +257,7 @@ MUTANTS = (
            "    if crate_wide && blocking {",
            "    if crate_wide || blocking {",
            (T + "exception_spec",)),
-) + RATCHET_MUTANTS + TABLE_MUTANTS + SUBSUME_MUTANTS
+) + RATCHET_MUTANTS + TABLE_MUTANTS + SUBSUME_MUTANTS + EFFECTS_MUTANTS
 
 I = "Tauten.Instances."
 REFINED_TYPES = ("percent", "port", "offset", "count")

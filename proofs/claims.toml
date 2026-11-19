@@ -108,6 +108,38 @@ theorems = ["Tauten.Kernel.subsumes_spec", "Tauten.Kernel.stale_proof_never_subs
 mutants = ["stale-proof-subsumes", "core-subsumed", "any-finding-subsumed", "unlisted-rule-subsumed"]
 
 [[claim]]
+crate = "tauten-check-kernel"
+file = "crates/tauten-check-kernel/src/effects.rs"
+function = "derive"
+lean = "tauten_check_kernel.effects.derive"
+theorems = ["Tauten.Kernel.derive_spec", "Tauten.Kernel.f001_decision"]
+mutants = ["dir-not-write", "readdir-writes", "fail-ignored"]
+
+[[claim]]
+crate = "tauten-check-kernel"
+file = "crates/tauten-check-kernel/src/effects.rs"
+function = "missing"
+lean = "tauten_check_kernel.effects.missing"
+theorems = ["Tauten.Kernel.missing_spec"]
+mutants = ["missing-net-swapped"]
+
+[[claim]]
+crate = "tauten-check-kernel"
+file = "crates/tauten-check-kernel/src/effects.rs"
+function = "extra"
+lean = "tauten_check_kernel.effects.extra"
+theorems = ["Tauten.Kernel.extra_spec"]
+mutants = ["missing-net-swapped"]
+
+[[claim]]
+crate = "tauten-check-kernel"
+file = "crates/tauten-check-kernel/src/effects.rs"
+function = "agrees"
+lean = "tauten_check_kernel.effects.agrees"
+theorems = ["Tauten.Kernel.agrees_spec", "Tauten.Kernel.f001_decision", "Tauten.Kernel.f001_examples"]
+mutants = ["agrees-ignores-extra", "missing-net-swapped"]
+
+[[claim]]
 crate = "tauten-proof-instances"
 file = "crates/tauten-proof-instances/src/refined.rs"
 function = "Percent::try_new"

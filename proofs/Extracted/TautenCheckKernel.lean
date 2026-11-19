@@ -20,6 +20,224 @@ set_option maxRecDepth 2048
 
 namespace tauten_check_kernel
 
+/-- [tauten_check_kernel::effects::Source]
+    Source: 'crates/tauten-check-kernel/src/effects.rs', lines 13:0-26:1
+    Visibility: public -/
+@[discriminant isize]
+inductive effects.Source where
+| Clock : effects.Source
+| Env : effects.Source
+| Dir : effects.Source
+| ReadDir : effects.Source
+| Net : effects.Source
+| Plain : effects.Source
+
+/-- [tauten_check_kernel::effects::Row]
+    Source: 'crates/tauten-check-kernel/src/effects.rs', lines 30:0-45:1
+    Visibility: public -/
+structure effects.Row where
+  clock : Bool
+  env : Bool
+  fs_read : Bool
+  fs_write : Bool
+  net : Bool
+  fail : Bool
+  suspend : Bool
+
+/-- [tauten_check_kernel::effects::empty]:
+    Source: 'crates/tauten-check-kernel/src/effects.rs', lines 49:0-59:1
+    Visibility: public -/
+def effects.empty : Result effects.Row := do
+  ok
+    {
+      clock := false,
+      env := false,
+      fs_read := false,
+      fs_write := false,
+      net := false,
+      fail := false,
+      suspend := false
+    }
+
+/-- [tauten_check_kernel::effects::add]:
+    Source: 'crates/tauten-check-kernel/src/effects.rs', lines 63:0-81:1
+    Visibility: public -/
+def effects.add
+  (row : effects.Row) (source : effects.Source) : Result effects.Row := do
+  let (clock, env, fs_read, fs_write, net) ←
+    match source with
+    | effects.Source.Clock => ok (true, false, false, false, false)
+    | effects.Source.Env => ok (false, true, false, false, false)
+    | effects.Source.Dir => ok (false, false, true, true, false)
+    | effects.Source.ReadDir => ok (false, false, true, false, false)
+    | effects.Source.Net => ok (false, false, false, false, true)
+    | effects.Source.Plain => ok (false, false, false, false, false)
+  let b ← if row.clock
+            then ok true
+            else ok clock
+  let b1 ← if row.env
+             then ok true
+             else ok env
+  let b2 ← if row.fs_read
+             then ok true
+             else ok fs_read
+  let b3 ← if row.fs_write
+             then ok true
+             else ok fs_write
+  if row.net
+  then ok { row with clock := b, env := b1, fs_read := b2, fs_write := b3 }
+  else
+    ok { row with clock := b, env := b1, fs_read := b2, fs_write := b3, net }
+
+/-- [tauten_check_kernel::effects::add_at]:
+    Source: 'crates/tauten-check-kernel/src/effects.rs', lines 85:0-90:1
+    Visibility: public -/
+def effects.add_at
+  (row : effects.Row) (sources : Slice effects.Source) (i : Std.Usize) :
+  Result effects.Row
+  := do
+  let o ←
+    core.slice.Slice.get (core.slice.index.SliceIndexUsizeSlice effects.Source)
+      sources i
+  match o with
+  | none => ok row
+  | some source => effects.add row source
+
+/-- [tauten_check_kernel::effects::derive]: loop body 0:
+    Source: 'crates/tauten-check-kernel/src/effects.rs', lines 107:4-110:5
+    Visibility: public -/
+@[rust_loop_body]
+def effects.derive_loop.body
+  (sources : Slice effects.Source) (row : effects.Row) (i : Std.Usize) :
+  Result (ControlFlow (effects.Row × Std.Usize) effects.Row)
+  := do
+  let i1 := Slice.len sources
+  if i < i1
+  then
+    let row1 ← effects.add_at row sources i
+    let i2 ← lift (core.num.Usize.saturating_add i 1#usize)
+    ok (cont (row1, i2))
+  else ok (done row)
+
+/-- [tauten_check_kernel::effects::derive]: loop 0:
+    Source: 'crates/tauten-check-kernel/src/effects.rs', lines 107:4-110:5
+    Visibility: public -/
+@[rust_loop]
+def effects.derive_loop
+  (sources : Slice effects.Source) (row : effects.Row) (i : Std.Usize) :
+  Result effects.Row
+  := do
+  loop
+    (fun (row1, i1) => effects.derive_loop.body sources row1 i1)
+    (row, i)
+
+/-- [tauten_check_kernel::effects::derive]:
+    Source: 'crates/tauten-check-kernel/src/effects.rs', lines 95:0-112:1
+    Visibility: public -/
+def effects.derive
+  (sources : Slice effects.Source) (fallible : Bool) (asynchronous : Bool) :
+  Result effects.Row
+  := do
+  let start ← effects.empty
+  effects.derive_loop sources
+    { start with fail := fallible, suspend := asynchronous } 0#usize
+
+/-- [tauten_check_kernel::effects::missing]:
+    Source: 'crates/tauten-check-kernel/src/effects.rs', lines 117:0-127:1
+    Visibility: public -/
+def effects.missing
+  (declared : effects.Row) (derived : effects.Row) : Result effects.Row := do
+  let (declared1, b) ←
+    if derived.clock
+    then ok (declared, ¬ declared.clock)
+    else ok (declared, false)
+  let (declared2, b1) ←
+    if derived.env
+    then ok (declared1, ¬ declared1.env)
+    else ok (declared1, false)
+  let (declared3, b2) ←
+    if derived.fs_read
+    then ok (declared2, ¬ declared2.fs_read)
+    else ok (declared2, false)
+  let (declared4, b3) ←
+    if derived.fs_write
+    then ok (declared3, ¬ declared3.fs_write)
+    else ok (declared3, false)
+  let (declared5, b4) ←
+    if derived.net
+    then ok (declared4, ¬ declared4.net)
+    else ok (declared4, false)
+  let (declared6, b5) ←
+    if derived.fail
+    then ok (declared5, ¬ declared5.fail)
+    else ok (declared5, false)
+  if derived.suspend
+  then
+    ok
+      {
+        clock := b,
+        env := b1,
+        fs_read := b2,
+        fs_write := b3,
+        net := b4,
+        fail := b5,
+        suspend := (¬ declared6.suspend)
+      }
+  else
+    ok
+      {
+        clock := b,
+        env := b1,
+        fs_read := b2,
+        fs_write := b3,
+        net := b4,
+        fail := b5,
+        suspend := false
+      }
+
+/-- [tauten_check_kernel::effects::extra]:
+    Source: 'crates/tauten-check-kernel/src/effects.rs', lines 131:0-133:1
+    Visibility: public -/
+def effects.extra
+  (declared : effects.Row) (derived : effects.Row) : Result effects.Row := do
+  effects.missing derived declared
+
+/-- [tauten_check_kernel::effects::is_empty]:
+    Source: 'crates/tauten-check-kernel/src/effects.rs', lines 137:0-139:1
+    Visibility: public -/
+def effects.is_empty (row : effects.Row) : Result Bool := do
+  let b ←
+    if row.clock
+    then ok true
+    else
+      if row.env
+      then ok true
+      else
+        if row.fs_read
+        then ok true
+        else
+          if row.fs_write
+          then ok true
+          else
+            if row.net
+            then ok true
+            else if row.fail
+                 then ok true
+                 else ok row.suspend
+  ok (¬ b)
+
+/-- [tauten_check_kernel::effects::agrees]:
+    Source: 'crates/tauten-check-kernel/src/effects.rs', lines 144:0-146:1
+    Visibility: public -/
+def effects.agrees
+  (declared : effects.Row) (derived : effects.Row) : Result Bool := do
+  let r ← effects.missing declared derived
+  let b ← effects.is_empty r
+  if b
+  then let r1 ← effects.extra declared derived
+       effects.is_empty r1
+  else ok false
+
 /-- [tauten_check_kernel::exception::Excuse]
     Source: 'crates/tauten-check-kernel/src/exception.rs', lines 9:0-16:1
     Visibility: public -/

@@ -16,6 +16,7 @@
 
 extern crate alloc;
 
+pub mod effects;
 pub mod exception;
 pub mod ratchet;
 pub mod severity;
