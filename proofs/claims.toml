@@ -161,7 +161,7 @@ file = "crates/tauten-check-kernel/src/span.rs"
 function = "innermost"
 lean = "tauten_check_kernel.span.innermost"
 theorems = ["Tauten.Kernel.innermost_spec", "Tauten.Kernel.innermost_examples"]
-mutants = ["tie-takes-later", "widest-wins", "covers-ignores-end"]
+mutants = ["tie-takes-later", "widest-wins", "covers-ignores-end", "skips-first-span"]
 
 [[claim]]
 crate = "tauten-proof-instances"

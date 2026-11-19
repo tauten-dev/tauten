@@ -464,3 +464,41 @@ impl G<u16> {
     assert_eq!(check(&claimed, 9), Severity::Error);
     assert_eq!(check(&claimed, 12), Severity::Error);
 }
+
+/// The previous (unproved) enclosing-function lookup, kept as a reference.
+fn reference_enclosing(spans: &[FunctionSpan], line: u32) -> Option<&FunctionSpan> {
+    spans
+        .iter()
+        .filter(|span| span.start <= line && line <= span.end)
+        .min_by_key(|span| span.end.saturating_sub(span.start))
+}
+
+#[test]
+fn proved_lookup_agrees_with_the_reference_on_random_spans() {
+    let mut state: u64 = 0x9e37_79b9_7f4a_7c15;
+    let mut next = |bound: u32| {
+        state ^= state << 13;
+        state ^= state >> 7;
+        state ^= state << 17;
+        u32::try_from(state % u64::from(bound)).expect("bounded")
+    };
+    for _ in 0..2000 {
+        let count = next(8);
+        let spans: Vec<FunctionSpan> = (0..count)
+            .map(|i| {
+                let start = next(40);
+                FunctionSpan {
+                    path: format!("f{i}"),
+                    start,
+                    end: start + next(20),
+                }
+            })
+            .collect();
+        let line = next(60);
+        assert_eq!(
+            enclosing(&spans, line).map(|s| &s.path),
+            reference_enclosing(&spans, line).map(|s| &s.path),
+            "{spans:?} at {line}"
+        );
+    }
+}

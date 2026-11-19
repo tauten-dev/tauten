@@ -250,6 +250,11 @@ SPAN_MUTANTS = (
            "        Some(current) if width(*current) <= width(*candidate) => best,",
            "        Some(current) if width(*current) >= width(*candidate) => best,",
            (T + "innermost_spec",)),
+    # span: the first span is never considered
+    Mutant("skips-first-span", "span.rs",
+           "    let mut i: usize = 0;",
+           "    let mut i: usize = 1;",
+           (T + "innermost_spec",)),
     # span: a span ending before the line still covers it
     Mutant("covers-ignores-end", "span.rs",
            "    lines.0 <= line && line <= lines.1",
