@@ -5,7 +5,7 @@ import Tauten
 # Axiom audit, constructor enumeration and coverage of the extraction
 
 Adapted from writfold's `proofs/Audit.lean` and the P0 probe. Covers
-`tauten_check_kernel` (P1, P2, P4) and `tauten_proof_instances` (P3, the
+`tauten_check_kernel` (P1, P2, P4, P5) and `tauten_proof_instances` (P3, the
 macros' expansion of its instances).
 
 1. Every theorem under `Tauten` depends only on Lean's standard three axioms
@@ -70,6 +70,11 @@ def claims : List Name := [
   -- rule-table well-formedness (P4)
   ``Tauten.Kernel.validate_ok_iff,
   ``Tauten.Kernel.validate_examples,
+  -- proof subsumption of arithmetic and indexing findings (P5)
+  ``Tauten.Kernel.subsumes_spec,
+  ``Tauten.Kernel.stale_proof_never_subsumes,
+  ``Tauten.Kernel.subsumes_only_in_kernel,
+  ``Tauten.Kernel.subsumes_only_arithmetic_and_indexing,
   -- the macros' generated code, per instance (P3)
   ``Tauten.Instances.percent_try_new_shape,
   ``Tauten.Instances.percent_try_new_ok_iff,
@@ -163,6 +168,7 @@ def reviewedFunctions : List Name := [
   ``tauten_check_kernel.ratchet.increases,
   ``tauten_check_kernel.ratchet.increases_loop,
   ``tauten_check_kernel.ratchet.increases_loop.body,
+  ``tauten_check_kernel.subsume.subsumes,
   ``tauten_check_kernel.table.is_at,
   ``tauten_check_kernel.table.find_before,
   ``tauten_check_kernel.table.find_before_loop,

@@ -1,0 +1,39 @@
+# Proof claims (tauten proof tier; `cargo tauten init --proofs` generated
+# this file). `cargo tauten proofs` runs the gate below and records one
+# outcome per claim in proofs/claims.json: proved, drift, build-failed,
+# audit-failed, mutant-survived or tool-missing.
+version = 1
+
+[gate]
+# Run from the workspace root. proofs/run.sh checks for Docker and the
+# pinned image, then runs proofs/gate.py in it.
+command = ["sh", "proofs/run.sh"]
+# Crate directories the gate translates with Charon/Aeneas.
+crates = ["crates/ledger-kernel"]
+
+# The worked example: one theorem about `apply`, total (it never fails for
+# any input), so arithmetic and indexing findings inside `apply` would be
+# subsumed in a kernel crate. Two mutants of the Rust source must break it.
+[[claim]]
+crate = "ledger-kernel"
+file = "crates/ledger-kernel/src/lib.rs"
+function = "apply"
+lean = "ledger_kernel.apply"
+theorems = ["Proofs.LedgerKernel.apply_spec"]
+total = "Proofs.LedgerKernel.apply_spec"
+subsumes = ["TAU-N001", "TAU-P003"]
+mutants = ["deposit-wraps", "withdraw-reports-overflow"]
+
+# A deposit wraps around instead of reporting overflow.
+[[mutant]]
+name = "deposit-wraps"
+file = "crates/ledger-kernel/src/lib.rs"
+before = "balance.checked_add(amount).ok_or(Rejection::Overflow)"
+after = "Some(balance.wrapping_add(amount)).ok_or(Rejection::Overflow)"
+
+# An overdrawn withdrawal reported as an overflow.
+[[mutant]]
+name = "withdraw-reports-overflow"
+file = "crates/ledger-kernel/src/lib.rs"
+before = "ok_or(Rejection::Insufficient)"
+after = "ok_or(Rejection::Overflow)"

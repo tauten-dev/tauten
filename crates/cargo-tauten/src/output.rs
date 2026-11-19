@@ -30,9 +30,10 @@ pub fn print(diags: &[Diagnostic], options: &Options) -> Result<()> {
         .iter()
         .filter(|d| all_warnings || d.severity == Severity::Error);
     for d in shown {
-        let label = match d.severity {
-            Severity::Error => "error",
-            Severity::Warning => "warning",
+        let label = match (d.severity, &d.subsumed_by) {
+            (_, Some(_)) => "subsumed",
+            (Severity::Error, None) => "error",
+            (Severity::Warning, None) => "warning",
         };
         let tier = d
             .tier
@@ -47,7 +48,13 @@ pub fn print(diags: &[Diagnostic], options: &Options) -> Result<()> {
         if let Some(rule) = &d.rule {
             writeln!(out, "  = rule: {rule} (enforced by {:?})", d.enforced_by)?;
         }
-        if let Some(fix) = &d.fix {
+        if let Some(theorem) = &d.subsumed_by {
+            writeln!(
+                out,
+                "  = subsumed by proof {theorem} ({}; not an error)",
+                crate::proofs::CLAIMS_JSON
+            )?;
+        } else if let Some(fix) = &d.fix {
             writeln!(out, "  = fix: {fix}")?;
         }
         writeln!(out)?;
@@ -56,11 +63,15 @@ pub fn print(diags: &[Diagnostic], options: &Options) -> Result<()> {
         .iter()
         .filter(|d| d.severity == Severity::Error)
         .count();
-    let warnings = diags.len().saturating_sub(errors);
+    let subsumed = diags.iter().filter(|d| d.subsumed_by.is_some()).count();
+    let warnings = diags.len().saturating_sub(errors).saturating_sub(subsumed);
     if !all_warnings && warnings > 0 {
         let mut by_rule: std::collections::BTreeMap<(&str, &str), usize> =
             std::collections::BTreeMap::new();
-        for d in diags.iter().filter(|d| d.severity == Severity::Warning) {
+        for d in diags
+            .iter()
+            .filter(|d| d.severity == Severity::Warning && d.subsumed_by.is_none())
+        {
             let slot = by_rule
                 .entry((d.id.as_str(), d.rule.as_deref().unwrap_or("")))
                 .or_insert(0);
@@ -71,14 +82,21 @@ pub fn print(diags: &[Diagnostic], options: &Options) -> Result<()> {
             writeln!(out, "  {count:>6}  {id}  {title}")?;
         }
     }
-    if baselined > 0 {
+    if !all_warnings && subsumed > 0 {
         writeln!(
             out,
-            "tauten: {errors} error(s), {warnings} warning(s), {baselined} accepted by the baseline"
+            "{subsumed} finding(s) subsumed by proofs ({}; run with --warnings to list them)",
+            crate::proofs::CLAIMS_JSON
         )?;
-    } else {
-        writeln!(out, "tauten: {errors} error(s), {warnings} warning(s)")?;
     }
+    let mut summary = format!("tauten: {errors} error(s), {warnings} warning(s)");
+    if subsumed > 0 {
+        summary.push_str(&format!(", {subsumed} subsumed by proofs"));
+    }
+    if baselined > 0 {
+        summary.push_str(&format!(", {baselined} accepted by the baseline"));
+    }
+    writeln!(out, "{summary}")?;
     Ok(())
 }
 

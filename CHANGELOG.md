@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+- `cargo tauten proofs`: runs a project's proof gate (`proofs/claims.toml`)
+  and prints one JSON outcome per claim (`proved`, `drift`,
+  `build-failed`, `audit-failed`, `mutant-survived`, `tool-missing`);
+  records them in `proofs/claims.json`.
+- `cargo tauten init --proofs <crate>` writes the Charon/Aeneas/Lean proof
+  template for a kernel crate.
+- In kernel crates, TAU-N001/TAU-P003 findings inside a function with a
+  current, total, proved claim are reported as subsumed by the proof
+  (JSON field `subsumed_by`, severity `warning`), not as errors.
+- Rule-table validation and proof subsumption are decided by
+  `tauten-check-kernel` and proved in Lean (`docs/proofs/README.md`).
+
 ## 0.0.2 (2026-11-18)
 
 - `#[refined]` rejects derives and attributes that could construct a value

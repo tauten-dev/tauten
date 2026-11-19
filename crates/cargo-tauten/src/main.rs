@@ -4,6 +4,7 @@ mod baseline_file;
 mod clippy;
 mod init;
 mod output;
+mod proofs;
 mod workspace;
 mod wrapper;
 
@@ -75,7 +76,8 @@ enum Command {
         #[arg(long)]
         allow_increase: bool,
     },
-    /// Propose a tier for every crate without one and write the agent profile.
+    /// Propose a tier for every crate without one and write the agent profile;
+    /// with `--proofs <crate>`, set up the proof tier for a kernel crate instead.
     Init {
         /// Path to Cargo.toml (default: discover from the current directory).
         #[arg(long)]
@@ -83,6 +85,20 @@ enum Command {
         /// Apply the plan (default: print it only).
         #[arg(long)]
         write: bool,
+        /// Set up `proofs/` (Charon/Aeneas/Lean template) for this kernel crate.
+        #[arg(long, value_name = "CRATE")]
+        proofs: Option<String>,
+    },
+    /// Run the project's proof gate (`proofs/claims.toml`) and print one JSON
+    /// outcome per claim: proved, drift, build-failed, audit-failed,
+    /// mutant-survived or tool-missing. Records them in `proofs/claims.json`.
+    Proofs {
+        /// Path to Cargo.toml (default: discover from the current directory).
+        #[arg(long)]
+        manifest_path: Option<PathBuf>,
+        /// Print the outcomes without updating `proofs/claims.json`.
+        #[arg(long)]
+        no_write: bool,
     },
     /// Explain a rule, e.g. `cargo tauten explain TAU-P001`; without an ID, list all rules.
     Explain {
@@ -194,10 +210,27 @@ fn run(cli: Cli) -> Result<ExitCode> {
         Command::Init {
             manifest_path,
             write,
+            proofs: Some(krate),
+        } => {
+            let ws = workspace::load(manifest_path.as_deref(), &[])?;
+            init::proofs(&ws, &krate, write)?;
+            Ok(ExitCode::SUCCESS)
+        }
+        Command::Init {
+            manifest_path,
+            write,
+            proofs: None,
         } => {
             let ws = workspace::load(manifest_path.as_deref(), &[])?;
             init::run(&ws, write)?;
             Ok(ExitCode::SUCCESS)
+        }
+        Command::Proofs {
+            manifest_path,
+            no_write,
+        } => {
+            let ws = workspace::load(manifest_path.as_deref(), &[])?;
+            proofs::run(&ws, !no_write)
         }
         Command::Explain { id, markdown } => {
             if markdown {
@@ -232,6 +265,10 @@ fn collect(profile: &Profile, target: &Target) -> Result<Collected> {
     if !target.structure_only {
         diags.extend(clippy::run(profile, &ws)?);
     }
+    // A finding inside a function whose proof is recorded for the current
+    // source (proofs/claims.json) is marked as subsumed by that proof.
+    let recorded = proofs::load(&ws)?;
+    let mut diags = proofs::subsume(diags, recorded.as_ref());
     diags.sort_by(|a, b| {
         (&a.file, a.line, a.column, &a.id, &a.message)
             .cmp(&(&b.file, b.line, b.column, &b.id, &b.message))

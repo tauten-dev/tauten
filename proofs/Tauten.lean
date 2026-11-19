@@ -4,6 +4,7 @@ import Tauten.Exception
 import Tauten.RatchetModel
 import Tauten.Ratchet
 import Tauten.Table
+import Tauten.Subsume
 import Tauten.MacroShapes
 import Tauten.Refined
 import Tauten.Contracts

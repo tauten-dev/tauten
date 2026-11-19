@@ -1,0 +1,420 @@
+//! Unit tests of the proof tier: claims.toml validation, the outcome of
+//! each claim from gate results, fingerprints, function spans and the
+//! subsumption of findings.
+
+use super::*;
+use crate::diag::EnforcedBy;
+use crate::tier::Tier;
+
+const CLAIMS: &str = r#"
+version = 1
+
+[gate]
+command = ["sh", "proofs/run.sh"]
+crates = ["crates/k"]
+
+[[claim]]
+crate = "k"
+file = "crates/k/src/lib.rs"
+function = "add"
+lean = "k.add"
+theorems = ["K.add_total", "K.add_spec"]
+total = "K.add_total"
+subsumes = ["TAU-N001"]
+mutants = ["add-wraps"]
+
+[[mutant]]
+name = "add-wraps"
+file = "crates/k/src/lib.rs"
+before = "checked_add"
+after = "wrapping_add"
+"#;
+
+fn claims() -> ClaimsFile {
+    ClaimsFile::parse(CLAIMS).expect("valid claims")
+}
+
+fn claim() -> Claim {
+    claims().claim.into_iter().next().expect("one claim")
+}
+
+fn event(json: &str) -> Event {
+    Event::parse(&format!("{MARKER}{json}")).expect("event")
+}
+
+fn passing() -> Report {
+    Report {
+        events: [
+            r#"{"stage":"tools","status":"ok"}"#,
+            r#"{"stage":"extract","status":"ok"}"#,
+            r#"{"stage":"drift","status":"ok"}"#,
+            r#"{"stage":"build","status":"ok"}"#,
+            r#"{"theorem":"K.add_total","status":"ok"}"#,
+            r#"{"theorem":"K.add_spec","status":"ok"}"#,
+            r#"{"total":"K.add_total","function":"k.add"}"#,
+            r#"{"stage":"audit","status":"ok"}"#,
+            r#"{"mutant":"add-wraps","status":"killed","broken":["K.add_spec"]}"#,
+            r#"{"stage":"mutants","status":"ok"}"#,
+        ]
+        .iter()
+        .map(|line| event(line))
+        .collect(),
+        ..Report::default()
+    }
+}
+
+fn without(report: &Report, needle: &str) -> Report {
+    let mut out = report.clone();
+    out.events.retain(|e| !format!("{e:?}").contains(needle));
+    out
+}
+
+fn with(report: &Report, json: &str) -> Report {
+    let mut out = report.clone();
+    out.events.push(event(json));
+    out
+}
+
+#[test]
+fn claims_file_parses() {
+    let file = claims();
+    assert_eq!(file.gate.command, ["sh", "proofs/run.sh"]);
+    assert_eq!(file.mutant.len(), 1);
+    assert_eq!(claim().total.as_deref(), Some("K.add_total"));
+}
+
+#[test]
+fn inconsistent_claims_are_rejected() {
+    let cases = [
+        ("mutants = [\"add-wraps\"]", "mutants = []", "no mutant"),
+        (
+            "theorems = [\"K.add_total\", \"K.add_spec\"]",
+            "theorems = []",
+            "no theorem",
+        ),
+        (
+            "total = \"K.add_total\"",
+            "total = \"K.other\"",
+            "one of its",
+        ),
+        (
+            "subsumes = [\"TAU-N001\"]",
+            "subsumes = [\"TAU-E001\"]",
+            "only TAU-N001",
+        ),
+        ("total = \"K.add_total\"\n", "", "needs a `total`"),
+        ("version = 1", "version = 2", "version 2"),
+        (
+            "command = [\"sh\", \"proofs/run.sh\"]",
+            "command = []",
+            "empty",
+        ),
+    ];
+    for (from, to, expected) in cases {
+        assert!(CLAIMS.contains(from), "{from}");
+        let error = ClaimsFile::parse(&CLAIMS.replacen(from, to, 1)).expect_err(expected);
+        assert!(error.to_string().contains(expected), "{error}");
+    }
+    let twice = format!(
+        "{CLAIMS}\n{}",
+        &CLAIMS[CLAIMS.find("[[claim]]").expect("claim")..]
+    );
+    let error = ClaimsFile::parse(&twice).expect_err("claimed twice");
+    assert!(error.to_string().contains("claimed twice"), "{error}");
+}
+
+#[test]
+fn every_outcome_is_reachable() {
+    let claim = claim();
+    let ok = passing();
+    assert_eq!(outcome(&claim, &ok), (Outcome::Proved, None));
+
+    let cases: Vec<(Report, Outcome)> = vec![
+        (
+            Report {
+                not_started: Some("docker: not found".to_owned()),
+                ..Report::default()
+            },
+            Outcome::ToolMissing,
+        ),
+        (Report::default(), Outcome::ToolMissing),
+        (
+            with(
+                &Report::default(),
+                r#"{"stage":"tools","status":"missing","detail":"no image"}"#,
+            ),
+            Outcome::ToolMissing,
+        ),
+        (
+            with(&ok, r#"{"stage":"extract","status":"fail"}"#),
+            Outcome::BuildFailed,
+        ),
+        (
+            with(&ok, r#"{"stage":"drift","status":"fail"}"#),
+            Outcome::Drift,
+        ),
+        (
+            with(&ok, r#"{"stage":"build","status":"fail"}"#),
+            Outcome::BuildFailed,
+        ),
+        (
+            with(&ok, r#"{"stage":"audit","status":"fail"}"#),
+            Outcome::AuditFailed,
+        ),
+        (without(&ok, "stage: \"audit\""), Outcome::AuditFailed),
+        (without(&ok, "K.add_spec\", status"), Outcome::AuditFailed),
+        (
+            with(&ok, r#"{"theorem":"K.add_spec","status":"fail"}"#),
+            Outcome::AuditFailed,
+        ),
+        (without(&ok, "Total"), Outcome::AuditFailed),
+        (without(&ok, "Mutant"), Outcome::MutantSurvived),
+        (
+            with(
+                &without(&ok, "Mutant"),
+                r#"{"mutant":"add-wraps","status":"killed","broken":["Other.thm"]}"#,
+            ),
+            Outcome::MutantSurvived,
+        ),
+        (
+            with(
+                &without(&ok, "Mutant"),
+                r#"{"mutant":"add-wraps","status":"survived","broken":[]}"#,
+            ),
+            Outcome::MutantSurvived,
+        ),
+        (
+            Report {
+                changed_during_run: true,
+                ..ok.clone()
+            },
+            Outcome::Drift,
+        ),
+    ];
+    for (index, (report, expected)) in cases.iter().enumerate() {
+        let (got, detail) = outcome(&claim, report);
+        assert_eq!(got, *expected, "case {index}: {detail:?}");
+        assert!(detail.is_some(), "case {index} gives a reason");
+    }
+}
+
+#[test]
+fn ordinary_output_is_not_an_event() {
+    assert_eq!(Event::parse("lake build"), None);
+    assert_eq!(Event::parse("TAUTEN-PROOFS not json"), None);
+    assert!(matches!(
+        Event::parse("TAUTEN-PROOFS {\"stage\":\"drift\",\"status\":\"ok\"}\n"),
+        Some(Event::Stage { .. })
+    ));
+}
+
+#[test]
+fn fingerprint_changes_with_any_byte_or_path() {
+    let files = vec![
+        ("a.rs".to_owned(), b"fn a() {}".to_vec()),
+        ("b.rs".to_owned(), b"fn b() {}".to_vec()),
+    ];
+    let base = fingerprint(&files);
+    assert!(base.starts_with("fnv1a64:"));
+    let reversed: Vec<_> = files.iter().rev().cloned().collect();
+    assert_eq!(
+        fingerprint(&reversed),
+        base,
+        "order of reading does not matter"
+    );
+    let mut edited = files.clone();
+    edited[0].1 = b"fn a() { }".to_vec();
+    assert_ne!(fingerprint(&edited), base);
+    let mut moved = files.clone();
+    moved[1].0 = "c.rs".to_owned();
+    assert_ne!(fingerprint(&moved), base);
+    // The boundary between path and contents is part of the hash.
+    let split = vec![("ab".to_owned(), b"c".to_vec())];
+    let other = vec![("a".to_owned(), b"bc".to_vec())];
+    assert_ne!(fingerprint(&split), fingerprint(&other));
+}
+
+const SOURCE: &str = "\
+pub fn add(a: u32, b: u32) -> u32 {
+    a + b
+}
+
+pub struct Acc(u32);
+
+impl Acc {
+    pub fn bump(&mut self) {
+        self.0 += 1;
+        fn helper(x: u32) -> u32 {
+            x * 2
+        }
+    }
+}
+
+mod inner {
+    pub fn get(xs: &[u32]) -> u32 {
+        xs[0]
+    }
+}
+";
+
+#[test]
+fn functions_are_found_with_their_lines() {
+    let spans = functions(SOURCE);
+    let paths: Vec<(&str, u32, u32)> = spans
+        .iter()
+        .map(|s| (s.path.as_str(), s.start, s.end))
+        .collect();
+    assert_eq!(
+        paths,
+        [
+            ("add", 1, 3),
+            ("Acc::bump", 8, 13),
+            ("Acc::bump::helper", 10, 12),
+            ("inner::get", 17, 19),
+        ]
+    );
+    assert_eq!(
+        enclosing(&spans, 11).map(|s| s.path.as_str()),
+        Some("Acc::bump::helper")
+    );
+    assert_eq!(
+        enclosing(&spans, 9).map(|s| s.path.as_str()),
+        Some("Acc::bump")
+    );
+    assert_eq!(enclosing(&spans, 5), None);
+    assert!(functions("fn (").is_empty());
+}
+
+fn finding(id: &str, tier: Tier, line: u32) -> Diagnostic {
+    Diagnostic {
+        id: id.to_owned(),
+        severity: Severity::Error,
+        krate: "k".to_owned(),
+        tier: Some(tier),
+        file: Some("crates/k/src/lib.rs".to_owned()),
+        line: Some(line),
+        column: Some(5),
+        message: "m".to_owned(),
+        rule: None,
+        why: None,
+        fix: None,
+        enforced_by: EnforcedBy::Clippy,
+        source: "clippy::arithmetic_side_effects".to_owned(),
+        subsumed_by: None,
+    }
+}
+
+fn record(outcome: Outcome) -> ClaimRecord {
+    ClaimRecord {
+        claim: claim(),
+        outcome,
+        detail: None,
+        fingerprint: "fnv1a64:0".to_owned(),
+    }
+}
+
+fn run(diag: Diagnostic, record: &ClaimRecord, fresh: bool) -> Diagnostic {
+    let spans = BTreeMap::from([("crates/k/src/lib.rs".to_owned(), functions(SOURCE))]);
+    let recorded = [Recorded { record, fresh }];
+    subsume(vec![diag], &recorded, &spans)
+        .pop()
+        .expect("one diagnostic")
+}
+
+#[test]
+fn a_fresh_proof_subsumes_listed_findings_in_its_function() {
+    let proved = record(Outcome::Proved);
+    let d = run(finding("TAU-N001", Tier::Kernel, 2), &proved, true);
+    assert_eq!(d.severity, Severity::Warning);
+    assert_eq!(d.subsumed_by.as_deref(), Some("K.add_total"));
+}
+
+#[test]
+fn nothing_else_is_subsumed() {
+    let proved = record(Outcome::Proved);
+    let unchanged = |d: &Diagnostic| d.severity == Severity::Error && d.subsumed_by.is_none();
+    // stale proof
+    assert!(unchanged(&run(
+        finding("TAU-N001", Tier::Kernel, 2),
+        &proved,
+        false
+    )));
+    // not a kernel crate
+    assert!(unchanged(&run(
+        finding("TAU-N001", Tier::Core, 2),
+        &proved,
+        true
+    )));
+    // rule not listed under `subsumes`
+    assert!(unchanged(&run(
+        finding("TAU-P003", Tier::Kernel, 2),
+        &proved,
+        true
+    )));
+    // rule that can never be subsumed
+    assert!(unchanged(&run(
+        finding("TAU-E001", Tier::Kernel, 2),
+        &proved,
+        true
+    )));
+    // outside the claimed function
+    assert!(unchanged(&run(
+        finding("TAU-N001", Tier::Kernel, 9),
+        &proved,
+        true
+    )));
+    // the gate did not prove the claim
+    for outcome in [
+        Outcome::Drift,
+        Outcome::BuildFailed,
+        Outcome::AuditFailed,
+        Outcome::MutantSurvived,
+        Outcome::ToolMissing,
+    ] {
+        assert!(unchanged(&run(
+            finding("TAU-N001", Tier::Kernel, 2),
+            &record(outcome),
+            true
+        )));
+    }
+    // a claim without a total theorem
+    let mut partial = record(Outcome::Proved);
+    partial.claim.total = None;
+    assert!(unchanged(&run(
+        finding("TAU-N001", Tier::Kernel, 2),
+        &partial,
+        true
+    )));
+    // another crate with the same file path
+    let mut other = finding("TAU-N001", Tier::Kernel, 2);
+    other.krate = "j".to_owned();
+    assert!(unchanged(&run(other, &proved, true)));
+}
+
+#[test]
+fn records_round_trip_as_json() {
+    let record = Record {
+        version: 1,
+        generated_by: "cargo tauten proofs".to_owned(),
+        claims: vec![record(Outcome::Proved), record(Outcome::MutantSurvived)],
+    };
+    let text = serde_json::to_string_pretty(&record).expect("json");
+    assert!(text.contains("\"outcome\": \"mutant-survived\""));
+    assert!(text.contains("\"crate\": \"k\""));
+    let back: Record = serde_json::from_str(&text).expect("parses");
+    assert_eq!(back, record);
+}
+
+#[test]
+fn the_repository_claims_files_are_valid() {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    for path in [
+        "proofs/claims.toml",
+        "bench/hosts/ledger/proofs/claims.toml",
+        "fixtures/proofs-subsume/proofs/claims.toml",
+    ] {
+        let text = std::fs::read_to_string(root.join(path)).expect(path);
+        let file = ClaimsFile::parse(&text).unwrap_or_else(|e| panic!("{path}: {e}"));
+        assert!(!file.claim.is_empty(), "{path}");
+    }
+}

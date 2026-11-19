@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "generated_by": "cargo tauten proofs",
+  "claims": [
+    {
+      "crate": "ledger-kernel",
+      "file": "crates/ledger-kernel/src/lib.rs",
+      "function": "apply",
+      "lean": "ledger_kernel.apply",
+      "theorems": [
+        "Proofs.LedgerKernel.apply_spec"
+      ],
+      "total": "Proofs.LedgerKernel.apply_spec",
+      "subsumes": [
+        "TAU-N001",
+        "TAU-P003"
+      ],
+      "mutants": [
+        "deposit-wraps",
+        "withdraw-reports-overflow"
+      ],
+      "outcome": "proved",
+      "fingerprint": "fnv1a64:2e504ba89b9e0a24"
+    }
+  ]
+}

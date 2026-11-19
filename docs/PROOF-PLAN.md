@@ -47,7 +47,24 @@ reading the sources and writfold's recorded experience; P0 exists to test them.
   all). The order in which errors are reported is checked by a
   differential test against the old code, not proved. Reject fixture:
   `fixtures/profiles/rej-missing-r001.toml`.
-- P5 is not started.
+- **P5 done locally** (branch `proofs-p45`, not yet merged or run on
+  GitHub). `proofs/claims.toml` (function → theorems → mutants) and
+  `cargo tauten proofs`, which runs a project's gate and prints one JSON
+  outcome per claim (`proved`, `drift`, `build-failed`, `audit-failed`,
+  `mutant-survived`, `tool-missing`; without the toolchain everything is
+  `tool-missing`) and records them, with a source fingerprint, in
+  `proofs/claims.json` (also the website's badge data; tauten's own file
+  lists 20 claims). Template `crates/cargo-tauten/templates/proofs/` and
+  `cargo tauten init --proofs <crate>`, instantiated on
+  `bench/hosts/ledger` (`apply_spec`, 2 mutants, `proved`). In kernel
+  crates, TAU-N001/P003 findings inside a function whose claim is `proved`,
+  has a total no-failure theorem (shape checked by the template's audit),
+  lists the rule and matches the current fingerprint are reported as
+  subsumed by the proof; the decision is the new kernel function
+  `subsume::subsumes` (4 claims, 4 mutants; 93 claims, 36 mutants in all).
+  `proofs/TRUST.md` is the trust list. Not done: CI does not yet run
+  `cargo tauten proofs` or check that `claims.json` is current; the site
+  does not yet read `claims.json`.
 
 Sources read: tauten `crates/*/src`, `docs/STATUS.md`, `docs/PLAN.md` section 4,
 `docs/reviews/plyward-2026-11-18.md`; writfold `proofs/` (Dockerfile, extract.sh,
@@ -232,8 +249,8 @@ work. Total 9.5 to 12.5 days if nothing is killed.
 | P1 (**done locally; CI run pending**) | `tauten-check-kernel` with tier relation, severity and exception decisions; `tauten-check` calls it. `proofs/` with extract, drift check, `lake build`, `Audit.lean`, at least 4 mutants; proof workflow in CI | 2 | Proof workflow green on main; theorems: `may_depend_on` is a total order agreeing with rank, kernel depends only on kernel; `severity_spec`; `exception_spec` with "kernel never excuses a levelled rule"; each mutant breaks exactly its theorem | More than 3 days, or the gate takes over 30 minutes warm |
 | P2 (**done locally**) | Ratchet in the kernel, interning in the shell, differential test against the old BTreeMap code, theorems R-conserve to R-shrink, at least 6 mutants | 3 | Theorems in the audit claims list; existing `tests/ratchet.rs` and writfold dry-run numbers unchanged | More than 5 days: ship the kernel refactor with the differential test and R-conserve only; record the rest as open |
 | P3 (**done locally**) | `tauten-proof-instances`; closure-free expansion if P0 requires it; schematic lemma; F01 targets 1, 2, 3; constructor enumeration (target 5) if P0 showed derived impls are visible; contract theorems (Err(requires) iff precondition false, body not evaluated then; Err(ensures) iff body Ok and postcondition false; otherwise the body's result; `old` is the pre-state value); macro-source mutants | 2 to 3 | At least 3 refined instances and 2 contract instances proved; at least 4 macro mutants killed | Expansion cannot be made extractable without changing user-visible behaviour: stop, label macros "tested" on the site |
-| P4 | Plain-Rust fix: `Profile::parse` rejects tables lacking emitted IDs. Then interned validator in the kernel with `validate_ok_iff` (unique ids, unique lint owner, bans reference existing rules, required IDs present) | 1.5 | Theorem plus 3 mutants; a reject fixture for a table without TAU-R001 | More than 2 days: keep the fix and tests, drop the theorem |
-| P5 | Fold into M3: the same `proofs/` files become the user template; `proofs/claims.toml` (function -> theorem -> mutants); `cargo tauten proofs` JSON outcomes `proved, drift, build-failed, audit-failed, mutant-survived, tool-missing`; `proofs/TRUST.md`; website badge data generated from the audit | 1 to 2 | Template instantiated on `bench/hosts/ledger` kernel with one theorem; site badge list generated, not hand-written | Existing PLAN rule: template not done in 3 days, ship without |
+| P4 (**done locally**) | Plain-Rust fix: `Profile::parse` rejects tables lacking emitted IDs. Then interned validator in the kernel with `validate_ok_iff` (unique ids, unique lint owner, bans reference existing rules, required IDs present) | 1.5 | Theorem plus 3 mutants; a reject fixture for a table without TAU-R001 | More than 2 days: keep the fix and tests, drop the theorem |
+| P5 (**done locally**) | Fold into M3: the same `proofs/` files become the user template; `proofs/claims.toml` (function -> theorem -> mutants); `cargo tauten proofs` JSON outcomes `proved, drift, build-failed, audit-failed, mutant-survived, tool-missing`; `proofs/TRUST.md`; website badge data generated from the audit | 1 to 2 | Template instantiated on `bench/hosts/ledger` kernel with one theorem; site badge list generated, not hand-written | Existing PLAN rule: template not done in 3 days, ship without |
 
 ### CI integration
 

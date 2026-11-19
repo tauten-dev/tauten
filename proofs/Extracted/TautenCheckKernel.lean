@@ -436,6 +436,44 @@ def severity.severity
     then ok severity.Severity.Error
     else ok severity.Severity.Warning
 
+/-- [tauten_check_kernel::subsume::Finding]
+    Source: 'crates/tauten-check-kernel/src/subsume.rs', lines 14:0-21:1
+    Visibility: public -/
+@[discriminant isize]
+inductive subsume.Finding where
+| Arithmetic : subsume.Finding
+| Indexing : subsume.Finding
+| Other : subsume.Finding
+
+/-- [tauten_check_kernel::subsume::subsumes]:
+    Source: 'crates/tauten-check-kernel/src/subsume.rs', lines 31:0-47:1
+    Visibility: public -/
+def subsume.subsumes
+  (tier : tiers.Tier) (finding : subsume.Finding) (listed : Bool)
+  (proved : Bool) (fresh : Bool) :
+  Result Bool
+  := do
+  let kind ←
+    match finding with
+    | subsume.Finding.Arithmetic => ok true
+    | subsume.Finding.Indexing => ok true
+    | subsume.Finding.Other => ok false
+  let kernel ←
+    match tier with
+    | tiers.Tier.Kernel => ok true
+    | tiers.Tier.Core => ok false
+    | tiers.Tier.Edge => ok false
+  if kernel
+  then
+    if kind
+    then if listed
+         then if proved
+              then ok fresh
+              else ok false
+         else ok false
+    else ok false
+  else ok false
+
 /-- [tauten_check_kernel::table::Invalid]
     Source: 'crates/tauten-check-kernel/src/table.rs', lines 16:0-26:1
     Visibility: public -/

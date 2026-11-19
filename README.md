@@ -57,6 +57,37 @@ Every rule says what enforces it (rustc, clippy, a tauten structural check,
 or convention). The full table, including what Rust **cannot** enforce, is in
 [docs/MAPPING.md](docs/MAPPING.md).
 
+## Proofs
+
+tauten's own decisions (tier order, severity, lint exceptions, the
+baseline ratchet, rule-table validation, proof subsumption) live in the
+`no_std` crate `tauten-check-kernel`. Lean 4 theorems are stated over its
+Charon/Aeneas translation, audited to Lean's three standard axioms and
+calibrated with source mutants that must break them; the code the macros
+generate is proved for a list of instances. What is proved and what is
+trusted: [docs/proofs/README.md](docs/proofs/README.md),
+[proofs/TRUST.md](proofs/TRUST.md). This is not "formally verified
+tauten": scanning, diagnostic mapping and rendering are tested, not proved.
+
+The same setup is a template for your own kernel crates:
+
+```console
+$ cargo tauten init --proofs my-kernel --write   # writes proofs/ (claims.toml, gate, Lean project)
+$ sh proofs/refresh.sh                           # translate the crate (Docker, pinned image)
+$ cargo tauten proofs                            # run the gate; one JSON outcome per claim
+{"crate":"my-kernel","function":"apply","theorems":["Proofs.MyKernel.apply_spec"],…,"outcome":"proved",…}
+```
+
+Outcomes: `proved`, `drift`, `build-failed`, `audit-failed`,
+`mutant-survived`, `tool-missing` (without Docker or the image nothing is
+checked and nothing passes). The results are recorded with a fingerprint of
+the sources in `proofs/claims.json`. In a kernel crate, a function proved
+never to fail (`∀ args, f args ⦃ _ ⦄`, no hypotheses) whose claim lists
+`subsumes = ["TAU-N001", "TAU-P003"]` has its arithmetic and indexing
+findings reported as "subsumed by proof <theorem>" instead of as errors,
+until the crate or the proofs change. Worked example:
+[bench/hosts/ledger/proofs](bench/hosts/ledger/proofs).
+
 ## Develop
 
 Everything that gates a commit runs in Docker:
@@ -72,7 +103,10 @@ Layout:
 | Path | Contents |
 |---|---|
 | `crates/tauten-check` | Pure analysis (tier `core`): the rule table (`rules.toml`), the agent profile (`agents.md`), lint flags, clippy config generation, diagnostic mapping, structural checks |
-| `crates/cargo-tauten` | The CLI (tier `edge`): workspace loading, the rustc wrapper, output |
+| `crates/tauten-check-kernel` | The checker's decisions in plain `no_std` Rust (tier `kernel`), proved in `proofs/` |
+| `crates/cargo-tauten` | The CLI (tier `edge`): workspace loading, the rustc wrapper, output, `cargo tauten proofs` |
+| `crates/cargo-tauten/templates/proofs` | The proof-tier template `cargo tauten init --proofs` writes |
+| `proofs/` | Lean proofs over the kernel and the macros' instances; `claims.toml`/`claims.json` (badge data); `TRUST.md` |
 | `fixtures/cases` | One crate per rule, each listing the exact rule IDs it must produce; three accept crates must produce none |
 | `docs/` | Plan, guidelines, mapping, status, dry-run reports |
 | `crates/tauten-check/agents.md` | The agent instructions adopting projects include (written by `cargo tauten init`) |

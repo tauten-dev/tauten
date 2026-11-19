@@ -8,6 +8,7 @@
 pub mod baseline;
 pub mod diag;
 pub mod profile;
+pub mod proofs;
 pub mod scan;
 pub mod structure;
 pub mod tier;

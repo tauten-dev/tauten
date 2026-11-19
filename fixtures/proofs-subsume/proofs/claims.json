@@ -1,0 +1,61 @@
+{
+  "version": 1,
+  "generated_by": "cargo tauten proofs",
+  "claims": [
+    {
+      "crate": "sub-kernel",
+      "file": "sub-kernel/src/lib.rs",
+      "function": "add_capped",
+      "lean": "sub_kernel.add_capped",
+      "theorems": [
+        "Proofs.SubKernel.add_capped_spec"
+      ],
+      "total": "Proofs.SubKernel.add_capped_spec",
+      "subsumes": [
+        "TAU-N001"
+      ],
+      "mutants": [
+        "guard-dropped"
+      ],
+      "outcome": "proved",
+      "fingerprint": "fnv1a64:15796b338c3afbf9"
+    },
+    {
+      "crate": "sub-kernel",
+      "file": "sub-kernel/src/lib.rs",
+      "function": "first_or_zero",
+      "lean": "sub_kernel.first_or_zero",
+      "theorems": [
+        "Proofs.SubKernel.first_or_zero_spec"
+      ],
+      "total": "Proofs.SubKernel.first_or_zero_spec",
+      "subsumes": [
+        "TAU-P003"
+      ],
+      "mutants": [
+        "second-value"
+      ],
+      "outcome": "proved",
+      "fingerprint": "fnv1a64:15796b338c3afbf9"
+    },
+    {
+      "crate": "sub-kernel",
+      "file": "sub-kernel/src/lib.rs",
+      "function": "double",
+      "lean": "sub_kernel.double",
+      "theorems": [
+        "Proofs.SubKernel.double_spec"
+      ],
+      "total": "Proofs.SubKernel.double_spec",
+      "subsumes": [
+        "TAU-N001"
+      ],
+      "mutants": [
+        "quadruple"
+      ],
+      "outcome": "audit-failed",
+      "detail": "Proofs.SubKernel.double_spec does not state that sub_kernel.double never fails for every input",
+      "fingerprint": "fnv1a64:15796b338c3afbf9"
+    }
+  ]
+}

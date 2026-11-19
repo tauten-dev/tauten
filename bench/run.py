@@ -51,7 +51,7 @@ def load_task(task_id):
 
 
 def setup_repo(repo, host_dir, host, arm):
-    shutil.copytree(host_dir, repo, ignore=shutil.ignore_patterns("target", "bench.toml"))
+    shutil.copytree(host_dir, repo, ignore=shutil.ignore_patterns("target", "bench.toml", "proofs"))
     instructions = (BENCH / "arms" / f"{arm}.md").read_text()
     if arm == "C":
         # Single source: the agent profile shipped in tauten-check.
