@@ -191,8 +191,26 @@ fn with_workspace_deps<'a>(ws: &'a Loaded, krate: &'a str) -> Vec<&'a str> {
     found
 }
 
+/// `text` without its `version = ..` lines: a release bump does not change
+/// what extraction sees, and must not stale every claim. (Kernel crates
+/// have no external dependencies whose version could matter.)
+fn without_versions(text: &str) -> String {
+    text.lines()
+        .filter(|line| {
+            line.trim_start()
+                .strip_prefix("version")
+                .is_none_or(|rest| !rest.trim_start().starts_with('='))
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+/// Root files that change what extraction sees.
+const WORKSPACE_FILES: &[&str] = &["Cargo.toml", "rust-toolchain", "rust-toolchain.toml"];
+
 /// Per claimed crate: the fingerprint of the crate's directory, the
-/// directories of the workspace members it depends on, and the proofs
+/// directories of the workspace members it depends on, the workspace
+/// manifest and toolchain pin, and the proofs
 /// directory (theorems, extraction, scripts, claims.toml; not the
 /// recorded claims.json), as the gate sees them.
 fn fingerprints(ws: &Loaded, file: &ClaimsFile) -> Result<BTreeMap<String, String>> {
@@ -204,6 +222,15 @@ fn current_fingerprints(ws: &Loaded, crates: &[&str]) -> Result<BTreeMap<String,
     let root = ws.root();
     let mut shared = Vec::new();
     files_under(root, Path::new("proofs"), &[CLAIMS_JSON], &mut shared)?;
+    // Extraction also reads the workspace manifest (edition, lints,
+    // profiles) and the toolchain pin.
+    for name in WORKSPACE_FILES {
+        let path = root.join(name);
+        if path.is_file() {
+            let text = fs::read_to_string(&path).with_context(|| format!("reading {name}"))?;
+            shared.push(((*name).to_owned(), without_versions(&text).into_bytes()));
+        }
+    }
     let mut out = BTreeMap::new();
     for &krate in crates {
         if out.contains_key(krate) {

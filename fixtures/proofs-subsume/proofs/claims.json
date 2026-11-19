@@ -18,7 +18,7 @@
         "guard-dropped"
       ],
       "outcome": "proved",
-      "fingerprint": "fnv1a64:15796b338c3afbf9"
+      "fingerprint": "fnv1a64:ff169ca9a60b6e6c"
     },
     {
       "crate": "sub-kernel",
@@ -36,7 +36,7 @@
         "second-value"
       ],
       "outcome": "proved",
-      "fingerprint": "fnv1a64:15796b338c3afbf9"
+      "fingerprint": "fnv1a64:ff169ca9a60b6e6c"
     },
     {
       "crate": "sub-kernel",
@@ -55,7 +55,7 @@
       ],
       "outcome": "audit-failed",
       "detail": "Proofs.SubKernel.double_spec does not state that sub_kernel.double never fails for every input",
-      "fingerprint": "fnv1a64:15796b338c3afbf9"
+      "fingerprint": "fnv1a64:ff169ca9a60b6e6c"
     }
   ]
 }

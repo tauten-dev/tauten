@@ -139,6 +139,28 @@ mod proofs {
         let text = fs::read_to_string(&theorems).expect("read");
         fs::write(&theorems, format!("{text}\n-- edited\n")).expect("write");
         assert_nothing_subsumed(&edited);
+
+        // The workspace manifest, which extraction reads, changed.
+        let edited = scratch("stale-manifest");
+        let manifest = edited.join("Cargo.toml");
+        let text = fs::read_to_string(&manifest).expect("read");
+        fs::write(&manifest, format!("{text}\n# edited\n")).expect("write");
+        assert_nothing_subsumed(&edited);
+    }
+
+    #[test]
+    fn a_version_bump_keeps_proofs_fresh() {
+        let bumped = scratch("version-bump");
+        let manifest = bumped.join("Cargo.toml");
+        let text = fs::read_to_string(&manifest).expect("read");
+        fs::write(
+            &manifest,
+            text.replace("version = \"0.0.0\"", "version = \"0.0.1\""),
+        )
+        .expect("write");
+        let output = tauten(&["check"], &bumped);
+        let text = String::from_utf8_lossy(&output.stdout);
+        assert!(text.contains("3 subsumed by proofs"), "{text}");
     }
 
     fn outcomes(output: &Output) -> Vec<String> {
