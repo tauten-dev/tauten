@@ -3,7 +3,7 @@
 Updated 2026-11-19. Name final: tauten; license MIT; code at github.com/tauten-dev/tauten (public). Every line says how far an item got:
 **specified → implemented → exercised**. "Exercised" means it ran against
 real input in this repository, and the evidence is named. Versions 0.0.1
-and 0.0.2 are on crates.io; the site is at tauten.dev. Development pilot
+0.0.2 and 0.0.3 are on crates.io; the site is at tauten.dev. Development pilot
 completed; held-out benefit not established.
 
 ## Milestones (see PLAN.md §6)
@@ -27,7 +27,7 @@ completed; held-out benefit not established.
 | M3 | Proof tier for users (Aeneas/Lean template from writfold) | **exercised** (local and GitHub CI) | see P5; `proofs.yml` green on main 2026-11-19 (93 claims, 36 mutants, gate 928 s) |
 | M4 | Benchmark harness: host, 4 dev tasks, runner, analysis, admission gate | **exercised with built-in agents only** | `bench/README.md` (validation table); `scripts/bench-validate` in the gate |
 | M4 | Pilot with a real agent (dev split) | **exercised** | `bench/reports/2026-11-18-pilot`: 36 trials, Sonnet 5.5. Ceiling: 0 escaped defects in every arm; enforcement removed unchecked arithmetic (A 6/12, B 5/12, C 0/12 trials). Held-out suite being designed |
-| M5 | Repo (public), CI gate, tag-driven release workflow with crates.io trusted publishing (no stored token) | **exercised** | 0.0.1 (stored token) and 0.0.2 (trusted publishing) of all four crates published 2026-11-18 by `release.yml` after the gate passed. A new crate's first publish still needs a token |
+| M5 | Repo (public), CI gate, tag-driven release workflow with crates.io trusted publishing (no stored token) | **exercised** | 0.0.1 (stored token) and 0.0.2 (trusted publishing) of all four crates published 2026-11-18 by `release.yml` after the gate passed. `tauten-check-kernel` first published 0.0.2 with a one-off token (2026-11-19), then trusted publishing; 0.0.3 of all five crates by `release.yml` |
 | M7 | Website (tauten.dev) | **exercised** (live) | `tauten-dev/tauten-dev.github.io`, generated from a pinned commit with drift checks; benchmark section shows the dev-split pilot |
 | M8 | Writfold adoption | **exercised** (worktree, not merged) | branch `tauten-adoption` in a separate worktree: tiers, 19 reasoned expects, baseline 712 → 679, then proof claims (151 claims proved, 96-minute gate) subsume 130 of 159 kernel N001/P003 findings → baseline 549; `scripts/tauten-check` passes. Awaiting the owner's review |
 | — | Plyward review | done | `docs/reviews/plyward-2026-11-18.md`; three defects fixed in `e7fbc8c` |

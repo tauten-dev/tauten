@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.0.3 (2026-11-19)
 
 - `cargo tauten proofs`: runs a project's proof gate (`proofs/claims.toml`)
   and prints one JSON outcome per claim (`proved`, `drift`,

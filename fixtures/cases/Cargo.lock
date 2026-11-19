@@ -312,7 +312,7 @@ dependencies = [
 
 [[package]]
 name = "tauten"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "cap-std",
  "tauten-macros",
@@ -320,7 +320,7 @@ dependencies = [
 
 [[package]]
 name = "tauten-macros"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "proc-macro2",
  "quote",
