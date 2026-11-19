@@ -102,6 +102,7 @@ def claims : List Name := [
   ``Tauten.Kernel.admit_infrastructure_refused,
   ``Tauten.Kernel.named_iff,
   ``Tauten.Kernel.admit_examples,
+  ``Tauten.Kernel.of_run_proved_iff,
   -- the macros' generated code, per instance (P3)
   ``Tauten.Instances.percent_try_new_shape,
   ``Tauten.Instances.percent_try_new_ok_iff,
@@ -238,6 +239,7 @@ def reviewedFunctions : List Name := [
   ``tauten_check_kernel.control.controls_ok_loop,
   ``tauten_check_kernel.control.controls_ok,
   ``tauten_check_kernel.control.admit,
+  ``tauten_check_kernel.outcome.of_run,
   ``tauten_check_kernel.table.is_at,
   ``tauten_check_kernel.table.find_before,
   ``tauten_check_kernel.table.find_before_loop,

@@ -263,6 +263,11 @@ SPAN_MUTANTS = (
 )
 
 CONTROL_MUTANTS = (
+    # outcome: a claim's mutants are not consulted from a run
+    Mutant("of-run-mutants-ignored", "outcome.rs",
+           "        mutants: admit(mutants, mutant_results),",
+           "        mutants: true,",
+           (T + "of_run_proved_iff",)),
     # control: any broken theorem counts as the named reason
     Mutant("named-any-broken", "control.rs",
            "            found = found || member(broken, *x);",
@@ -630,11 +635,19 @@ def main() -> None:
     failed: list[str] = []
     for mutant in mutants:
         with tempfile.TemporaryDirectory(prefix=f"mutant-{mutant.name}-") as directory:
+            # Status: `survived` only when the proofs still build against the
+            # mutant; `timeout` when a build ran out of time; `other` when
+            # it failed for a reason other than the named theorems.
             try:
                 calibrate(mutant, Path(directory))
+            except subprocess.TimeoutExpired:
+                print(f"FAIL {mutant.name}: timed out", flush=True)
+                emit(mutant=mutant.name, status="timeout", broken=[])
+                failed.append(mutant.name)
             except SystemExit as error:
                 print(error, flush=True)
-                emit(mutant=mutant.name, status="survived", broken=[])
+                status = "survived" if "still build" in str(error) else "other"
+                emit(mutant=mutant.name, status=status, broken=[])
                 failed.append(mutant.name)
     if failed:
         raise SystemExit(f"FAIL: {len(failed)} mutant(s) not calibrated: {failed}")

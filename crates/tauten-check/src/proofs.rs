@@ -24,6 +24,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use serde::{Deserialize, Serialize};
 use syn::spanned::Spanned;
 use syn::visit::Visit;
+use tauten_check_kernel::control as kernel_control;
 use tauten_check_kernel::outcome as kernel_outcome;
 use tauten_check_kernel::subsume as kernel;
 
@@ -251,7 +252,8 @@ pub enum Event {
     Mutant {
         /// Mutant name.
         mutant: String,
-        /// `killed`, `survived` or `error`.
+        /// `killed`, `survived` (the proofs still build), `timeout`, or
+        /// `other` (it broke something other than the named theorems).
         status: String,
         /// Theorems that no longer build against the mutated translation.
         #[serde(default)]
@@ -312,6 +314,89 @@ impl Report {
         })
     }
 
+    /// The claim's theorems as controls that must pass, with every audit
+    /// result reported for them (an `ok` audit is a pass).
+    fn theorem_controls(
+        &self,
+        claim: &Claim,
+    ) -> (
+        Vec<kernel_control::Control>,
+        Vec<kernel_control::Observation>,
+    ) {
+        use kernel_control::{Control, Expect, Observation, Seen};
+        let controls = (0..claim.theorems.len())
+            .map(|id| Control {
+                id,
+                expect: Expect::Pass,
+            })
+            .collect();
+        let observed = self
+            .events
+            .iter()
+            .filter_map(|event| match event {
+                Event::Theorem { theorem, status } => {
+                    let id = claim.theorems.iter().position(|t| t == theorem)?;
+                    let seen = if status == "ok" {
+                        Seen::Pass
+                    } else {
+                        Seen::FailOther
+                    };
+                    Some(Observation { id, seen })
+                }
+                Event::Stage { .. } | Event::Total { .. } | Event::Mutant { .. } => None,
+            })
+            .collect();
+        (controls, observed)
+    }
+
+    /// The claim's mutants as negative controls, with every result reported
+    /// for them. A kill is named when it broke one of the claim's theorems
+    /// ([`kernel_control::named`]).
+    fn mutant_controls(
+        &self,
+        claim: &Claim,
+    ) -> (
+        Vec<kernel_control::Control>,
+        Vec<kernel_control::Observation>,
+    ) {
+        use kernel_control::{Control, Expect, Observation, Seen};
+        let controls = (0..claim.mutants.len())
+            .map(|id| Control {
+                id,
+                expect: Expect::Fail,
+            })
+            .collect();
+        let declared: Vec<usize> = (0..claim.theorems.len()).collect();
+        let observed = self
+            .events
+            .iter()
+            .filter_map(|event| match event {
+                Event::Mutant {
+                    mutant,
+                    status,
+                    broken,
+                } => {
+                    let id = claim.mutants.iter().position(|m| m == mutant)?;
+                    let broken_ids: Vec<usize> = broken
+                        .iter()
+                        .filter_map(|b| claim.theorems.iter().position(|t| t == b))
+                        .collect();
+                    let seen = match status.as_str() {
+                        "killed" if kernel_control::named(&declared, &broken_ids) => {
+                            Seen::FailNamed
+                        }
+                        "survived" => Seen::Pass,
+                        "timeout" => Seen::Timeout,
+                        _ => Seen::FailOther,
+                    };
+                    Some(Observation { id, seen })
+                }
+                Event::Stage { .. } | Event::Theorem { .. } | Event::Total { .. } => None,
+            })
+            .collect();
+        (controls, observed)
+    }
+
     fn mutant_kills(&self, name: &str, theorems: &[String]) -> bool {
         self.events.iter().any(|event| match event {
             Event::Mutant {
@@ -351,6 +436,8 @@ pub fn outcome(claim: &Claim, report: &Report) -> (Outcome, Option<String>) {
         .mutants
         .iter()
         .find(|m| !report.mutant_kills(m, &claim.theorems));
+    let (theorems, theorem_results) = report.theorem_controls(claim);
+    let (mutants, mutant_results) = report.mutant_controls(claim);
     let facts = kernel_outcome::Facts {
         ran,
         tools: stage("tools"),
@@ -358,12 +445,18 @@ pub fn outcome(claim: &Claim, report: &Report) -> (Outcome, Option<String>) {
         drift: stage("drift"),
         build: stage("build"),
         audit: stage("audit"),
-        theorems: missing_theorem.is_none(),
+        theorems: false,
         total: total_ok,
-        mutants: survivor.is_none(),
+        mutants: false,
         changed: report.changed_during_run,
     };
-    let decided = kernel_outcome::outcome(facts);
+    let decided = kernel_outcome::of_run(
+        facts,
+        &theorems,
+        &theorem_results,
+        &mutants,
+        &mutant_results,
+    );
     let first_stage = || {
         ["tools", "extract", "drift", "build", "audit"]
             .into_iter()
@@ -402,6 +495,10 @@ pub fn outcome(claim: &Claim, report: &Report) -> (Outcome, Option<String>) {
                 Some(format!(
                     "{missing} is missing or depends on a non-standard axiom"
                 ))
+            } else if claim.theorems.is_empty() {
+                Some("the claim lists no theorem".to_owned())
+            } else if !kernel_control::admit(&theorems, &theorem_results) {
+                Some("a theorem was reported more than once".to_owned())
             } else {
                 claim.total.as_ref().map(|total| {
                     format!(
@@ -411,9 +508,14 @@ pub fn outcome(claim: &Claim, report: &Report) -> (Outcome, Option<String>) {
                 })
             }
         }
-        kernel_outcome::Outcome::MutantSurvived => {
-            survivor.map(|name| format!("mutant {name} broke none of the claim's theorems"))
-        }
+        kernel_outcome::Outcome::MutantSurvived => Some(if claim.mutants.is_empty() {
+            "the claim lists no mutant, so nothing shows the theorems can fail".to_owned()
+        } else {
+            match survivor {
+                Some(name) => format!("mutant {name} broke none of the claim's theorems"),
+                None => "a mutant was reported more than once".to_owned(),
+            }
+        }),
     };
     let outcome = match decided {
         kernel_outcome::Outcome::Proved => Outcome::Proved,

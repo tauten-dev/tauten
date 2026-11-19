@@ -250,3 +250,11 @@ function = "named"
 lean = "tauten_check_kernel.control.named"
 theorems = ["Tauten.Kernel.named_iff"]
 mutants = ["named-any-broken"]
+
+[[claim]]
+crate = "tauten-check-kernel"
+file = "crates/tauten-check-kernel/src/outcome.rs"
+function = "of_run"
+lean = "tauten_check_kernel.outcome.of_run"
+theorems = ["Tauten.Kernel.of_run_proved_iff"]
+mutants = ["of-run-mutants-ignored"]

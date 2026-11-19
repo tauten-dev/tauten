@@ -763,7 +763,7 @@ def exception.excuse
   else ok exception.Excuse.Forbidden
 
 /-- [tauten_check_kernel::outcome::Stage]
-    Source: 'crates/tauten-check-kernel/src/outcome.rs', lines 11:0-18:1
+    Source: 'crates/tauten-check-kernel/src/outcome.rs', lines 13:0-20:1
     Visibility: public -/
 @[discriminant isize]
 inductive outcome.Stage where
@@ -772,7 +772,7 @@ inductive outcome.Stage where
 | Absent : outcome.Stage
 
 /-- [tauten_check_kernel::outcome::Outcome]
-    Source: 'crates/tauten-check-kernel/src/outcome.rs', lines 22:0-38:1
+    Source: 'crates/tauten-check-kernel/src/outcome.rs', lines 24:0-40:1
     Visibility: public -/
 @[discriminant isize]
 inductive outcome.Outcome where
@@ -784,7 +784,7 @@ inductive outcome.Outcome where
 | ToolMissing : outcome.Outcome
 
 /-- [tauten_check_kernel::outcome::Facts]
-    Source: 'crates/tauten-check-kernel/src/outcome.rs', lines 42:0-63:1
+    Source: 'crates/tauten-check-kernel/src/outcome.rs', lines 44:0-65:1
     Visibility: public -/
 structure outcome.Facts where
   ran : Bool
@@ -799,7 +799,7 @@ structure outcome.Facts where
   changed : Bool
 
 /-- [tauten_check_kernel::outcome::passed]:
-    Source: 'crates/tauten-check-kernel/src/outcome.rs', lines 67:0-72:1
+    Source: 'crates/tauten-check-kernel/src/outcome.rs', lines 69:0-74:1
     Visibility: public -/
 def outcome.passed (stage : outcome.Stage) : Result Bool := do
   match stage with
@@ -808,7 +808,7 @@ def outcome.passed (stage : outcome.Stage) : Result Bool := do
   | outcome.Stage.Absent => ok false
 
 /-- [tauten_check_kernel::outcome::outcome]:
-    Source: 'crates/tauten-check-kernel/src/outcome.rs', lines 76:0-94:1
+    Source: 'crates/tauten-check-kernel/src/outcome.rs', lines 78:0-96:1
     Visibility: public -/
 def outcome.outcome (f : outcome.Facts) : Result outcome.Outcome := do
   if f.ran
@@ -846,6 +846,20 @@ def outcome.outcome (f : outcome.Facts) : Result outcome.Outcome := do
       else ok outcome.Outcome.BuildFailed
     else ok outcome.Outcome.ToolMissing
   else ok outcome.Outcome.ToolMissing
+
+/-- [tauten_check_kernel::outcome::of_run]:
+    Source: 'crates/tauten-check-kernel/src/outcome.rs', lines 102:0-114:1
+    Visibility: public -/
+def outcome.of_run
+  (stages : outcome.Facts) (theorems : Slice control.Control)
+  (theorem_results : Slice control.Observation)
+  (mutants : Slice control.Control)
+  (mutant_results : Slice control.Observation) :
+  Result outcome.Outcome
+  := do
+  let b ← control.admit theorems theorem_results
+  let b1 ← control.admit mutants mutant_results
+  outcome.outcome { stages with theorems := b, mutants := b1 }
 
 /-- [tauten_check_kernel::ratchet::Finding]
     Source: 'crates/tauten-check-kernel/src/ratchet.rs', lines 16:0-21:1

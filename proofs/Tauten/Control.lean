@@ -1,4 +1,5 @@
 import Tauten.Ratchet
+import Tauten.Outcome
 
 /-!
 # Whether a set of checks passed (`tauten_check_kernel::control`)
@@ -360,5 +361,32 @@ theorem admit_examples :
     admitN [] [] = false := by
   refine ⟨?_, ?_, rfl⟩ <;>
     simp [admitN, observationsN, controlsN, metN, requiredN, obsCountN, control_okN]
+
+/-- `outcome` never fails. -/
+theorem outcome_ok (g : outcome.Facts) : ∃ v, outcome.outcome g = ok v := by
+  rcases g with ⟨ran, tools, extract, drift, build, audit, theorems, total, mutants, changed⟩
+  simp only [outcome.outcome, passed_spec, bind_ok]
+  split_ifs <;> exact ⟨_, rfl⟩
+
+/-- A claim is proved from a run exactly when every stage passed, the
+`total` theorem (if any) has the right shape, the sources did not change,
+and both its theorems and its mutants are admitted as exact control sets. -/
+theorem of_run_proved_iff (f : outcome.Facts) (th : Slice control.Control)
+    (tho : Slice control.Observation) (mu : Slice control.Control) (muo : Slice control.Observation) :
+    outcome.of_run f th tho mu muo ⦃ r => (r = .Proved ↔
+      f.ran = true ∧ f.tools = .Ok ∧ f.extract = .Ok ∧ f.drift = .Ok ∧ f.build = .Ok ∧
+      f.audit = .Ok ∧ admitN th.val tho.val = true ∧ f.total = true ∧
+      admitN mu.val muo.val = true ∧ f.changed = false) ⦄ := by
+  unfold outcome.of_run
+  apply WP.spec_bind (admit_spec th tho)
+  intro b hb
+  apply WP.spec_bind (admit_spec mu muo)
+  intro b1 hb1
+  have h := outcome_proved_iff { f with theorems := b, mutants := b1 }
+  obtain ⟨v, hv⟩ := outcome_ok { f with theorems := b, mutants := b1 }
+  rw [hv] at h ⊢
+  simp only [WP.spec_ok]
+  simp only [ok.injEq] at h
+  rw [h, allGood, hb, hb1]
 
 end Tauten.Kernel

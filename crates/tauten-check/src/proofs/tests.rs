@@ -502,3 +502,45 @@ fn proved_lookup_agrees_with_the_reference_on_random_spans() {
         );
     }
 }
+
+/// Control admission (S2): results the previous aggregation accepted or
+/// conflated are now refused, each for its own reason.
+#[test]
+fn controls_are_admitted_as_exact_sets() {
+    let c = claim();
+    assert_eq!(outcome(&c, &passing()).0, Outcome::Proved);
+
+    // A mutant reported twice is not one kill.
+    let twice = with(
+        &passing(),
+        r#"{"mutant":"add-wraps","status":"killed","broken":["K.add_spec"]}"#,
+    );
+    let (o, why) = outcome(&c, &twice);
+    assert_eq!(o, Outcome::MutantSurvived);
+    assert_eq!(why.as_deref(), Some("a mutant was reported more than once"));
+
+    // A mutant that timed out is not a kill.
+    let timed_out = with(
+        &without(&passing(), "add-wraps"),
+        r#"{"mutant":"add-wraps","status":"timeout","broken":[]}"#,
+    );
+    assert_eq!(outcome(&c, &timed_out).0, Outcome::MutantSurvived);
+
+    // A mutant that broke only another claim's theorem is not this claim's kill.
+    let elsewhere = with(
+        &without(&passing(), "add-wraps"),
+        r#"{"mutant":"add-wraps","status":"killed","broken":["K.other_spec"]}"#,
+    );
+    assert_eq!(outcome(&c, &elsewhere).0, Outcome::MutantSurvived);
+
+    // A theorem reported twice (once failing) is refused by the audit.
+    let doubled = with(&passing(), r#"{"theorem":"K.add_spec","status":"fail"}"#);
+    assert_eq!(outcome(&c, &doubled).0, Outcome::AuditFailed);
+
+    // A claim with no mutant has nothing showing its theorems can fail.
+    let mut bare = claim();
+    bare.mutants.clear();
+    let (o, why) = outcome(&bare, &passing());
+    assert_eq!(o, Outcome::MutantSurvived);
+    assert!(why.is_some_and(|w| w.contains("no mutant")));
+}

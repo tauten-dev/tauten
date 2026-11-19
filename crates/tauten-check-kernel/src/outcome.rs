@@ -6,6 +6,8 @@
 //! a claim is [`Outcome::Proved`] exactly when every fact is good, and that
 //! otherwise the outcome names the first failure in gate order.
 
+use crate::control::{Control, Observation, admit};
+
 /// One gate stage as reported.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Stage {
@@ -91,6 +93,24 @@ pub const fn outcome(f: Facts) -> Outcome {
     } else {
         Outcome::Proved
     }
+}
+
+/// The outcome of one claim from a whole run: the stage facts, with the
+/// claim's theorems and mutants admitted as two sets of controls
+/// ([`admit`]). A claim with no theorem or no mutant is never proved.
+#[must_use]
+pub fn of_run(
+    stages: Facts,
+    theorems: &[Control],
+    theorem_results: &[Observation],
+    mutants: &[Control],
+    mutant_results: &[Observation],
+) -> Outcome {
+    outcome(Facts {
+        theorems: admit(theorems, theorem_results),
+        mutants: admit(mutants, mutant_results),
+        ..stages
+    })
 }
 
 #[cfg(test)]
