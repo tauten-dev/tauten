@@ -121,6 +121,38 @@ RATCHET_MUTANTS = (
            STALE + INCREASES),
 )
 
+# Every rule-table claim: the examples are proved through `validate_ok_iff`.
+TABLE = (T + "validate_ok_iff", T + "validate_examples")
+
+TABLE_MUTANTS = (
+    # table: two rules may share an ID
+    Mutant("duplicate-ids-accepted", "table.rs",
+           "    if let Some((_, rule)) = first_duplicate(ids) {",
+           "    if let Some((_, rule)) = None::<(usize, usize)> {",
+           TABLE),
+    # table: a lint may be owned twice when no ID repeats
+    Mutant("duplicate-lints-accepted", "table.rs",
+           "    if let Some((first, second)) = lint {\n        return Some(Invalid::DuplicateLint(first, second));\n    }\n",
+           "",
+           TABLE),
+    # table: an API ban may name a rule that does not exist
+    Mutant("unknown-api-rule-accepted", "table.rs",
+           "    if let Some(api) = first_missing(ids, api_rules) {\n        return Err(Invalid::UnknownRule(api));\n    }\n",
+           "",
+           TABLE),
+    # table: a required ID may be missing (a table without TAU-R001 passes)
+    Mutant("required-id-missing-accepted", "table.rs",
+           "        Some(id) => Err(Invalid::MissingRule(id)),\n        None => Ok(()),",
+           "        Some(_) | None => Ok(()),",
+           TABLE),
+    # table: the search stops one position short, so the last rule ID is
+    # never found and an adjacent repeat is never seen
+    Mutant("search-stops-short", "table.rs",
+           "    while i < end {",
+           "    while i.saturating_add(1) < end {",
+           TABLE),
+)
+
 MUTANTS = (
     # tiers: a tier may depend on its own tier; `<` refuses same-tier edges
     Mutant("same-tier-refused", "tiers.rs",
@@ -172,7 +204,7 @@ MUTANTS = (
            "    if crate_wide && blocking {",
            "    if crate_wide || blocking {",
            (T + "exception_spec",)),
-) + RATCHET_MUTANTS
+) + RATCHET_MUTANTS + TABLE_MUTANTS
 
 I = "Tauten.Instances."
 REFINED_TYPES = ("percent", "port", "offset", "count")

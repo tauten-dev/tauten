@@ -37,7 +37,17 @@ reading the sources and writfold's recorded experience; P0 exists to test them.
   `old(..)` is the pre-state). 60 new audited claims (87 in all), 10
   macro-source mutants, all killed. Wording: "proved for listed
   instances", never "macros verified" (`docs/proofs/README.md`).
-- P4 and P5 are not started.
+- **P4 done locally** (branch `proofs-p45`, not yet merged or run on
+  GitHub). `tauten_check_kernel::table::validate` decides rule-table
+  well-formedness over interned names; `Profile::parse` calls it (the
+  plain-Rust fix for missing emitted IDs was already on main). Claims
+  `validate_ok_iff` (accepted iff IDs unique, lints owned once, API bans
+  name existing rules, every emitted ID present; never panics) and
+  `validate_examples` (89 claims in all); 5 mutants, all killed (32 in
+  all). The order in which errors are reported is checked by a
+  differential test against the old code, not proved. Reject fixture:
+  `fixtures/profiles/rej-missing-r001.toml`.
+- P5 is not started.
 
 Sources read: tauten `crates/*/src`, `docs/STATUS.md`, `docs/PLAN.md` section 4,
 `docs/reviews/plyward-2026-11-18.md`; writfold `proofs/` (Dockerfile, extract.sh,

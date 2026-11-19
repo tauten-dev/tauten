@@ -5,7 +5,7 @@ import Tauten
 # Axiom audit, constructor enumeration and coverage of the extraction
 
 Adapted from writfold's `proofs/Audit.lean` and the P0 probe. Covers
-`tauten_check_kernel` (P1, P2) and `tauten_proof_instances` (P3, the
+`tauten_check_kernel` (P1, P2, P4) and `tauten_proof_instances` (P3, the
 macros' expansion of its instances).
 
 1. Every theorem under `Tauten` depends only on Lean's standard three axioms
@@ -67,6 +67,9 @@ def claims : List Name := [
   ``Tauten.Kernel.regenerated_baseline_never_grows,
   ``Tauten.Kernel.ratchet_example,
   ``Tauten.Kernel.increase_example,
+  -- rule-table well-formedness (P4)
+  ``Tauten.Kernel.validate_ok_iff,
+  ``Tauten.Kernel.validate_examples,
   -- the macros' generated code, per instance (P3)
   ``Tauten.Instances.percent_try_new_shape,
   ``Tauten.Instances.percent_try_new_ok_iff,
@@ -160,6 +163,23 @@ def reviewedFunctions : List Name := [
   ``tauten_check_kernel.ratchet.increases,
   ``tauten_check_kernel.ratchet.increases_loop,
   ``tauten_check_kernel.ratchet.increases_loop.body,
+  ``tauten_check_kernel.table.is_at,
+  ``tauten_check_kernel.table.find_before,
+  ``tauten_check_kernel.table.find_before_loop,
+  ``tauten_check_kernel.table.find_before_loop.body,
+  ``tauten_check_kernel.table.contains,
+  ``tauten_check_kernel.table.repeat_at,
+  ``tauten_check_kernel.table.first_duplicate,
+  ``tauten_check_kernel.table.first_duplicate_loop,
+  ``tauten_check_kernel.table.first_duplicate_loop.body,
+  ``tauten_check_kernel.table.absent,
+  ``tauten_check_kernel.table.missing_at,
+  ``tauten_check_kernel.table.first_missing,
+  ``tauten_check_kernel.table.first_missing_loop,
+  ``tauten_check_kernel.table.first_missing_loop.body,
+  ``tauten_check_kernel.table.owner_at,
+  ``tauten_check_kernel.table.duplicate,
+  ``tauten_check_kernel.table.validate,
   -- tauten_proof_instances (P3): the macros' expansion, the closures it
   -- generates, the derives, and the runtime helpers made transparent by
   -- `include = ["tauten::contract", "tauten::error"]`

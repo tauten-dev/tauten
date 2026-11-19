@@ -1,0 +1,103 @@
+# Reject fixture (P4): a rule table that defines every rule the checker
+# emits except TAU-R001. Without TAU-R001 a stale baseline would pass
+# silently, so `Profile::parse` must reject this table with
+# "rule table lacks TAU-R001, which the checker emits". The decision is the
+# proved kernel's (`tauten_check_kernel::table::validate`,
+# `validate_ok_iff` in proofs/Tauten/Table.lean). Tested by
+# `profile::tests::rejects_the_fixture_without_r001` in tauten-check, which
+# also checks that adding TAU-R001 makes the table valid.
+
+version = 1
+api = []
+
+[clippy_conf]
+
+[[rule]]
+id = "TAU-A002"
+title = "t"
+lints = []
+levels = { core = "deny" }
+enforced_by = "tauten"
+why = "w"
+fix = "f"
+
+[[rule]]
+id = "TAU-K003"
+title = "t"
+lints = []
+levels = { core = "deny" }
+enforced_by = "tauten"
+why = "w"
+fix = "f"
+
+[[rule]]
+id = "TAU-X001"
+title = "t"
+lints = []
+levels = { core = "deny" }
+enforced_by = "tauten"
+why = "w"
+fix = "f"
+
+[[rule]]
+id = "TAU-S002"
+title = "t"
+lints = []
+levels = { core = "deny" }
+enforced_by = "tauten"
+why = "w"
+fix = "f"
+
+[[rule]]
+id = "TAU-T001"
+title = "t"
+lints = []
+levels = { core = "deny" }
+enforced_by = "tauten"
+why = "w"
+fix = "f"
+
+[[rule]]
+id = "TAU-T002"
+title = "t"
+lints = []
+levels = { core = "deny" }
+enforced_by = "tauten"
+why = "w"
+fix = "f"
+
+[[rule]]
+id = "TAU-T003"
+title = "t"
+lints = []
+levels = { core = "deny" }
+enforced_by = "tauten"
+why = "w"
+fix = "f"
+
+[[rule]]
+id = "TAU-X002"
+title = "t"
+lints = []
+levels = { core = "deny" }
+enforced_by = "tauten"
+why = "w"
+fix = "f"
+
+[[rule]]
+id = "TAU-X003"
+title = "t"
+lints = []
+levels = { core = "deny" }
+enforced_by = "tauten"
+why = "w"
+fix = "f"
+
+[[rule]]
+id = "TAU-X004"
+title = "t"
+lints = []
+levels = { core = "deny" }
+enforced_by = "tauten"
+why = "w"
+fix = "f"

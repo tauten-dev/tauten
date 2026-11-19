@@ -2,10 +2,11 @@
 
 Lean 4 theorems about the decision code of the checker, stated over the
 Charon/Aeneas translation of the shipped Rust. Plan: `docs/PROOF-PLAN.md`.
-P0 (toolchain probe): `docs/proofs/probe.md`. This page covers P1, P2
-and P3 (the macros' generated code, for listed instances).
+P0 (toolchain probe): `docs/proofs/probe.md`. This page covers P1, P2,
+P3 (the macros' generated code, for listed instances) and P4 (rule-table
+well-formedness).
 
-## What is proved (P1, P2)
+## What is proved (P1, P2, P4)
 
 The proved code is `crates/tauten-check-kernel`: a dependency-free
 `no_std` crate in the `kernel` tier. `tauten-check` calls it for each of
@@ -20,6 +21,7 @@ these decisions. Its public API did not change.
 | `ratchet::stale` | `baseline::apply` (one TAU-R001 per key returned) | `ratchet_stale_iff`, `ratchet_passes_iff`, `ratchet_example` |
 | `ratchet::count_errors` (with `zeros`, `add_error`, `add_error_at`) | `Baseline::from_findings` | `count_errors_counts`, `regenerated_baseline_never_grows` |
 | `ratchet::increases` (with `grows_at`) | `Baseline::increases` (`cargo tauten baseline` refuses growth) | `increases_flags`, `increases_none_iff`, `regenerated_baseline_never_grows`, `increase_example` |
+| `table::validate` (with `duplicate`, `first_duplicate`, `first_missing`, `find_before`, `contains`, `absent`, `repeat_at`, `missing_at`, `is_at`, `owner_at`) | `Profile::parse` (every rule table, the embedded one included) | `validate_ok_iff`, `validate_examples` (P4, below) |
 
 The P1 theorems are proved directly against the extracted definitions,
 none derived from another, so a mutant breaks each P1 claim it falsifies.
@@ -75,6 +77,51 @@ derived from another theorem. So a mutant of the Rust source breaks each
 claim it falsifies, and `proofs/mutants.py` records exactly which claims
 each mutant breaks.
 
+### Rule-table well-formedness (P4)
+
+`Profile::parse` reads the TOML rule table, then interns every rule ID it
+sees (each rule's own ID, the rule each API ban names, and the IDs the
+checker emits itself, `EMITTED_BY_CODE`) to one index per distinct string,
+and every lint name likewise. It passes the kernel the rules' IDs, the
+flattened lint list with each lint's owning rule, the API bans' rules and
+the required IDs; `table::validate` returns the first problem, and the
+shell maps its positions back to names for the unchanged `ProfileError`.
+
+| Claim | Statement |
+|---|---|
+| `validate_ok_iff` | `validate` never panics, and returns `Ok` iff the rule IDs are pairwise distinct, the lints are pairwise distinct (no lint owned by two rules, or twice by one), every API ban names a rule ID of the table, and every required ID is a rule ID |
+| `validate_examples` | non-vacuity: a small table is accepted; the same table is rejected with a repeated ID, with a lint owned twice, with an API ban naming an unknown rule, and with a required ID missing (the case of a table without TAU-R001) |
+
+Each extracted function has a lemma (`find_before_spec`,
+`first_duplicate_spec`, `first_missing_spec`, `duplicate_spec`, ...; the
+loops by invariants) and the claims are proved from them, so a mutant of
+any table function breaks both claims. Which problem is reported first
+(the table's reading order: rule by rule, its ID before its lints; then API
+bans; then required IDs, in `EMITTED_BY_CODE` order) is not a theorem. The
+old `BTreeSet`/`BTreeMap` checks are kept as `profile/reference.rs`, and a
+differential test compares the full error text on 3,000 randomly edited
+copies of the embedded table (rules dropped, duplicated and renamed, lints
+inserted and repeated, API bans renamed; each of the six outcomes, `Ok`,
+duplicate ID, lint repeated within one rule, lint owned by two rules,
+unknown rule and missing rule, must occur at least 50 times).
+
+Reject fixture: `fixtures/profiles/rej-missing-r001.toml` defines every ID
+the checker emits except TAU-R001. `profile::tests::rejects_the_fixture_without_r001`
+requires the error "rule table lacks TAU-R001, which the checker emits",
+and that the fixture plus a TAU-R001 rule is accepted.
+
+Trusted for P4: the interning (equal strings, equal index), which the
+differential test covers; the mapping of positions back to names; and that
+the table read by `toml`/`serde` is the one the user wrote.
+
+| Mutant | Change | Claims that must break | Failing lemma |
+|---|---|---|---|
+| `duplicate-ids-accepted` | the ID duplicate check never fires | `validate_ok_iff`, `validate_examples` | `duplicate_spec` |
+| `duplicate-lints-accepted` | a lint owned twice passes when no ID repeats | `validate_ok_iff`, `validate_examples` | `duplicate_spec` |
+| `unknown-api-rule-accepted` | API bans not checked | `validate_ok_iff`, `validate_examples` | — |
+| `required-id-missing-accepted` | missing required IDs ignored (a table without TAU-R001 passes) | `validate_ok_iff`, `validate_examples` | — |
+| `search-stops-short` | `find_before` stops one position early | `validate_ok_iff`, `validate_examples` | `find_before_spec` |
+
 What is trusted, not proved:
 - Ratchet interning (`baseline::Interned`): one index per distinct key, in
   key order, and of duplicate baseline entries the later count. The shell's
@@ -96,8 +143,8 @@ What is trusted, not proved:
   (`kernel_excuse_agrees_with_the_reference_on_every_profile_lint`).
 - The toolchain: Charon, Aeneas and its Lean library, Lean, and rustc.
 
-This is not a proof of tauten. It covers three small decisions and the
-ratchet's counting, and (P3, below) the code the macros generated for a
+This is not a proof of tauten. It covers three small decisions, the
+ratchet's counting, the rule table's well-formedness (P4), and (P3, below) the code the macros generated for a
 list of instances. Scanning, diagnostic mapping, interning and rendering
 are not covered.
 
@@ -254,21 +301,21 @@ What is trusted, not proved, for P3:
    - every theorem under `Tauten` uses no axioms beyond `propext`,
      `Classical.choice` and `Quot.sound` (the transitive closure, so
      `sorryAx` or an Aeneas `axiom` for an opaque function fails it);
-   - all 87 required claims exist (27 kernel, 50 instance, 10 schematic);
+   - all 89 required claims exist (29 kernel, 50 instance, 10 schematic);
    - constructor enumeration (P3, above);
-   - every extracted function (27 from `tauten_check_kernel`, counting
+   - every extracted function (44 from `tauten_check_kernel`, counting
      loops and loop bodies; 59 from `tauten_proof_instances`, counting
      closures, derives and the transparent runtime helpers) is on a
      reviewed list and is stated in a required claim or called, through
      the extracted definitions and trait-instance records, by a function
      that is.
-4. **Mutants.** `proofs/mutants.py` applies 17 mutations to the kernel's
+4. **Mutants.** `proofs/mutants.py` applies 22 mutations to the kernel's
    Rust source and 10 to the macros' source (P3, above). For each one it
    re-extracts, rebuilds, and requires the
    build to break exactly the named claims (a claim breaks when its proof
    fails or depends on a failed lemma; helper lemmas may fail) and no
    error outside the theorem files. Every theorem a mutant names must be a
-   required claim. Each of the 77 claims stated over the extraction is
+   required claim. Each of the 79 claims stated over the extraction is
    broken by at least one mutant; the 10 schematic claims
    (`Tauten.Macros`) mention no extracted function, so no mutant of the
    Rust source can break them.
@@ -394,6 +441,12 @@ P3 (2026-11-18, load average about 3 to 7):
 |---|---|---|---|---|---|
 | Cold container (`docker compose … run --rm proofs`), 26 mutants (before `attributes-dropped` was added) | 17 s (includes crates.io fetch of `syn` and Charon's sysroot setup) | <1 s | 12 s | 256 s | 285 s (286 s wall time) |
 | Warm (long-lived container, `proofs/container.sh`), all 27 mutants | 5 s | <1 s | 1 s | 265 s | 271 s |
+
+P4 (2026-11-18, load average about 10 to 20):
+
+| Run | Extract (both crates) | Drift | `lake build` + audit | 32 mutants | Total |
+|---|---|---|---|---|---|
+| Warm (long-lived container, `proofs/container.sh`) | 5 s | <1 s | 11 s | 323 s | 339 s |
 
 A macro mutant re-translates the instance crate through the mutated
 macros (it compiles `syn` again in a fresh shadow workspace) and rebuilds
