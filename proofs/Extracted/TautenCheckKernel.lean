@@ -20,6 +20,421 @@ set_option maxRecDepth 2048
 
 namespace tauten_check_kernel
 
+/-- [tauten_check_kernel::control::Expect]
+    Source: 'crates/tauten-check-kernel/src/control.rs', lines 17:0-22:1
+    Visibility: public -/
+@[discriminant isize]
+inductive control.Expect where
+| Pass : control.Expect
+| Fail : control.Expect
+
+/-- [tauten_check_kernel::control::Seen]
+    Source: 'crates/tauten-check-kernel/src/control.rs', lines 26:0-41:1
+    Visibility: public -/
+@[discriminant isize]
+inductive control.Seen where
+| Pass : control.Seen
+| FailNamed : control.Seen
+| FailOther : control.Seen
+| Timeout : control.Seen
+| ToolMissing : control.Seen
+| Empty : control.Seen
+| NotRun : control.Seen
+
+/-- [tauten_check_kernel::control::Control]
+    Source: 'crates/tauten-check-kernel/src/control.rs', lines 45:0-50:1
+    Visibility: public -/
+structure control.Control where
+  id : Std.Usize
+  expect : control.Expect
+
+/-- [tauten_check_kernel::control::Observation]
+    Source: 'crates/tauten-check-kernel/src/control.rs', lines 54:0-59:1
+    Visibility: public -/
+structure control.Observation where
+  id : Std.Usize
+  seen : control.Seen
+
+/-- [tauten_check_kernel::control::control_ok]:
+    Source: 'crates/tauten-check-kernel/src/control.rs', lines 64:0-86:1
+    Visibility: public -/
+def control.control_ok
+  (expect : control.Expect) (seen : control.Seen) : Result Bool := do
+  match expect with
+  | control.Expect.Pass =>
+    match seen with
+    | control.Seen.Pass => ok true
+    | control.Seen.FailNamed => ok false
+    | control.Seen.FailOther => ok false
+    | control.Seen.Timeout => ok false
+    | control.Seen.ToolMissing => ok false
+    | control.Seen.Empty => ok false
+    | control.Seen.NotRun => ok false
+  | control.Expect.Fail =>
+    match seen with
+    | control.Seen.Pass => ok false
+    | control.Seen.FailNamed => ok true
+    | control.Seen.FailOther => ok false
+    | control.Seen.Timeout => ok false
+    | control.Seen.ToolMissing => ok false
+    | control.Seen.Empty => ok false
+    | control.Seen.NotRun => ok false
+
+/-- [tauten_check_kernel::control::member]: loop body 0:
+    Source: 'crates/tauten-check-kernel/src/control.rs', lines 94:4-99:5
+    Visibility: public -/
+@[rust_loop_body]
+def control.member_loop.body
+  (ids : Slice Std.Usize) (id : Std.Usize) (found : Bool) (i : Std.Usize) :
+  Result (ControlFlow (Bool × Std.Usize) Bool)
+  := do
+  let i1 := Slice.len ids
+  if i < i1
+  then
+    let o ←
+      core.slice.Slice.get (core.slice.index.SliceIndexUsizeSlice Std.Usize)
+        ids i
+    let found1 ←
+      match o with
+      | none => ok found
+      | some x => if found
+                  then ok true
+                  else ok (x = id)
+    let i2 ← lift (core.num.Usize.saturating_add i 1#usize)
+    ok (cont (found1, i2))
+  else ok (done found)
+
+/-- [tauten_check_kernel::control::member]: loop 0:
+    Source: 'crates/tauten-check-kernel/src/control.rs', lines 94:4-99:5
+    Visibility: public -/
+@[rust_loop]
+def control.member_loop
+  (ids : Slice Std.Usize) (id : Std.Usize) (found : Bool) (i : Std.Usize) :
+  Result Bool
+  := do
+  loop
+    (fun (found1, i1) => control.member_loop.body ids id found1 i1)
+    (found, i)
+
+/-- [tauten_check_kernel::control::member]:
+    Source: 'crates/tauten-check-kernel/src/control.rs', lines 91:0-101:1
+    Visibility: public -/
+@[reducible]
+def control.member (ids : Slice Std.Usize) (id : Std.Usize) : Result Bool := do
+  control.member_loop ids id false 0#usize
+
+/-- [tauten_check_kernel::control::named]: loop body 0:
+    Source: 'crates/tauten-check-kernel/src/control.rs', lines 108:4-113:5
+    Visibility: public -/
+@[rust_loop_body]
+def control.named_loop.body
+  (declared : Slice Std.Usize) (broken : Slice Std.Usize) (found : Bool)
+  (i : Std.Usize) :
+  Result (ControlFlow (Bool × Std.Usize) Bool)
+  := do
+  let i1 := Slice.len declared
+  if i < i1
+  then
+    let o ←
+      core.slice.Slice.get (core.slice.index.SliceIndexUsizeSlice Std.Usize)
+        declared i
+    let found1 ←
+      match o with
+      | none => ok found
+      | some x => if found
+                  then ok true
+                  else control.member broken x
+    let i2 ← lift (core.num.Usize.saturating_add i 1#usize)
+    ok (cont (found1, i2))
+  else ok (done found)
+
+/-- [tauten_check_kernel::control::named]: loop 0:
+    Source: 'crates/tauten-check-kernel/src/control.rs', lines 108:4-113:5
+    Visibility: public -/
+@[rust_loop]
+def control.named_loop
+  (declared : Slice Std.Usize) (broken : Slice Std.Usize) (found : Bool)
+  (i : Std.Usize) :
+  Result Bool
+  := do
+  loop
+    (fun (found1, i1) => control.named_loop.body declared broken found1 i1)
+    (found, i)
+
+/-- [tauten_check_kernel::control::named]:
+    Source: 'crates/tauten-check-kernel/src/control.rs', lines 105:0-115:1
+    Visibility: public -/
+@[reducible]
+def control.named
+  (declared : Slice Std.Usize) (broken : Slice Std.Usize) : Result Bool := do
+  control.named_loop declared broken false 0#usize
+
+/-- [tauten_check_kernel::control::count_id]: loop body 0:
+    Source: 'crates/tauten-check-kernel/src/control.rs', lines 122:4-129:5
+    Visibility: public -/
+@[rust_loop_body]
+def control.count_id_loop.body
+  (observed : Slice control.Observation) (id : Std.Usize) (count : Std.Usize)
+  (i : Std.Usize) :
+  Result (ControlFlow (Std.Usize × Std.Usize) Std.Usize)
+  := do
+  let i1 := Slice.len observed
+  if i < i1
+  then
+    let o ←
+      core.slice.Slice.get (core.slice.index.SliceIndexUsizeSlice
+        control.Observation) observed i
+    let count1 ←
+      match o with
+      | none => ok count
+      | some o1 =>
+        if o1.id = id
+        then ok (core.num.Usize.saturating_add count 1#usize)
+        else ok count
+    let i2 ← lift (core.num.Usize.saturating_add i 1#usize)
+    ok (cont (count1, i2))
+  else ok (done count)
+
+/-- [tauten_check_kernel::control::count_id]: loop 0:
+    Source: 'crates/tauten-check-kernel/src/control.rs', lines 122:4-129:5
+    Visibility: public -/
+@[rust_loop]
+def control.count_id_loop
+  (observed : Slice control.Observation) (id : Std.Usize) (count : Std.Usize)
+  (i : Std.Usize) :
+  Result Std.Usize
+  := do
+  loop
+    (fun (count1, i1) => control.count_id_loop.body observed id count1 i1)
+    (count, i)
+
+/-- [tauten_check_kernel::control::count_id]:
+    Source: 'crates/tauten-check-kernel/src/control.rs', lines 119:0-131:1
+    Visibility: public -/
+@[reducible]
+def control.count_id
+  (observed : Slice control.Observation) (id : Std.Usize) :
+  Result Std.Usize
+  := do
+  control.count_id_loop observed id 0#usize 0#usize
+
+/-- [tauten_check_kernel::control::required_id]: loop body 0:
+    Source: 'crates/tauten-check-kernel/src/control.rs', lines 138:4-143:5
+    Visibility: public -/
+@[rust_loop_body]
+def control.required_id_loop.body
+  (required : Slice control.Control) (id : Std.Usize) (found : Bool)
+  (i : Std.Usize) :
+  Result (ControlFlow (Bool × Std.Usize) Bool)
+  := do
+  let i1 := Slice.len required
+  if i < i1
+  then
+    let o ←
+      core.slice.Slice.get (core.slice.index.SliceIndexUsizeSlice
+        control.Control) required i
+    let found1 ←
+      match o with
+      | none => ok found
+      | some c => if found
+                  then ok true
+                  else ok (c.id = id)
+    let i2 ← lift (core.num.Usize.saturating_add i 1#usize)
+    ok (cont (found1, i2))
+  else ok (done found)
+
+/-- [tauten_check_kernel::control::required_id]: loop 0:
+    Source: 'crates/tauten-check-kernel/src/control.rs', lines 138:4-143:5
+    Visibility: public -/
+@[rust_loop]
+def control.required_id_loop
+  (required : Slice control.Control) (id : Std.Usize) (found : Bool)
+  (i : Std.Usize) :
+  Result Bool
+  := do
+  loop
+    (fun (found1, i1) => control.required_id_loop.body required id found1 i1)
+    (found, i)
+
+/-- [tauten_check_kernel::control::required_id]:
+    Source: 'crates/tauten-check-kernel/src/control.rs', lines 135:0-145:1
+    Visibility: public -/
+@[reducible]
+def control.required_id
+  (required : Slice control.Control) (id : Std.Usize) : Result Bool := do
+  control.required_id_loop required id false 0#usize
+
+/-- [tauten_check_kernel::control::met]: loop body 0:
+    Source: 'crates/tauten-check-kernel/src/control.rs', lines 152:4-157:5
+    Visibility: public -/
+@[rust_loop_body]
+def control.met_loop.body
+  (observed : Slice control.Observation) (id : Std.Usize)
+  (expect : control.Expect) (found : Bool) (i : Std.Usize) :
+  Result (ControlFlow (Bool × Std.Usize) Bool)
+  := do
+  let i1 := Slice.len observed
+  if i < i1
+  then
+    let o ←
+      core.slice.Slice.get (core.slice.index.SliceIndexUsizeSlice
+        control.Observation) observed i
+    let found1 ←
+      match o with
+      | none => ok found
+      | some o1 =>
+        if found
+        then ok true
+        else if o1.id = id
+             then control.control_ok expect o1.seen
+             else ok false
+    let i2 ← lift (core.num.Usize.saturating_add i 1#usize)
+    ok (cont (found1, i2))
+  else ok (done found)
+
+/-- [tauten_check_kernel::control::met]: loop 0:
+    Source: 'crates/tauten-check-kernel/src/control.rs', lines 152:4-157:5
+    Visibility: public -/
+@[rust_loop]
+def control.met_loop
+  (observed : Slice control.Observation) (id : Std.Usize)
+  (expect : control.Expect) (found : Bool) (i : Std.Usize) :
+  Result Bool
+  := do
+  loop
+    (fun (found1, i1) => control.met_loop.body observed id expect found1 i1)
+    (found, i)
+
+/-- [tauten_check_kernel::control::met]:
+    Source: 'crates/tauten-check-kernel/src/control.rs', lines 149:0-159:1
+    Visibility: public -/
+@[reducible]
+def control.met
+  (observed : Slice control.Observation) (id : Std.Usize)
+  (expect : control.Expect) :
+  Result Bool
+  := do
+  control.met_loop observed id expect false 0#usize
+
+/-- [tauten_check_kernel::control::observations_ok]: loop body 0:
+    Source: 'crates/tauten-check-kernel/src/control.rs', lines 166:4-171:5
+    Visibility: public -/
+@[rust_loop_body]
+def control.observations_ok_loop.body
+  (required : Slice control.Control) (observed : Slice control.Observation)
+  (ok1 : Bool) (i : Std.Usize) :
+  Result (ControlFlow (Bool × Std.Usize) Bool)
+  := do
+  let i1 := Slice.len observed
+  if i < i1
+  then
+    let o ←
+      core.slice.Slice.get (core.slice.index.SliceIndexUsizeSlice
+        control.Observation) observed i
+    let ok2 ←
+      match o with
+      | none => ok ok1
+      | some o1 =>
+        if ok1
+        then
+          do
+          let i2 ← control.count_id observed o1.id
+          if i2 = 1#usize
+          then control.required_id required o1.id
+          else ok false
+        else ok false
+    let i2 ← lift (core.num.Usize.saturating_add i 1#usize)
+    ok (cont (ok2, i2))
+  else ok (done ok1)
+
+/-- [tauten_check_kernel::control::observations_ok]: loop 0:
+    Source: 'crates/tauten-check-kernel/src/control.rs', lines 166:4-171:5
+    Visibility: public -/
+@[rust_loop]
+def control.observations_ok_loop
+  (required : Slice control.Control) (observed : Slice control.Observation)
+  (ok1 : Bool) (i : Std.Usize) :
+  Result Bool
+  := do
+  loop
+    (fun (ok2, i1) => control.observations_ok_loop.body required observed ok2
+      i1)
+    (ok1, i)
+
+/-- [tauten_check_kernel::control::observations_ok]:
+    Source: 'crates/tauten-check-kernel/src/control.rs', lines 163:0-173:1
+    Visibility: public -/
+@[reducible]
+def control.observations_ok
+  (required : Slice control.Control) (observed : Slice control.Observation) :
+  Result Bool
+  := do
+  control.observations_ok_loop required observed true 0#usize
+
+/-- [tauten_check_kernel::control::controls_ok]: loop body 0:
+    Source: 'crates/tauten-check-kernel/src/control.rs', lines 180:4-185:5
+    Visibility: public -/
+@[rust_loop_body]
+def control.controls_ok_loop.body
+  (required : Slice control.Control) (observed : Slice control.Observation)
+  (ok1 : Bool) (i : Std.Usize) :
+  Result (ControlFlow (Bool × Std.Usize) Bool)
+  := do
+  let i1 := Slice.len required
+  if i < i1
+  then
+    let o ←
+      core.slice.Slice.get (core.slice.index.SliceIndexUsizeSlice
+        control.Control) required i
+    let ok2 ←
+      match o with
+      | none => ok ok1
+      | some c => if ok1
+                  then control.met observed c.id c.expect
+                  else ok false
+    let i2 ← lift (core.num.Usize.saturating_add i 1#usize)
+    ok (cont (ok2, i2))
+  else ok (done ok1)
+
+/-- [tauten_check_kernel::control::controls_ok]: loop 0:
+    Source: 'crates/tauten-check-kernel/src/control.rs', lines 180:4-185:5
+    Visibility: public -/
+@[rust_loop]
+def control.controls_ok_loop
+  (required : Slice control.Control) (observed : Slice control.Observation)
+  (ok1 : Bool) (i : Std.Usize) :
+  Result Bool
+  := do
+  loop
+    (fun (ok2, i1) => control.controls_ok_loop.body required observed ok2 i1)
+    (ok1, i)
+
+/-- [tauten_check_kernel::control::controls_ok]:
+    Source: 'crates/tauten-check-kernel/src/control.rs', lines 177:0-187:1
+    Visibility: public -/
+@[reducible]
+def control.controls_ok
+  (required : Slice control.Control) (observed : Slice control.Observation) :
+  Result Bool
+  := do
+  control.controls_ok_loop required observed true 0#usize
+
+/-- [tauten_check_kernel::control::admit]:
+    Source: 'crates/tauten-check-kernel/src/control.rs', lines 191:0-193:1
+    Visibility: public -/
+def control.admit
+  (required : Slice control.Control) (observed : Slice control.Observation) :
+  Result Bool
+  := do
+  let b ← core.slice.Slice.is_empty required
+  if b
+  then ok false
+  else
+    let b1 ← control.observations_ok required observed
+    if b1
+    then control.controls_ok required observed
+    else ok false
+
 /-- [tauten_check_kernel::effects::Source]
     Source: 'crates/tauten-check-kernel/src/effects.rs', lines 13:0-26:1
     Visibility: public -/

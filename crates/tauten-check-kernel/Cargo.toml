@@ -64,6 +64,15 @@ start_from = [
     "tauten_check_kernel::span::width",
     "tauten_check_kernel::span::consider",
     "tauten_check_kernel::span::innermost",
+    "tauten_check_kernel::control::control_ok",
+    "tauten_check_kernel::control::member",
+    "tauten_check_kernel::control::named",
+    "tauten_check_kernel::control::count_id",
+    "tauten_check_kernel::control::required_id",
+    "tauten_check_kernel::control::met",
+    "tauten_check_kernel::control::observations_ok",
+    "tauten_check_kernel::control::controls_ok",
+    "tauten_check_kernel::control::admit",
 ]
 
 # Stated locally, not inherited: the proofs gate translates this crate in a

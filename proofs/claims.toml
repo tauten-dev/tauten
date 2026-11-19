@@ -226,3 +226,27 @@ function = "share"
 lean = "tauten_proof_instances.contracts.share"
 theorems = ["Tauten.Instances.share_shape", "Tauten.Instances.share_requires_skips_body", "Tauten.Instances.share_requires_iff", "Tauten.Instances.share_ok"]
 mutants = ["requires-inverted", "requires-dropped", "requires-after-body"]
+
+[[claim]]
+crate = "tauten-check-kernel"
+file = "crates/tauten-check-kernel/src/control.rs"
+function = "admit"
+lean = "tauten_check_kernel.control.admit"
+theorems = ["Tauten.Kernel.admit_spec", "Tauten.Kernel.admit_ok_iff", "Tauten.Kernel.admit_infrastructure_refused", "Tauten.Kernel.admit_examples"]
+mutants = ["duplicate-accepted", "empty-inventory-accepted", "missing-observation-accepted", "unexpected-accepted", "timeout-counts-as-kill", "unnamed-failure-accepted"]
+
+[[claim]]
+crate = "tauten-check-kernel"
+file = "crates/tauten-check-kernel/src/control.rs"
+function = "control_ok"
+lean = "tauten_check_kernel.control.control_ok"
+theorems = ["Tauten.Kernel.control_ok_spec", "Tauten.Kernel.infrastructure_never_passes"]
+mutants = ["timeout-counts-as-kill", "unnamed-failure-accepted"]
+
+[[claim]]
+crate = "tauten-check-kernel"
+file = "crates/tauten-check-kernel/src/control.rs"
+function = "named"
+lean = "tauten_check_kernel.control.named"
+theorems = ["Tauten.Kernel.named_iff"]
+mutants = ["named-any-broken"]

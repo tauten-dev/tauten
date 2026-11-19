@@ -262,6 +262,44 @@ SPAN_MUTANTS = (
            (T + "innermost_spec",)),
 )
 
+CONTROL_MUTANTS = (
+    # control: any broken theorem counts as the named reason
+    Mutant("named-any-broken", "control.rs",
+           "            found = found || member(broken, *x);",
+           "            found = found || !broken.is_empty();",
+           (T + "named_iff",)),
+    # control: a negative control that timed out counts as killed
+    Mutant("timeout-counts-as-kill", "control.rs",
+           "        (Expect::Pass, Seen::Pass) | (Expect::Fail, Seen::FailNamed) => true,",
+           "        (Expect::Pass, Seen::Pass) | (Expect::Fail, Seen::FailNamed) => true,\n        (Expect::Fail, Seen::Timeout) => true,",
+           (T + "control_ok_spec", T + "admit_spec", T + "admit_ok_iff", T + "admit_infrastructure_refused")),
+    # control: a negative control that failed for another reason counts
+    Mutant("unnamed-failure-accepted", "control.rs",
+           "        (Expect::Pass, Seen::Pass) | (Expect::Fail, Seen::FailNamed) => true,",
+           "        (Expect::Pass, Seen::Pass) | (Expect::Fail, Seen::FailNamed) => true,\n        (Expect::Fail, Seen::FailOther) => true,",
+           (T + "control_ok_spec", T + "admit_spec", T + "admit_ok_iff", T + "admit_infrastructure_refused")),
+    # control: a control observed twice is accepted
+    Mutant("duplicate-accepted", "control.rs",
+           "count_id(observed, o.id) == 1",
+           "count_id(observed, o.id) >= 1",
+           (T + "admit_spec", T + "admit_ok_iff", T + "admit_infrastructure_refused")),
+    # control: an empty inventory is admitted
+    Mutant("empty-inventory-accepted", "control.rs",
+           "    !required.is_empty() && observations_ok(required, observed)",
+           "    observations_ok(required, observed)",
+           (T + "admit_spec", T + "admit_ok_iff", T + "admit_infrastructure_refused")),
+    # control: a required control that was never observed is accepted
+    Mutant("missing-observation-accepted", "control.rs",
+           "            ok = ok && met(observed, c.id, c.expect);",
+           "            ok = ok && (met(observed, c.id, c.expect) || count_id(observed, c.id) == 0);",
+           (T + "admit_spec", T + "admit_ok_iff", T + "admit_infrastructure_refused")),
+    # control: an observation of a control nobody required is accepted
+    Mutant("unexpected-accepted", "control.rs",
+           "            ok = ok && count_id(observed, o.id) == 1 && required_id(required, o.id);",
+           "            ok = ok && count_id(observed, o.id) == 1;",
+           (T + "admit_spec", T + "admit_ok_iff", T + "admit_infrastructure_refused")),
+)
+
 MUTANTS = (
     # tiers: a tier may depend on its own tier; `<` refuses same-tier edges
     Mutant("same-tier-refused", "tiers.rs",
@@ -313,7 +351,7 @@ MUTANTS = (
            "    if crate_wide && blocking {",
            "    if crate_wide || blocking {",
            (T + "exception_spec",)),
-) + RATCHET_MUTANTS + TABLE_MUTANTS + SUBSUME_MUTANTS + EFFECTS_MUTANTS + OUTCOME_MUTANTS + SPAN_MUTANTS
+) + RATCHET_MUTANTS + TABLE_MUTANTS + SUBSUME_MUTANTS + EFFECTS_MUTANTS + OUTCOME_MUTANTS + SPAN_MUTANTS + CONTROL_MUTANTS
 
 I = "Tauten.Instances."
 REFINED_TYPES = ("percent", "port", "offset", "count")
