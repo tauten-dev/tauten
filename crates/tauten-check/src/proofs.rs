@@ -24,6 +24,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use serde::{Deserialize, Serialize};
 use syn::spanned::Spanned;
 use syn::visit::Visit;
+use tauten_check_kernel::badge as kernel_badge;
 use tauten_check_kernel::control as kernel_control;
 use tauten_check_kernel::outcome as kernel_outcome;
 use tauten_check_kernel::subsume as kernel;
@@ -89,6 +90,54 @@ pub struct Claim {
     pub subsumes: Vec<String>,
     /// Mutants of the Rust source that must break at least one theorem.
     pub mutants: Vec<String>,
+    /// Named assumptions about the outside world the theorems rest on
+    /// (IDs from `proofs/assumptions.toml`). A claim with assumptions is
+    /// at best `proved-under`, never `proved`. Version 2 only.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub assumes: Vec<String>,
+}
+
+/// `proofs/assumptions.toml`: the named assumptions claims may rest on.
+#[derive(Debug, Clone, Default, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct AssumptionsFile {
+    /// One entry per assumption.
+    #[serde(default)]
+    pub assumption: Vec<Assumption>,
+}
+
+/// One named assumption, e.g. that `rename` is atomic on the filesystems a
+/// project supports.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Assumption {
+    /// Stable ID, e.g. `FS.rename-atomic`.
+    pub id: String,
+    /// What is assumed, in one sentence.
+    pub statement: String,
+    /// Where it is assumed to hold (platforms, filesystems, versions).
+    #[serde(default)]
+    pub scope: Option<String>,
+    /// Tests or fault injections that exercise it (it is not proved).
+    #[serde(default)]
+    pub tested_by: Vec<String>,
+}
+
+impl AssumptionsFile {
+    /// Parse `proofs/assumptions.toml`.
+    ///
+    /// # Errors
+    /// Malformed TOML, or an ID listed twice.
+    pub fn parse(text: &str) -> Result<Self, ClaimsError> {
+        let file: Self = toml::from_str(text)?;
+        let mut seen = BTreeSet::new();
+        for a in &file.assumption {
+            if !seen.insert(a.id.as_str()) {
+                return Err(ClaimsError::Assumption(format!("{} is listed twice", a.id)));
+            }
+        }
+        Ok(file)
+    }
 }
 
 /// One `[[mutant]]`: a textual change to the source.
@@ -117,6 +166,10 @@ pub enum ClaimsError {
     /// The gate command is empty.
     #[error("[gate] command is empty")]
     NoCommand,
+    /// `proofs/assumptions.toml` is inconsistent, or a claim names an
+    /// assumption it does not define.
+    #[error("assumptions: {0}")]
+    Assumption(String),
     /// A claim is inconsistent.
     #[error("claim {function}: {problem}")]
     Claim {
@@ -137,7 +190,7 @@ impl ClaimsFile {
     /// than TAU-N001/TAU-P003 or without `total`, or a function claimed twice.
     pub fn parse(text: &str) -> Result<Self, ClaimsError> {
         let file: Self = toml::from_str(text)?;
-        if file.version != 1 {
+        if !matches!(file.version, 1 | 2) {
             return Err(ClaimsError::Version(file.version));
         }
         if file.gate.command.is_empty() {
@@ -177,8 +230,31 @@ impl ClaimsFile {
             if !seen.insert((claim.file.as_str(), claim.function.as_str())) {
                 return Err(problem("is claimed twice"));
             }
+            if !claim.assumes.is_empty() && file.version < 2 {
+                return Err(problem("`assumes` needs `version = 2`"));
+            }
         }
         Ok(file)
+    }
+
+    /// Check that every assumption a claim names is defined.
+    ///
+    /// # Errors
+    /// [`ClaimsError::Assumption`] naming the first undefined ID.
+    pub fn check_assumptions(&self, known: &AssumptionsFile) -> Result<(), ClaimsError> {
+        for claim in &self.claim {
+            if let Some(id) = claim
+                .assumes
+                .iter()
+                .find(|id| !known.assumption.iter().any(|a| &a.id == *id))
+            {
+                return Err(ClaimsError::Assumption(format!(
+                    "claim {} assumes {id}, which proofs/assumptions.toml does not define",
+                    claim.function
+                )));
+            }
+        }
+        Ok(())
     }
 }
 
@@ -528,6 +604,69 @@ pub fn outcome(claim: &Claim, report: &Report) -> (Outcome, Option<String>) {
     (outcome, reason)
 }
 
+/// What may be said about a claim (the proved [`kernel_badge::badge`]).
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum Badge {
+    /// Proved about the code, with no assumption about the outside world.
+    Proved,
+    /// Proved about the code, under the claim's named assumptions.
+    ProvedUnder,
+    /// Proved about a model only.
+    ModelProved,
+    /// Checked by a bounded search.
+    Bounded,
+    /// Tested.
+    Tested,
+    /// Reviewed.
+    Reviewed,
+    /// Established, but its inputs changed since.
+    Pending,
+    /// Not established.
+    #[default]
+    NotEstablished,
+}
+
+impl Badge {
+    /// The name printed in JSON and summaries.
+    #[must_use]
+    pub const fn name(self) -> &'static str {
+        match self {
+            Self::Proved => "proved",
+            Self::ProvedUnder => "proved-under",
+            Self::ModelProved => "model-proved",
+            Self::Bounded => "bounded",
+            Self::Tested => "tested",
+            Self::Reviewed => "reviewed",
+            Self::Pending => "pending",
+            Self::NotEstablished => "not-established",
+        }
+    }
+}
+
+/// The badge of an extracted Lean claim: established when the gate proved
+/// it, `fresh` when its inputs are unchanged since.
+#[must_use]
+pub fn badge(claim: &Claim, outcome: Outcome, fresh: bool) -> Badge {
+    use kernel_badge::{Method, Relation};
+    match kernel_badge::badge(
+        outcome == Outcome::Proved,
+        fresh,
+        Method::Lean,
+        Relation::Extracted,
+        !claim.assumes.is_empty(),
+    ) {
+        kernel_badge::Badge::Proved => Badge::Proved,
+        kernel_badge::Badge::ProvedUnder => Badge::ProvedUnder,
+        kernel_badge::Badge::ModelProved => Badge::ModelProved,
+        kernel_badge::Badge::Bounded => Badge::Bounded,
+        kernel_badge::Badge::Tested => Badge::Tested,
+        kernel_badge::Badge::Reviewed => Badge::Reviewed,
+        kernel_badge::Badge::Pending => Badge::Pending,
+        kernel_badge::Badge::NotEstablished => Badge::NotEstablished,
+    }
+}
+
 /// One claim as recorded in `proofs/claims.json` (also the badge data).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ClaimRecord {
@@ -536,6 +675,9 @@ pub struct ClaimRecord {
     pub claim: Claim,
     /// What the gate established.
     pub outcome: Outcome,
+    /// What may be said about it when it was recorded ([`badge`]).
+    #[serde(default)]
+    pub badge: Badge,
     /// Why the claim is not proved.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub detail: Option<String>,
@@ -789,7 +931,10 @@ pub fn subsume(
             _ => kernel::Finding::Other,
         };
         let listed = record.claim.subsumes.contains(&diag.id);
-        let proved = record.outcome == Outcome::Proved && record.claim.total.is_some();
+        // Only an unconditional proof subsumes: a claim proved under
+        // assumptions does not excuse a panic path.
+        let proved = badge(&record.claim, record.outcome, entry.fresh) == Badge::Proved
+            && record.claim.total.is_some();
         if kernel::subsumes(tier.kernel(), finding, listed, proved, entry.fresh) {
             diag.severity = Severity::Warning;
             diag.subsumed_by.clone_from(&record.claim.total);

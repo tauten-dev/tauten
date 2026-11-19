@@ -103,7 +103,7 @@ fn inconsistent_claims_are_rejected() {
             "only TAU-N001",
         ),
         ("total = \"K.add_total\"\n", "", "needs a `total`"),
-        ("version = 1", "version = 2", "version 2"),
+        ("version = 1", "version = 3", "version 3"),
         (
             "command = [\"sh\", \"proofs/run.sh\"]",
             "command = []",
@@ -308,6 +308,7 @@ fn record(outcome: Outcome) -> ClaimRecord {
     ClaimRecord {
         claim: claim(),
         outcome,
+        badge: badge(&claim(), outcome, true),
         detail: None,
         fingerprint: "fnv1a64:0".to_owned(),
     }
@@ -573,4 +574,48 @@ fn freshness_is_decided_by_bindings() {
             ("n", "fnv1a64:04")
         ])
     ));
+}
+
+/// Named assumptions (S3): a claim resting on one records `proved-under`,
+/// never `proved`, and never subsumes a finding.
+#[test]
+fn assumptions_lower_the_badge() {
+    let text = CLAIMS.replace("version = 1", "version = 2").replace(
+        "mutants = [\"add-wraps\"]",
+        "mutants = [\"add-wraps\"]\nassumes = [\"FIXTURE.example\"]",
+    );
+    let file = ClaimsFile::parse(&text).expect("valid v2 claims");
+    let c = file.claim[0].clone();
+    assert_eq!(c.assumes, ["FIXTURE.example"]);
+    // Undefined assumption IDs are refused; defined ones are accepted.
+    assert!(file.check_assumptions(&AssumptionsFile::default()).is_err());
+    let known = AssumptionsFile::parse(
+        "[[assumption]]\nid = \"FIXTURE.example\"\nstatement = \"an example\"\n",
+    )
+    .expect("assumptions");
+    assert!(file.check_assumptions(&known).is_ok());
+    assert!(AssumptionsFile::parse(
+        "[[assumption]]\nid = \"A\"\nstatement = \"x\"\n[[assumption]]\nid = \"A\"\nstatement = \"y\"\n"
+    )
+    .is_err());
+    // `assumes` needs version 2.
+    assert!(ClaimsFile::parse(&text.replace("version = 2", "version = 1")).is_err());
+
+    let (o, _) = outcome(&c, &passing());
+    assert_eq!(o, Outcome::Proved);
+    assert_eq!(badge(&c, o, true), Badge::ProvedUnder);
+    assert_eq!(badge(&c, o, false), Badge::Pending);
+    assert_eq!(badge(&claim(), o, true), Badge::Proved);
+
+    // A proved-under claim does not subsume.
+    let rec = ClaimRecord {
+        claim: c.clone(),
+        outcome: Outcome::Proved,
+        badge: Badge::ProvedUnder,
+        detail: None,
+        fingerprint: "fnv1a64:0".to_owned(),
+    };
+    let d = run(finding("TAU-N001", Tier::Kernel, 2), &rec, true);
+    assert_eq!(d.severity, Severity::Error);
+    assert!(d.subsumed_by.is_none());
 }

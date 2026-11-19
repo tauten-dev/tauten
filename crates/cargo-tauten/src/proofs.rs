@@ -12,13 +12,16 @@ use std::process::{Command, ExitCode, Stdio};
 use anyhow::{Context, Result};
 use tauten_check::Diagnostic;
 use tauten_check::proofs::{
-    self, ClaimRecord, ClaimsFile, Event, FunctionSpan, Outcome, Record, Recorded, Report,
+    self, AssumptionsFile, Badge, ClaimRecord, ClaimsFile, Event, FunctionSpan, Outcome, Record,
+    Recorded, Report,
 };
 
 use crate::workspace::Loaded;
 
 /// The claims a project declares.
 pub const CLAIMS_TOML: &str = "proofs/claims.toml";
+/// Named assumptions claims may rest on.
+pub const ASSUMPTIONS_TOML: &str = "proofs/assumptions.toml";
 /// The outcomes `cargo tauten proofs` recorded (and the badge data).
 pub const CLAIMS_JSON: &str = "proofs/claims.json";
 
@@ -33,6 +36,15 @@ pub fn run(ws: &Loaded, write: bool) -> Result<ExitCode> {
         )
     })?;
     let file = ClaimsFile::parse(&text)?;
+    let assumptions_path = root.join(ASSUMPTIONS_TOML);
+    let assumptions = if assumptions_path.is_file() {
+        let text = fs::read_to_string(&assumptions_path)
+            .with_context(|| format!("reading {}", assumptions_path.display()))?;
+        AssumptionsFile::parse(&text)?
+    } else {
+        AssumptionsFile::default()
+    };
+    file.check_assumptions(&assumptions)?;
     let before = fingerprints(ws, &file)?;
     let mut report = run_gate(root, &file.gate.command)?;
     report.changed_during_run = !proofs::unchanged(&before, &fingerprints(ws, &file)?);
@@ -44,6 +56,7 @@ pub fn run(ws: &Loaded, write: bool) -> Result<ExitCode> {
         records.push(ClaimRecord {
             claim: claim.clone(),
             outcome,
+            badge: proofs::badge(claim, outcome, true),
             detail,
             fingerprint,
         });
@@ -72,8 +85,17 @@ pub fn run(ws: &Loaded, write: bool) -> Result<ExitCode> {
         .iter()
         .filter(|r| r.outcome == Outcome::Proved)
         .count();
+    let under = records
+        .iter()
+        .filter(|r| r.badge == Badge::ProvedUnder)
+        .count();
+    let under = if under == 0 {
+        String::new()
+    } else {
+        format!(", {under} of them under named assumptions")
+    };
     eprintln!(
-        "tauten: {proved} of {} claim(s) proved{}",
+        "tauten: {proved} of {} claim(s) proved{under}{}",
         records.len(),
         if write {
             format!(" (recorded in {CLAIMS_JSON})")
