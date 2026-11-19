@@ -347,6 +347,91 @@ def exception.excuse
     else ok exception.Excuse.Allowed
   else ok exception.Excuse.Forbidden
 
+/-- [tauten_check_kernel::outcome::Stage]
+    Source: 'crates/tauten-check-kernel/src/outcome.rs', lines 11:0-18:1
+    Visibility: public -/
+@[discriminant isize]
+inductive outcome.Stage where
+| Ok : outcome.Stage
+| Failed : outcome.Stage
+| Absent : outcome.Stage
+
+/-- [tauten_check_kernel::outcome::Outcome]
+    Source: 'crates/tauten-check-kernel/src/outcome.rs', lines 22:0-38:1
+    Visibility: public -/
+@[discriminant isize]
+inductive outcome.Outcome where
+| Proved : outcome.Outcome
+| Drift : outcome.Outcome
+| BuildFailed : outcome.Outcome
+| AuditFailed : outcome.Outcome
+| MutantSurvived : outcome.Outcome
+| ToolMissing : outcome.Outcome
+
+/-- [tauten_check_kernel::outcome::Facts]
+    Source: 'crates/tauten-check-kernel/src/outcome.rs', lines 42:0-63:1
+    Visibility: public -/
+structure outcome.Facts where
+  ran : Bool
+  tools : outcome.Stage
+  extract : outcome.Stage
+  drift : outcome.Stage
+  build : outcome.Stage
+  audit : outcome.Stage
+  theorems : Bool
+  total : Bool
+  mutants : Bool
+  changed : Bool
+
+/-- [tauten_check_kernel::outcome::passed]:
+    Source: 'crates/tauten-check-kernel/src/outcome.rs', lines 67:0-72:1
+    Visibility: public -/
+def outcome.passed (stage : outcome.Stage) : Result Bool := do
+  match stage with
+  | outcome.Stage.Ok => ok true
+  | outcome.Stage.Failed => ok false
+  | outcome.Stage.Absent => ok false
+
+/-- [tauten_check_kernel::outcome::outcome]:
+    Source: 'crates/tauten-check-kernel/src/outcome.rs', lines 76:0-94:1
+    Visibility: public -/
+def outcome.outcome (f : outcome.Facts) : Result outcome.Outcome := do
+  if f.ran
+  then
+    let b ← outcome.passed f.tools
+    if b
+    then
+      let b1 ← outcome.passed f.extract
+      if b1
+      then
+        let b2 ← outcome.passed f.drift
+        if b2
+        then
+          let b3 ← outcome.passed f.build
+          if b3
+          then
+            let b4 ← outcome.passed f.audit
+            if b4
+            then
+              if f.theorems
+              then
+                if f.total
+                then
+                  if f.mutants
+                  then
+                    if f.changed
+                    then ok outcome.Outcome.Drift
+                    else ok outcome.Outcome.Proved
+                  else ok outcome.Outcome.MutantSurvived
+                else ok outcome.Outcome.AuditFailed
+              else ok outcome.Outcome.AuditFailed
+            else ok outcome.Outcome.AuditFailed
+          else ok outcome.Outcome.BuildFailed
+        else ok outcome.Outcome.Drift
+      else ok outcome.Outcome.BuildFailed
+    else ok outcome.Outcome.ToolMissing
+  else ok outcome.Outcome.ToolMissing
+
 /-- [tauten_check_kernel::ratchet::Finding]
     Source: 'crates/tauten-check-kernel/src/ratchet.rs', lines 16:0-21:1
     Visibility: public -/

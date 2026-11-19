@@ -148,6 +148,14 @@ theorems = ["Tauten.Kernel.verdict_spec", "Tauten.Kernel.f001_error_iff", "Taute
 mutants = ["unresolved-blocks", "undeclared-always-blocks"]
 
 [[claim]]
+crate = "tauten-check-kernel"
+file = "crates/tauten-check-kernel/src/outcome.rs"
+function = "outcome"
+lean = "tauten_check_kernel.outcome.outcome"
+theorems = ["Tauten.Kernel.outcome_proved_iff", "Tauten.Kernel.outcome_tool_missing_iff", "Tauten.Kernel.outcome_mutant_survived_iff", "Tauten.Kernel.outcome_examples"]
+mutants = ["changed-ignored", "mutants-ignored", "absent-passes"]
+
+[[claim]]
 crate = "tauten-proof-instances"
 file = "crates/tauten-proof-instances/src/refined.rs"
 function = "Percent::try_new"

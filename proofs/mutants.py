@@ -220,6 +220,25 @@ EFFECTS_MUTANTS = (
            (T + "verdict_spec", T + "f001_error_iff", T + "f001_silent_iff")),
 )
 
+OUTCOME_MUTANTS = (
+    # outcome: sources changing during the run no longer block "proved"
+    Mutant("changed-ignored", "outcome.rs",
+           "    } else if f.changed {\n        Outcome::Drift\n    } else {",
+           "    } else if false {\n        Outcome::Drift\n    } else {",
+           (T + "outcome_proved_iff", T + "outcome_examples")),
+    # outcome: a surviving mutant is ignored
+    Mutant("mutants-ignored", "outcome.rs",
+           "    } else if !f.mutants {",
+           "    } else if false {",
+           (T + "outcome_proved_iff", T + "outcome_mutant_survived_iff")),
+    # outcome: a stage that never reported counts as passed
+    Mutant("absent-passes", "outcome.rs",
+           "        Stage::Failed | Stage::Absent => false,",
+           "        Stage::Failed => false,\n        Stage::Absent => true,",
+           (T + "outcome_proved_iff", T + "outcome_tool_missing_iff",
+            T + "outcome_mutant_survived_iff", T + "outcome_examples")),
+)
+
 MUTANTS = (
     # tiers: a tier may depend on its own tier; `<` refuses same-tier edges
     Mutant("same-tier-refused", "tiers.rs",
@@ -271,7 +290,7 @@ MUTANTS = (
            "    if crate_wide && blocking {",
            "    if crate_wide || blocking {",
            (T + "exception_spec",)),
-) + RATCHET_MUTANTS + TABLE_MUTANTS + SUBSUME_MUTANTS + EFFECTS_MUTANTS
+) + RATCHET_MUTANTS + TABLE_MUTANTS + SUBSUME_MUTANTS + EFFECTS_MUTANTS + OUTCOME_MUTANTS
 
 I = "Tauten.Instances."
 REFINED_TYPES = ("percent", "port", "offset", "count")

@@ -9,3 +9,4 @@ import Tauten.MacroShapes
 import Tauten.Refined
 import Tauten.Contracts
 import Tauten.Effects
+import Tauten.Outcome

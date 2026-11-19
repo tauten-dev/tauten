@@ -86,6 +86,11 @@ def claims : List Name := [
   ``Tauten.Kernel.verdict_spec,
   ``Tauten.Kernel.f001_error_iff,
   ``Tauten.Kernel.f001_silent_iff,
+  -- the outcome of a claim (T3)
+  ``Tauten.Kernel.outcome_proved_iff,
+  ``Tauten.Kernel.outcome_tool_missing_iff,
+  ``Tauten.Kernel.outcome_mutant_survived_iff,
+  ``Tauten.Kernel.outcome_examples,
   -- the macros' generated code, per instance (P3)
   ``Tauten.Instances.percent_try_new_shape,
   ``Tauten.Instances.percent_try_new_ok_iff,
@@ -191,6 +196,8 @@ def reviewedFunctions : List Name := [
   ``tauten_check_kernel.effects.is_empty,
   ``tauten_check_kernel.effects.agrees,
   ``tauten_check_kernel.effects.verdict,
+  ``tauten_check_kernel.outcome.passed,
+  ``tauten_check_kernel.outcome.outcome,
   ``tauten_check_kernel.table.is_at,
   ``tauten_check_kernel.table.find_before,
   ``tauten_check_kernel.table.find_before_loop,

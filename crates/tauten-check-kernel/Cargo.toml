@@ -58,6 +58,8 @@ start_from = [
     "tauten_check_kernel::effects::is_empty",
     "tauten_check_kernel::effects::agrees",
     "tauten_check_kernel::effects::verdict",
+    "tauten_check_kernel::outcome::passed",
+    "tauten_check_kernel::outcome::outcome",
 ]
 
 # Stated locally, not inherited: the proofs gate translates this crate in a

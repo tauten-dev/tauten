@@ -24,6 +24,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use serde::{Deserialize, Serialize};
 use syn::spanned::Spanned;
 use syn::visit::Visit;
+use tauten_check_kernel::outcome as kernel_outcome;
 use tauten_check_kernel::subsume as kernel;
 
 use crate::diag::{Diagnostic, Severity};
@@ -325,85 +326,104 @@ impl Report {
     }
 }
 
-/// The outcome of one claim, with a reason when it is not proved.
+/// The outcome of one claim, with a reason when it is not proved. The
+/// decision is the proved [`kernel_outcome::outcome`]; this reads the facts
+/// from the report and words the reason.
 #[must_use]
 pub fn outcome(claim: &Claim, report: &Report) -> (Outcome, Option<String>) {
-    if let Some(why) = &report.not_started {
-        return (Outcome::ToolMissing, Some(why.clone()));
-    }
-    if report.stage("tools") == Some("missing") {
-        let detail = report.events.iter().find_map(|event| match event {
-            Event::Stage { stage, detail, .. } if stage == "tools" => detail.clone(),
-            Event::Stage { .. }
-            | Event::Theorem { .. }
-            | Event::Total { .. }
-            | Event::Mutant { .. } => None,
-        });
-        return (
-            Outcome::ToolMissing,
-            detail.or_else(|| Some("proof toolchain missing".to_owned())),
-        );
-    }
-    if !report
-        .events
-        .iter()
-        .any(|event| matches!(event, Event::Stage { .. }))
-    {
-        return (
-            Outcome::ToolMissing,
-            Some("the gate printed no result; it did not run".to_owned()),
-        );
-    }
-    let stages = [
-        ("tools", Outcome::ToolMissing),
-        ("extract", Outcome::BuildFailed),
-        ("drift", Outcome::Drift),
-        ("build", Outcome::BuildFailed),
-        ("audit", Outcome::AuditFailed),
-    ];
-    for (stage, failure) in stages {
-        match report.stage(stage) {
-            Some("ok") => {}
-            Some(status) => return (failure, Some(format!("stage {stage}: {status}"))),
-            None => return (failure, Some(format!("stage {stage} did not run"))),
-        }
-    }
-    if let Some(missing) = claim.theorems.iter().find(|t| !report.theorem_ok(t)) {
-        return (
-            Outcome::AuditFailed,
-            Some(format!(
-                "{missing} is missing or depends on a non-standard axiom"
-            )),
-        );
-    }
-    if let Some(total) = &claim.total
-        && !report.total_ok(total, &claim.lean)
-    {
-        return (
-            Outcome::AuditFailed,
-            Some(format!(
-                "{total} does not state that {} never fails for every input",
-                claim.lean
-            )),
-        );
-    }
-    if let Some(name) = claim
+    use kernel_outcome::Stage;
+    let stage = |name: &str| match report.stage(name) {
+        Some("ok") => Stage::Ok,
+        Some(_) => Stage::Failed,
+        None => Stage::Absent,
+    };
+    let ran = report.not_started.is_none()
+        && report
+            .events
+            .iter()
+            .any(|event| matches!(event, Event::Stage { .. }));
+    let missing_theorem = claim.theorems.iter().find(|t| !report.theorem_ok(t));
+    let total_ok = claim
+        .total
+        .as_ref()
+        .is_none_or(|total| report.total_ok(total, &claim.lean));
+    let survivor = claim
         .mutants
         .iter()
-        .find(|m| !report.mutant_kills(m, &claim.theorems))
-    {
-        return (
-            Outcome::MutantSurvived,
-            Some(format!("mutant {name} broke none of the claim's theorems")),
-        );
-    }
-    if report.changed_during_run {
-        return (
-            Outcome::Drift,
-            Some("the sources changed while the gate ran".to_owned()),
-        );
-    }
-    (Outcome::Proved, None)
+        .find(|m| !report.mutant_kills(m, &claim.theorems));
+    let facts = kernel_outcome::Facts {
+        ran,
+        tools: stage("tools"),
+        extract: stage("extract"),
+        drift: stage("drift"),
+        build: stage("build"),
+        audit: stage("audit"),
+        theorems: missing_theorem.is_none(),
+        total: total_ok,
+        mutants: survivor.is_none(),
+        changed: report.changed_during_run,
+    };
+    let decided = kernel_outcome::outcome(facts);
+    let first_stage = || {
+        ["tools", "extract", "drift", "build", "audit"]
+            .into_iter()
+            .find_map(|name| match report.stage(name) {
+                Some("ok") => None,
+                Some(status) => Some(format!("stage {name}: {status}")),
+                None => Some(format!("stage {name} did not run")),
+            })
+    };
+    let reason = match decided {
+        kernel_outcome::Outcome::Proved => return (Outcome::Proved, None),
+        kernel_outcome::Outcome::ToolMissing => Some(if let Some(why) = &report.not_started {
+            why.clone()
+        } else if !ran {
+            "the gate printed no result; it did not run".to_owned()
+        } else {
+            report
+                .events
+                .iter()
+                .find_map(|event| match event {
+                    Event::Stage { stage, detail, .. } if stage == "tools" => detail.clone(),
+                    Event::Stage { .. }
+                    | Event::Theorem { .. }
+                    | Event::Total { .. }
+                    | Event::Mutant { .. } => None,
+                })
+                .unwrap_or_else(|| "proof toolchain missing".to_owned())
+        }),
+        kernel_outcome::Outcome::BuildFailed => first_stage(),
+        kernel_outcome::Outcome::Drift if facts.drift != Stage::Ok => first_stage(),
+        kernel_outcome::Outcome::Drift => Some("the sources changed while the gate ran".to_owned()),
+        kernel_outcome::Outcome::AuditFailed => {
+            if facts.audit != Stage::Ok {
+                first_stage()
+            } else if let Some(missing) = missing_theorem {
+                Some(format!(
+                    "{missing} is missing or depends on a non-standard axiom"
+                ))
+            } else {
+                claim.total.as_ref().map(|total| {
+                    format!(
+                        "{total} does not state that {} never fails for every input",
+                        claim.lean
+                    )
+                })
+            }
+        }
+        kernel_outcome::Outcome::MutantSurvived => {
+            survivor.map(|name| format!("mutant {name} broke none of the claim's theorems"))
+        }
+    };
+    let outcome = match decided {
+        kernel_outcome::Outcome::Proved => Outcome::Proved,
+        kernel_outcome::Outcome::Drift => Outcome::Drift,
+        kernel_outcome::Outcome::BuildFailed => Outcome::BuildFailed,
+        kernel_outcome::Outcome::AuditFailed => Outcome::AuditFailed,
+        kernel_outcome::Outcome::MutantSurvived => Outcome::MutantSurvived,
+        kernel_outcome::Outcome::ToolMissing => Outcome::ToolMissing,
+    };
+    (outcome, reason)
 }
 
 /// One claim as recorded in `proofs/claims.json` (also the badge data).
@@ -464,7 +484,8 @@ pub fn fingerprint(files: &[(String, Vec<u8>)]) -> String {
 /// A function's lines in a source file.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FunctionSpan {
-    /// `name`, `Type::name`, `module::name` (nested items: `outer::inner`).
+    /// `name`, `Type::name`, `<Type as Trait>::name`, `module::name` (nested
+    /// items: `outer::inner`).
     pub path: String,
     /// First line (1-based, attributes included).
     pub start: u32,
@@ -517,7 +538,19 @@ impl<'ast> Visit<'ast> for Functions {
     }
 
     fn visit_item_impl(&mut self, item: &'ast syn::ItemImpl) {
-        self.prefix.push(type_name(&item.self_ty));
+        // A trait method is `<Type as Trait>::f`, so a claim on the
+        // inherent `Type::f` never covers it.
+        let name = match &item.trait_ {
+            Some((path, _)) => format!(
+                "<{} as {}>",
+                type_name(&item.self_ty),
+                path.segments
+                    .last()
+                    .map_or_else(String::new, |s| s.ident.to_string())
+            ),
+            None => type_name(&item.self_ty),
+        };
+        self.prefix.push(name);
         syn::visit::visit_item_impl(self, item);
         self.prefix.pop();
     }
@@ -585,9 +618,17 @@ pub fn subsume(
         let (Some(file), Some(line), Some(tier)) = (&diag.file, diag.line, diag.tier) else {
             continue;
         };
-        let Some(function) = functions.get(file).and_then(|spans| enclosing(spans, line)) else {
+        let Some(spans) = functions.get(file) else {
             continue;
         };
+        let Some(function) = enclosing(spans, line) else {
+            continue;
+        };
+        // Two functions with the same path in one file (generic impls,
+        // `cfg` variants): the claim cannot say which it is about.
+        if spans.iter().filter(|s| s.path == function.path).count() > 1 {
+            continue;
+        }
         let Some(entry) = recorded.iter().find(|entry| {
             let claim = &entry.record.claim;
             claim.file == *file && claim.function == function.path && claim.krate == diag.krate

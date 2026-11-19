@@ -418,3 +418,49 @@ fn the_repository_claims_files_are_valid() {
         assert!(!file.claim.is_empty(), "{path}");
     }
 }
+
+/// A proof of the inherent `Acc::add` must not cover `<Acc as Add>::add`,
+/// and a path that names two functions covers neither.
+#[test]
+fn trait_methods_and_ambiguous_paths_are_not_subsumed() {
+    const COLLIDE: &str = "\
+struct Acc;
+impl Acc {
+    fn add(a: u32, b: u32) -> u32 { a + b }
+}
+impl Add for Acc {
+    fn add(a: u32, b: u32) -> u32 { a + b }
+}
+impl G<u8> {
+    fn get(x: u8) -> u8 { x + 1 }
+}
+impl G<u16> {
+    fn get(x: u16) -> u16 { x + 1 }
+}
+";
+    let spans = functions(COLLIDE);
+    let paths: Vec<&str> = spans.iter().map(|s| s.path.as_str()).collect();
+    assert_eq!(paths, ["Acc::add", "<Acc as Add>::add", "G::get", "G::get"]);
+    let mut claimed = record(Outcome::Proved);
+    let file = BTreeMap::from([("crates/k/src/lib.rs".to_owned(), spans)]);
+    let check = |claimed: &ClaimRecord, line: u32| {
+        let recorded = [Recorded {
+            record: claimed,
+            fresh: true,
+        }];
+        subsume(
+            vec![finding("TAU-N001", Tier::Kernel, line)],
+            &recorded,
+            &file,
+        )
+        .pop()
+        .expect("one")
+        .severity
+    };
+    claimed.claim.function = "Acc::add".to_owned();
+    assert_eq!(check(&claimed, 3), Severity::Warning);
+    assert_eq!(check(&claimed, 6), Severity::Error);
+    claimed.claim.function = "G::get".to_owned();
+    assert_eq!(check(&claimed, 9), Severity::Error);
+    assert_eq!(check(&claimed, 12), Severity::Error);
+}
