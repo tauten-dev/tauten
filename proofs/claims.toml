@@ -258,3 +258,19 @@ function = "of_run"
 lean = "tauten_check_kernel.outcome.of_run"
 theorems = ["Tauten.Kernel.of_run_proved_iff"]
 mutants = ["of-run-mutants-ignored"]
+
+[[claim]]
+crate = "tauten-check-kernel"
+file = "crates/tauten-check-kernel/src/binding.rs"
+function = "fresh"
+lean = "tauten_check_kernel.binding.fresh"
+theorems = ["Tauten.Kernel.fresh_iff", "Tauten.Kernel.missing_key_never_fresh", "Tauten.Kernel.extra_key_never_fresh", "Tauten.Kernel.changed_never_fresh"]
+mutants = ["missing-key-accepted", "extra-key-accepted", "changed-accepted", "last-byte-ignored", "length-ignored"]
+
+[[claim]]
+crate = "tauten-check-kernel"
+file = "crates/tauten-check-kernel/src/binding.rs"
+function = "same_bytes"
+lean = "tauten_check_kernel.binding.same_bytes"
+theorems = ["Tauten.Kernel.same_bytes_spec"]
+mutants = ["last-byte-ignored", "length-ignored"]

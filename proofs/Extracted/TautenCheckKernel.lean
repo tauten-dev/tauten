@@ -20,6 +20,279 @@ set_option maxRecDepth 2048
 
 namespace tauten_check_kernel
 
+/-- [tauten_check_kernel::binding::Binding]
+    Source: 'crates/tauten-check-kernel/src/binding.rs', lines 19:0-24:1
+    Visibility: public -/
+structure binding.Binding where
+  key : Std.Usize
+  bytes : alloc.vec.Vec Std.U8
+
+/-- [tauten_check_kernel::binding::same_bytes]: loop body 0:
+    Source: 'crates/tauten-check-kernel/src/binding.rs', lines 34:4-39:5
+    Visibility: public -/
+@[rust_loop_body]
+def binding.same_bytes_loop.body
+  (a : Slice Std.U8) (b : Slice Std.U8) (same : Bool) (i : Std.Usize) :
+  Result (ControlFlow (Bool × Std.Usize) Bool)
+  := do
+  let i1 := Slice.len a
+  if i < i1
+  then
+    let o ←
+      core.slice.Slice.get (core.slice.index.SliceIndexUsizeSlice Std.U8) a i
+    let o1 ←
+      core.slice.Slice.get (core.slice.index.SliceIndexUsizeSlice Std.U8) b i
+    let same1 ←
+      match o with
+      | none => ok same
+      | some x =>
+        match o1 with
+        | none => ok same
+        | some y => if same
+                    then ok (x = y)
+                    else ok false
+    let i2 ← lift (core.num.Usize.saturating_add i 1#usize)
+    ok (cont (same1, i2))
+  else ok (done same)
+
+/-- [tauten_check_kernel::binding::same_bytes]: loop 0:
+    Source: 'crates/tauten-check-kernel/src/binding.rs', lines 34:4-39:5
+    Visibility: public -/
+@[rust_loop]
+def binding.same_bytes_loop
+  (a : Slice Std.U8) (b : Slice Std.U8) (same : Bool) (i : Std.Usize) :
+  Result Bool
+  := do
+  loop
+    (fun (same1, i1) => binding.same_bytes_loop.body a b same1 i1)
+    (same, i)
+
+/-- [tauten_check_kernel::binding::same_bytes]:
+    Source: 'crates/tauten-check-kernel/src/binding.rs', lines 28:0-41:1
+    Visibility: public -/
+def binding.same_bytes
+  (a : Slice Std.U8) (b : Slice Std.U8) : Result Bool := do
+  let i := Slice.len a
+  let i1 := Slice.len b
+  if i != i1
+  then ok false
+  else binding.same_bytes_loop a b true 0#usize
+
+/-- [tauten_check_kernel::binding::has_key]: loop body 0:
+    Source: 'crates/tauten-check-kernel/src/binding.rs', lines 48:4-53:5
+    Visibility: public -/
+@[rust_loop_body]
+def binding.has_key_loop.body
+  (list : Slice binding.Binding) (key : Std.Usize) (found : Bool)
+  (i : Std.Usize) :
+  Result (ControlFlow (Bool × Std.Usize) Bool)
+  := do
+  let i1 := Slice.len list
+  if i < i1
+  then
+    let o ←
+      core.slice.Slice.get (core.slice.index.SliceIndexUsizeSlice
+        binding.Binding) list i
+    let found1 ←
+      match o with
+      | none => ok found
+      | some b => if found
+                  then ok true
+                  else ok (b.key = key)
+    let i2 ← lift (core.num.Usize.saturating_add i 1#usize)
+    ok (cont (found1, i2))
+  else ok (done found)
+
+/-- [tauten_check_kernel::binding::has_key]: loop 0:
+    Source: 'crates/tauten-check-kernel/src/binding.rs', lines 48:4-53:5
+    Visibility: public -/
+@[rust_loop]
+def binding.has_key_loop
+  (list : Slice binding.Binding) (key : Std.Usize) (found : Bool)
+  (i : Std.Usize) :
+  Result Bool
+  := do
+  loop
+    (fun (found1, i1) => binding.has_key_loop.body list key found1 i1)
+    (found, i)
+
+/-- [tauten_check_kernel::binding::has_key]:
+    Source: 'crates/tauten-check-kernel/src/binding.rs', lines 45:0-55:1
+    Visibility: public -/
+@[reducible]
+def binding.has_key
+  (list : Slice binding.Binding) (key : Std.Usize) : Result Bool := do
+  binding.has_key_loop list key false 0#usize
+
+/-- [tauten_check_kernel::binding::agrees]: loop body 0:
+    Source: 'crates/tauten-check-kernel/src/binding.rs', lines 62:4-67:5
+    Visibility: public -/
+@[rust_loop_body]
+def binding.agrees_loop.body
+  (list : Slice binding.Binding) (key : Std.Usize) (bytes : Slice Std.U8)
+  (ok1 : Bool) (i : Std.Usize) :
+  Result (ControlFlow (Bool × Std.Usize) Bool)
+  := do
+  let i1 := Slice.len list
+  if i < i1
+  then
+    let o ←
+      core.slice.Slice.get (core.slice.index.SliceIndexUsizeSlice
+        binding.Binding) list i
+    let ok2 ←
+      match o with
+      | none => ok ok1
+      | some b =>
+        if ok1
+        then
+          if b.key != key
+          then ok true
+          else let s := alloc.vec.Vec.deref b.bytes
+               binding.same_bytes s bytes
+        else ok false
+    let i2 ← lift (core.num.Usize.saturating_add i 1#usize)
+    ok (cont (ok2, i2))
+  else ok (done ok1)
+
+/-- [tauten_check_kernel::binding::agrees]: loop 0:
+    Source: 'crates/tauten-check-kernel/src/binding.rs', lines 62:4-67:5
+    Visibility: public -/
+@[rust_loop]
+def binding.agrees_loop
+  (list : Slice binding.Binding) (key : Std.Usize) (bytes : Slice Std.U8)
+  (ok1 : Bool) (i : Std.Usize) :
+  Result Bool
+  := do
+  loop
+    (fun (ok2, i1) => binding.agrees_loop.body list key bytes ok2 i1)
+    (ok1, i)
+
+/-- [tauten_check_kernel::binding::agrees]:
+    Source: 'crates/tauten-check-kernel/src/binding.rs', lines 59:0-69:1
+    Visibility: public -/
+@[reducible]
+def binding.agrees
+  (list : Slice binding.Binding) (key : Std.Usize) (bytes : Slice Std.U8) :
+  Result Bool
+  := do
+  binding.agrees_loop list key bytes true 0#usize
+
+/-- [tauten_check_kernel::binding::covered]: loop body 0:
+    Source: 'crates/tauten-check-kernel/src/binding.rs', lines 76:4-81:5
+    Visibility: public -/
+@[rust_loop_body]
+def binding.covered_loop.body
+  (recorded : Slice binding.Binding) (current : Slice binding.Binding)
+  (ok1 : Bool) (i : Std.Usize) :
+  Result (ControlFlow (Bool × Std.Usize) Bool)
+  := do
+  let i1 := Slice.len current
+  if i < i1
+  then
+    let o ←
+      core.slice.Slice.get (core.slice.index.SliceIndexUsizeSlice
+        binding.Binding) current i
+    let ok2 ←
+      match o with
+      | none => ok ok1
+      | some c =>
+        if ok1
+        then
+          do
+          let b ← binding.has_key recorded c.key
+          if b
+          then
+            let s := alloc.vec.Vec.deref c.bytes
+            binding.agrees recorded c.key s
+          else ok false
+        else ok false
+    let i2 ← lift (core.num.Usize.saturating_add i 1#usize)
+    ok (cont (ok2, i2))
+  else ok (done ok1)
+
+/-- [tauten_check_kernel::binding::covered]: loop 0:
+    Source: 'crates/tauten-check-kernel/src/binding.rs', lines 76:4-81:5
+    Visibility: public -/
+@[rust_loop]
+def binding.covered_loop
+  (recorded : Slice binding.Binding) (current : Slice binding.Binding)
+  (ok1 : Bool) (i : Std.Usize) :
+  Result Bool
+  := do
+  loop
+    (fun (ok2, i1) => binding.covered_loop.body recorded current ok2 i1)
+    (ok1, i)
+
+/-- [tauten_check_kernel::binding::covered]:
+    Source: 'crates/tauten-check-kernel/src/binding.rs', lines 73:0-83:1
+    Visibility: public -/
+@[reducible]
+def binding.covered
+  (recorded : Slice binding.Binding) (current : Slice binding.Binding) :
+  Result Bool
+  := do
+  binding.covered_loop recorded current true 0#usize
+
+/-- [tauten_check_kernel::binding::present]: loop body 0:
+    Source: 'crates/tauten-check-kernel/src/binding.rs', lines 90:4-95:5
+    Visibility: public -/
+@[rust_loop_body]
+def binding.present_loop.body
+  (recorded : Slice binding.Binding) (current : Slice binding.Binding)
+  (ok1 : Bool) (i : Std.Usize) :
+  Result (ControlFlow (Bool × Std.Usize) Bool)
+  := do
+  let i1 := Slice.len recorded
+  if i < i1
+  then
+    let o ←
+      core.slice.Slice.get (core.slice.index.SliceIndexUsizeSlice
+        binding.Binding) recorded i
+    let ok2 ←
+      match o with
+      | none => ok ok1
+      | some r => if ok1
+                  then binding.has_key current r.key
+                  else ok false
+    let i2 ← lift (core.num.Usize.saturating_add i 1#usize)
+    ok (cont (ok2, i2))
+  else ok (done ok1)
+
+/-- [tauten_check_kernel::binding::present]: loop 0:
+    Source: 'crates/tauten-check-kernel/src/binding.rs', lines 90:4-95:5
+    Visibility: public -/
+@[rust_loop]
+def binding.present_loop
+  (recorded : Slice binding.Binding) (current : Slice binding.Binding)
+  (ok1 : Bool) (i : Std.Usize) :
+  Result Bool
+  := do
+  loop
+    (fun (ok2, i1) => binding.present_loop.body recorded current ok2 i1)
+    (ok1, i)
+
+/-- [tauten_check_kernel::binding::present]:
+    Source: 'crates/tauten-check-kernel/src/binding.rs', lines 87:0-97:1
+    Visibility: public -/
+@[reducible]
+def binding.present
+  (recorded : Slice binding.Binding) (current : Slice binding.Binding) :
+  Result Bool
+  := do
+  binding.present_loop recorded current true 0#usize
+
+/-- [tauten_check_kernel::binding::fresh]:
+    Source: 'crates/tauten-check-kernel/src/binding.rs', lines 101:0-103:1
+    Visibility: public -/
+def binding.fresh
+  (recorded : Slice binding.Binding) (current : Slice binding.Binding) :
+  Result Bool
+  := do
+  let b ← binding.covered recorded current
+  if b
+  then binding.present recorded current
+  else ok false
+
 /-- [tauten_check_kernel::control::Expect]
     Source: 'crates/tauten-check-kernel/src/control.rs', lines 17:0-22:1
     Visibility: public -/

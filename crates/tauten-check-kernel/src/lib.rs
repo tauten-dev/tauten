@@ -16,6 +16,7 @@
 
 extern crate alloc;
 
+pub mod binding;
 pub mod control;
 pub mod effects;
 pub mod exception;

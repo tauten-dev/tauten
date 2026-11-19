@@ -544,3 +544,33 @@ fn controls_are_admitted_as_exact_sets() {
     assert_eq!(o, Outcome::MutantSurvived);
     assert!(why.is_some_and(|w| w.contains("no mutant")));
 }
+
+/// Freshness goes through the proved binding kernel (S4).
+#[test]
+fn freshness_is_decided_by_bindings() {
+    let map = |pairs: &[(&str, &str)]| -> BTreeMap<String, String> {
+        pairs
+            .iter()
+            .map(|(k, v)| ((*k).to_owned(), (*v).to_owned()))
+            .collect()
+    };
+    let now = map(&[("k", "fnv1a64:01"), ("m", "fnv1a64:02")]);
+    assert!(claim_fresh("k", "fnv1a64:01", &now));
+    assert!(!claim_fresh("k", "fnv1a64:00", &now));
+    assert!(!claim_fresh("x", "fnv1a64:01", &now));
+    assert!(unchanged(&now, &now.clone()));
+    // Any edited, added or removed input is a change.
+    assert!(!unchanged(
+        &now,
+        &map(&[("k", "fnv1a64:01"), ("m", "fnv1a64:03")])
+    ));
+    assert!(!unchanged(&now, &map(&[("k", "fnv1a64:01")])));
+    assert!(!unchanged(
+        &now,
+        &map(&[
+            ("k", "fnv1a64:01"),
+            ("m", "fnv1a64:02"),
+            ("n", "fnv1a64:04")
+        ])
+    ));
+}

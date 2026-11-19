@@ -35,7 +35,7 @@ pub fn run(ws: &Loaded, write: bool) -> Result<ExitCode> {
     let file = ClaimsFile::parse(&text)?;
     let before = fingerprints(ws, &file)?;
     let mut report = run_gate(root, &file.gate.command)?;
-    report.changed_during_run = fingerprints(ws, &file)? != before;
+    report.changed_during_run = !proofs::unchanged(&before, &fingerprints(ws, &file)?);
 
     let mut records = Vec::new();
     for claim in &file.claim {
@@ -274,7 +274,7 @@ pub fn load(ws: &Loaded) -> Result<Option<RecordedProofs>> {
     let fresh = record
         .claims
         .iter()
-        .map(|c| current.get(&c.claim.krate) == Some(&c.fingerprint))
+        .map(|c| proofs::claim_fresh(&c.claim.krate, &c.fingerprint, &current))
         .collect();
     let mut functions = BTreeMap::new();
     for claim in &record.claims {

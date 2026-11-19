@@ -305,6 +305,34 @@ CONTROL_MUTANTS = (
            (T + "admit_spec", T + "admit_ok_iff", T + "admit_infrastructure_refused")),
 )
 
+BINDING_MUTANTS = (
+    # binding: the last byte is never compared
+    Mutant("last-byte-ignored", "binding.rs",
+           "    while i < a.len() {\n        if let (Some(x), Some(y))",
+           "    while i < a.len().saturating_sub(1) {\n        if let (Some(x), Some(y))",
+           (T + "same_bytes_spec",) + (T + "fresh_iff", T + "missing_key_never_fresh", T + "extra_key_never_fresh", T + "changed_never_fresh")),
+    # binding: byte strings of different lengths can compare equal
+    Mutant("length-ignored", "binding.rs",
+           "    if a.len() != b.len() {\n        return false;\n    }",
+           "",
+           (T + "same_bytes_spec",) + (T + "fresh_iff", T + "missing_key_never_fresh", T + "extra_key_never_fresh", T + "changed_never_fresh")),
+    # binding: a current input the record does not mention is accepted
+    Mutant("missing-key-accepted", "binding.rs",
+           "            ok = ok && has_key(recorded, c.key) && agrees(recorded, c.key, &c.bytes);",
+           "            ok = ok && agrees(recorded, c.key, &c.bytes);",
+           (T + "fresh_iff", T + "missing_key_never_fresh", T + "extra_key_never_fresh", T + "changed_never_fresh")),
+    # binding: a recorded input that no longer exists is accepted
+    Mutant("extra-key-accepted", "binding.rs",
+           "    covered(recorded, current) && present(recorded, current)",
+           "    covered(recorded, current)",
+           (T + "fresh_iff", T + "missing_key_never_fresh", T + "extra_key_never_fresh", T + "changed_never_fresh")),
+    # binding: only the length of a changed input is compared
+    Mutant("changed-accepted", "binding.rs",
+           "            ok = ok && (b.key != key || same_bytes(&b.bytes, bytes));",
+           "            ok = ok && (b.key != key || b.bytes.len() == bytes.len());",
+           (T + "fresh_iff", T + "missing_key_never_fresh", T + "extra_key_never_fresh", T + "changed_never_fresh")),
+)
+
 MUTANTS = (
     # tiers: a tier may depend on its own tier; `<` refuses same-tier edges
     Mutant("same-tier-refused", "tiers.rs",
@@ -356,7 +384,7 @@ MUTANTS = (
            "    if crate_wide && blocking {",
            "    if crate_wide || blocking {",
            (T + "exception_spec",)),
-) + RATCHET_MUTANTS + TABLE_MUTANTS + SUBSUME_MUTANTS + EFFECTS_MUTANTS + OUTCOME_MUTANTS + SPAN_MUTANTS + CONTROL_MUTANTS
+) + RATCHET_MUTANTS + TABLE_MUTANTS + SUBSUME_MUTANTS + EFFECTS_MUTANTS + OUTCOME_MUTANTS + SPAN_MUTANTS + CONTROL_MUTANTS + BINDING_MUTANTS
 
 I = "Tauten.Instances."
 REFINED_TYPES = ("percent", "port", "offset", "count")

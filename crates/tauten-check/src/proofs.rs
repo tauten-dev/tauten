@@ -698,6 +698,51 @@ fn enclosing(spans: &[FunctionSpan], line: u32) -> Option<&FunctionSpan> {
     tauten_check_kernel::span::innermost(&lines, line).and_then(|i| spans.get(i))
 }
 
+/// Bindings of every input in `map` (name to identifying text), keyed by
+/// the name's position in `names`.
+fn bindings(
+    map: &BTreeMap<String, String>,
+    names: &[&String],
+) -> Vec<tauten_check_kernel::binding::Binding> {
+    map.iter()
+        .filter_map(|(name, value)| {
+            let key = names.iter().position(|n| *n == name)?;
+            Some(tauten_check_kernel::binding::Binding {
+                key,
+                bytes: value.as_bytes().to_vec(),
+            })
+        })
+        .collect()
+}
+
+/// Whether a result recorded against inputs `recorded` may be reused with
+/// inputs `current` (name to fingerprint): the proved
+/// [`tauten_check_kernel::binding::fresh`]. An input added, removed or
+/// changed since the record makes it stale.
+#[must_use]
+pub fn unchanged(recorded: &BTreeMap<String, String>, current: &BTreeMap<String, String>) -> bool {
+    let names: Vec<&String> = recorded
+        .keys()
+        .chain(current.keys())
+        .collect::<BTreeSet<_>>()
+        .into_iter()
+        .collect();
+    tauten_check_kernel::binding::fresh(&bindings(recorded, &names), &bindings(current, &names))
+}
+
+/// Whether a claim recorded with `fingerprint` for `krate` is fresh against
+/// the current fingerprints of the claimed crates.
+#[must_use]
+pub fn claim_fresh(krate: &str, fingerprint: &str, current: &BTreeMap<String, String>) -> bool {
+    let recorded = BTreeMap::from([(krate.to_owned(), fingerprint.to_owned())]);
+    let now: BTreeMap<String, String> = current
+        .get(krate)
+        .map(|f| (krate.to_owned(), f.clone()))
+        .into_iter()
+        .collect();
+    unchanged(&recorded, &now)
+}
+
 /// A recorded claim and whether its fingerprint matches the current source.
 #[derive(Debug, Clone, Copy)]
 pub struct Recorded<'a> {

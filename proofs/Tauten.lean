@@ -12,3 +12,4 @@ import Tauten.Effects
 import Tauten.Outcome
 import Tauten.Span
 import Tauten.Control
+import Tauten.Binding
