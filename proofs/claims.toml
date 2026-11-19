@@ -140,6 +140,14 @@ theorems = ["Tauten.Kernel.agrees_spec", "Tauten.Kernel.f001_decision", "Tauten.
 mutants = ["agrees-ignores-extra", "missing-net-swapped"]
 
 [[claim]]
+crate = "tauten-check-kernel"
+file = "crates/tauten-check-kernel/src/effects.rs"
+function = "verdict"
+lean = "tauten_check_kernel.effects.verdict"
+theorems = ["Tauten.Kernel.verdict_spec", "Tauten.Kernel.f001_error_iff", "Tauten.Kernel.f001_silent_iff"]
+mutants = ["unresolved-blocks", "undeclared-always-blocks"]
+
+[[claim]]
 crate = "tauten-proof-instances"
 file = "crates/tauten-proof-instances/src/refined.rs"
 function = "Percent::try_new"
