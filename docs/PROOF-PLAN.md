@@ -62,7 +62,18 @@ reading the sources and writfold's recorded experience; P0 exists to test them.
   lists the rule and matches the current fingerprint are reported as
   subsumed by the proof; the decision is the new kernel function
   `subsume::subsumes` (4 claims, 4 mutants; 93 claims, 36 mutants in all).
-  `proofs/TRUST.md` is the trust list. Not done: CI does not yet run
+  `proofs/TRUST.md` is the trust list.
+
+  **What a proof must establish to silence a lint.** A theorem that merely
+  mentions a function never subsumes its findings. Subsumption needs the
+  specific property the lint stands for: a `total` theorem stating that the
+  extracted function succeeds on every input (Aeneas models arithmetic
+  overflow and out-of-bounds indexing as failure, so success rules out both),
+  for the claimed function, at the recorded fingerprint, listing the rule.
+  A theorem with caller preconditions (`i < len`) does not qualify; crediting
+  such a helper would need a proof that every caller establishes the
+  precondition, which tauten does not check yet. The total-shape check runs
+  in the project's audit, so it is on the trust list. Not done: CI does not yet run
   `cargo tauten proofs` or check that `claims.json` is current; the site
   does not yet read `claims.json`.
 

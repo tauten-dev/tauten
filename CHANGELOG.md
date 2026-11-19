@@ -13,6 +13,14 @@
   (JSON field `subsumed_by`, severity `warning`), not as errors.
 - Rule-table validation and proof subsumption are decided by
   `tauten-check-kernel` and proved in Lean (`docs/proofs/README.md`).
+- **Breaking:** `#[refined]` accepts only an inner type that is
+  `tauten::refine::Frozen` (primitives, `String`, and `Box`, `Option`, `Vec`,
+  arrays, slices, tuples and `&'static` references of those). A `Cell` could
+  be changed through `get()`, and a user-written `Clone` could break the
+  predicate, after `try_new` checked it. Every refined type implements
+  `tauten::refine::Refined`. Reported by an external review.
+- Proof fingerprints include the workspace `Cargo.toml` (without `version`
+  lines) and the toolchain pin.
 
 ## 0.0.2 (2026-11-18)
 

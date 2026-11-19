@@ -1,0 +1,28 @@
+error[E0277]: `Level` cannot be wrapped by #[refined]: it is not `tauten::refine::Frozen`
+  --> tests/ui/refined_custom_clone.rs:14:20
+   |
+14 | pub struct Bounded(Level);
+   |                    ^^^^^ unsatisfied trait bound
+   |
+help: the trait `Frozen` is not implemented for `Level`
+  --> tests/ui/refined_custom_clone.rs:4:1
+   |
+ 4 | pub struct Level(u8);
+   | ^^^^^^^^^^^^^^^^
+   = note: a refined value must not change after `try_new` checked it: interior mutability (`Cell`, `RefCell`, atomics, locks) or a user-written `Clone` could break the predicate
+   = note: supported: primitives, `String`, and `Box`, `Option`, `Vec`, arrays, slices, tuples and `&'static` references of those
+   = help: the following other types implement trait `Frozen`:
+             &'static T
+             ()
+             (A, B)
+             (A, B, C)
+             (A, B, C, D)
+             (A, B, C, D, E)
+             (A, B, C, D, E, F)
+             (A,)
+           and $N others
+note: required by a bound in `tauten::refine::Refined::Inner`
+  --> src/refine.rs
+   |
+   |     type Inner: Frozen + ?Sized;
+   |                 ^^^^^^ required by this bound in `Refined::Inner`

@@ -111,6 +111,24 @@ mod behaviour {
         assert!(matches!(early_return(&[]), Err(BankError::Contract(_))));
     }
 
+    #[tauten::refined(|s: &String| !s.is_empty())]
+    #[derive(Clone, Debug, PartialEq)]
+    struct Label(String);
+
+    #[tauten::refined(|v: &Vec<(u8, &'static str)>| v.len() <= 2)]
+    struct Short(Vec<(u8, &'static str)>);
+
+    #[test]
+    fn frozen_inner_types_are_accepted() {
+        fn inner<T: tauten::refine::Refined>(_: &T) {}
+        let name = Label::try_new("a".to_owned()).expect("non-empty");
+        inner(&name);
+        assert_eq!(name.clone(), name);
+        assert!(Label::try_new(String::new()).is_err());
+        assert!(Short::try_new(vec![(1, "a"), (2, "b")]).is_ok());
+        assert!(Short::try_new(vec![(1, "a"), (2, "b"), (3, "c")]).is_err());
+    }
+
     #[test]
     fn compile_time_guarantees() {
         let t = trybuild::TestCases::new();

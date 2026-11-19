@@ -12,9 +12,10 @@ tauten turns those into compiler-checked rules, sorted by how much authority
 a crate holds, and reports each one with a stable ID and a repair hint an
 agent can act on.
 
-> **Status: pre-release.** Not published yet, no website yet, and no
-> benchmark numbers yet. What exists and what has been exercised is listed in
-> [docs/STATUS.md](docs/STATUS.md). The plan is [docs/PLAN.md](docs/PLAN.md).
+> **Status: early release** (0.0.x on crates.io; site at
+> [tauten.dev](https://tauten.dev)). Benchmark: development pilot completed;
+> held-out benefit not established. What exists and what has been exercised
+> is listed in [docs/STATUS.md](docs/STATUS.md). The plan is [docs/PLAN.md](docs/PLAN.md).
 
 ## How it works
 

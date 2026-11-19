@@ -7,7 +7,8 @@
 //!   handle). Core code takes those as parameters, so a signature shows what
 //!   it can touch and tests can substitute fakes.
 //! * [`newtype`] / [`refined`]: nominal wrappers whose field cannot be
-//!   reached or built except through `new` / `try_new`.
+//!   reached or built except through `new` / `try_new`. A refined type
+//!   wraps only a [`refine::Frozen`] type, so the checked value cannot change.
 //! * [`requires`] / [`ensures`]: contracts checked on every call in every
 //!   build profile. A violation is returned as an error, never a panic.
 //!
@@ -18,6 +19,7 @@
 pub mod cap;
 pub mod contract;
 mod error;
+pub mod refine;
 
 pub use error::{ContractViolation, RefineError};
 pub use tauten_macros::{ensures, newtype, refined, requires};

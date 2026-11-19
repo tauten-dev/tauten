@@ -152,6 +152,10 @@ fn expand_wrapper(item: &ItemStruct, predicate: Option<&Expr>) -> syn::Result<To
     );
     let conversions = if predicate.is_some() {
         quote! {
+            impl ::tauten::refine::Refined for #name {
+                type Inner = #inner;
+            }
+
             impl ::core::convert::TryFrom<#inner> for #name {
                 type Error = ::tauten::RefineError;
                 fn try_from(value: #inner) -> ::core::result::Result<Self, Self::Error> {

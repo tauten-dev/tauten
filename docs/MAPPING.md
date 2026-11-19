@@ -38,6 +38,10 @@ only by a visible, reasoned `#[expect]`, and not at all where marked
 | Repair-hint diagnostics | `--format json` stable schema; `explain` | tooling | Exercised | — |
 | Proof tier | Charon/Aeneas → Lean for kernel crates, generalised from writfold | P | Planned (M3) | Only listed kernel theorems are "proved". |
 
-Dropped as not portable to Rust: regions and arena brands, effect
-polymorphism, hidden-authority capture tracking in closures, staged macros,
-cleanup effects.
+Out of scope for now (a scope decision, not a claim that Rust cannot
+express them): regions and arena brands, effect polymorphism, captured
+authority tracking in closures, staged macros, cleanup effects and
+cancellation protocols. Several have partial Rust encodings (lifetime-branded
+handles, restricted effect analysis, explicit capability parameters); tauten
+does not enforce them yet. Benchmark results set their priority; a low
+frequency in one task suite does not rule a defect class out.

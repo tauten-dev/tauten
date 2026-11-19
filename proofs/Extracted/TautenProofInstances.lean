@@ -92,6 +92,92 @@ def tauten.error.ContractViolation.ensures
   := do
   ok (tauten.error.ContractViolation.Ensures function condition)
 
+/-- Trait declaration: [tauten::refine::sealed::Sealed]
+    Source: 'crates/tauten/src/refine.rs', lines 14:4-14:20
+    Name pattern: [tauten::refine::sealed::Sealed]
+    Visibility: public -/
+@[rust_trait "tauten::refine::sealed::Sealed"]
+structure tauten.refine.sealed.Sealed (Self : Type _) where
+
+/-- Trait declaration: [tauten::refine::Frozen]
+    Source: 'crates/tauten/src/refine.rs', lines 26:0-26:32
+    Name pattern: [tauten::refine::Frozen]
+    Visibility: public -/
+@[rust_trait "tauten::refine::Frozen" (parentClauses := ["sealedSealedInst"])]
+structure tauten.refine.Frozen (Self : Type _) where
+  sealedSealedInst : tauten.refine.sealed.Sealed Self
+
+/-- Trait declaration: [tauten::refine::Refined]
+    Source: 'crates/tauten/src/refine.rs', lines 29:0-29:17
+    Name pattern: [tauten::refine::Refined]
+    Visibility: public -/
+@[rust_trait "tauten::refine::Refined" (parentClauses := ["FrozenInst"])]
+structure tauten.refine.Refined (Self : Type _) (Self_Inner : Type _) where
+  FrozenInst : tauten.refine.Frozen Self_Inner
+
+/-- Trait implementation: [tauten::refine::{impl tauten::refine::sealed::Sealed for u8}]
+    Source: 'crates/tauten/src/refine.rs', lines 37:12-37:38; this code is generated from a macro invocation at: 'crates/tauten/src/refine.rs', lines 43:0-63:1
+    Name pattern: [tauten::refine::sealed::Sealed<u8>] -/
+@[reducible, rust_trait_impl "tauten::refine::sealed::Sealed<u8>"]
+def U8.Insts.TautenRefineSealedSealed : tauten.refine.sealed.Sealed Std.U8 := {
+}
+
+/-- Trait implementation: [tauten::refine::{impl tauten::refine::Frozen for u8}]
+    Source: 'crates/tauten/src/refine.rs', lines 38:12-38:30; this code is generated from a macro invocation at: 'crates/tauten/src/refine.rs', lines 43:0-63:1
+    Name pattern: [tauten::refine::Frozen<u8>] -/
+@[reducible, rust_trait_impl "tauten::refine::Frozen<u8>"]
+def U8.Insts.TautenRefineFrozen : tauten.refine.Frozen Std.U8 := {
+  sealedSealedInst := U8.Insts.TautenRefineSealedSealed
+}
+
+/-- Trait implementation: [tauten::refine::{impl tauten::refine::sealed::Sealed for u16}]
+    Source: 'crates/tauten/src/refine.rs', lines 37:12-37:38; this code is generated from a macro invocation at: 'crates/tauten/src/refine.rs', lines 43:0-63:1
+    Name pattern: [tauten::refine::sealed::Sealed<u16>] -/
+@[reducible, rust_trait_impl "tauten::refine::sealed::Sealed<u16>"]
+def U16.Insts.TautenRefineSealedSealed : tauten.refine.sealed.Sealed Std.U16
+  := {
+}
+
+/-- Trait implementation: [tauten::refine::{impl tauten::refine::Frozen for u16}]
+    Source: 'crates/tauten/src/refine.rs', lines 38:12-38:30; this code is generated from a macro invocation at: 'crates/tauten/src/refine.rs', lines 43:0-63:1
+    Name pattern: [tauten::refine::Frozen<u16>] -/
+@[reducible, rust_trait_impl "tauten::refine::Frozen<u16>"]
+def U16.Insts.TautenRefineFrozen : tauten.refine.Frozen Std.U16 := {
+  sealedSealedInst := U16.Insts.TautenRefineSealedSealed
+}
+
+/-- Trait implementation: [tauten::refine::{impl tauten::refine::sealed::Sealed for i32}]
+    Source: 'crates/tauten/src/refine.rs', lines 37:12-37:38; this code is generated from a macro invocation at: 'crates/tauten/src/refine.rs', lines 43:0-63:1
+    Name pattern: [tauten::refine::sealed::Sealed<i32>] -/
+@[reducible, rust_trait_impl "tauten::refine::sealed::Sealed<i32>"]
+def I32.Insts.TautenRefineSealedSealed : tauten.refine.sealed.Sealed Std.I32
+  := {
+}
+
+/-- Trait implementation: [tauten::refine::{impl tauten::refine::Frozen for i32}]
+    Source: 'crates/tauten/src/refine.rs', lines 38:12-38:30; this code is generated from a macro invocation at: 'crates/tauten/src/refine.rs', lines 43:0-63:1
+    Name pattern: [tauten::refine::Frozen<i32>] -/
+@[reducible, rust_trait_impl "tauten::refine::Frozen<i32>"]
+def I32.Insts.TautenRefineFrozen : tauten.refine.Frozen Std.I32 := {
+  sealedSealedInst := I32.Insts.TautenRefineSealedSealed
+}
+
+/-- Trait implementation: [tauten::refine::{impl tauten::refine::sealed::Sealed for u64}]
+    Source: 'crates/tauten/src/refine.rs', lines 37:12-37:38; this code is generated from a macro invocation at: 'crates/tauten/src/refine.rs', lines 43:0-63:1
+    Name pattern: [tauten::refine::sealed::Sealed<u64>] -/
+@[reducible, rust_trait_impl "tauten::refine::sealed::Sealed<u64>"]
+def U64.Insts.TautenRefineSealedSealed : tauten.refine.sealed.Sealed Std.U64
+  := {
+}
+
+/-- Trait implementation: [tauten::refine::{impl tauten::refine::Frozen for u64}]
+    Source: 'crates/tauten/src/refine.rs', lines 38:12-38:30; this code is generated from a macro invocation at: 'crates/tauten/src/refine.rs', lines 43:0-63:1
+    Name pattern: [tauten::refine::Frozen<u64>] -/
+@[reducible, rust_trait_impl "tauten::refine::Frozen<u64>"]
+def U64.Insts.TautenRefineFrozen : tauten.refine.Frozen Std.U64 := {
+  sealedSealedInst := U64.Insts.TautenRefineSealedSealed
+}
+
 /-- [tauten_proof_instances::contracts::OpError]
     Source: 'crates/tauten-proof-instances/src/contracts.rs', lines 8:0-15:1
     Visibility: public -/
@@ -408,6 +494,14 @@ def refined.__tauten_percent.Percent.Insts.CoreConvertAsRefU8 :
   as_ref := refined.__tauten_percent.Percent.Insts.CoreConvertAsRefU8.as_ref
 }
 
+/-- Trait implementation: [tauten_proof_instances::refined::__tauten_percent::{impl tauten::refine::Refined<u8> for tauten_proof_instances::refined::__tauten_percent::Percent}]
+    Source: 'crates/tauten-proof-instances/src/refined.rs', lines 4:0-4:33 -/
+@[reducible]
+def refined.__tauten_percent.Percent.Insts.TautenRefineRefinedU8 :
+  tauten.refine.Refined refined.__tauten_percent.Percent Std.U8 := {
+  FrozenInst := U8.Insts.TautenRefineFrozen
+}
+
 /-- [tauten_proof_instances::refined::__tauten_percent::{tauten_proof_instances::refined::__tauten_percent::Percent}::try_new::{closure}]
     Source: 'crates/tauten-proof-instances/src/refined.rs', lines 4:18-4:31 -/
 @[reducible]
@@ -578,6 +672,14 @@ def refined.__tauten_port.Port.Insts.CoreConvertAsRefU16 : core.convert.AsRef
   as_ref := refined.__tauten_port.Port.Insts.CoreConvertAsRefU16.as_ref
 }
 
+/-- Trait implementation: [tauten_proof_instances::refined::__tauten_port::{impl tauten::refine::Refined<u16> for tauten_proof_instances::refined::__tauten_port::Port}]
+    Source: 'crates/tauten-proof-instances/src/refined.rs', lines 9:0-9:49 -/
+@[reducible]
+def refined.__tauten_port.Port.Insts.TautenRefineRefinedU16 :
+  tauten.refine.Refined refined.__tauten_port.Port Std.U16 := {
+  FrozenInst := U16.Insts.TautenRefineFrozen
+}
+
 /-- [tauten_proof_instances::refined::__tauten_port::{tauten_proof_instances::refined::__tauten_port::Port}::try_new::{closure}]
     Source: 'crates/tauten-proof-instances/src/refined.rs', lines 9:18-9:47 -/
 @[reducible]
@@ -742,6 +844,14 @@ def refined.__tauten_offset.Offset.Insts.CoreConvertAsRefI32.as_ref
 def refined.__tauten_offset.Offset.Insts.CoreConvertAsRefI32 :
   core.convert.AsRef refined.__tauten_offset.Offset Std.I32 := {
   as_ref := refined.__tauten_offset.Offset.Insts.CoreConvertAsRefI32.as_ref
+}
+
+/-- Trait implementation: [tauten_proof_instances::refined::__tauten_offset::{impl tauten::refine::Refined<i32> for tauten_proof_instances::refined::__tauten_offset::Offset}]
+    Source: 'crates/tauten-proof-instances/src/refined.rs', lines 14:0-14:49 -/
+@[reducible]
+def refined.__tauten_offset.Offset.Insts.TautenRefineRefinedI32 :
+  tauten.refine.Refined refined.__tauten_offset.Offset Std.I32 := {
+  FrozenInst := I32.Insts.TautenRefineFrozen
 }
 
 /-- [tauten_proof_instances::refined::__tauten_offset::{tauten_proof_instances::refined::__tauten_offset::Offset}::try_new::{closure}]
@@ -914,6 +1024,14 @@ def refined.__tauten_count.Count.Insts.CoreConvertAsRefU64.as_ref
 def refined.__tauten_count.Count.Insts.CoreConvertAsRefU64 : core.convert.AsRef
   refined.__tauten_count.Count Std.U64 := {
   as_ref := refined.__tauten_count.Count.Insts.CoreConvertAsRefU64.as_ref
+}
+
+/-- Trait implementation: [tauten_proof_instances::refined::__tauten_count::{impl tauten::refine::Refined<u64> for tauten_proof_instances::refined::__tauten_count::Count}]
+    Source: 'crates/tauten-proof-instances/src/refined.rs', lines 19:0-19:31 -/
+@[reducible]
+def refined.__tauten_count.Count.Insts.TautenRefineRefinedU64 :
+  tauten.refine.Refined refined.__tauten_count.Count Std.U64 := {
+  FrozenInst := U64.Insts.TautenRefineFrozen
 }
 
 /-- [tauten_proof_instances::refined::__tauten_count::{tauten_proof_instances::refined::__tauten_count::Count}::try_new::{closure}]
