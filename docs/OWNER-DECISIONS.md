@@ -1,25 +1,28 @@
 # Decisions and assets needed from the owner
 
-Collected 2026-11-18. Each item says what it unblocks.
+Updated 2026-11-19. Settled items are kept at the bottom for the record.
 
-## Assets
+## Open
 
-| # | Asset | Unblocks |
-|---|---|---|
-| 1 | **Final name.** Candidates whose crates.io lookup returned 404 on 2026-11-18: `tauten`, `scantling`, `stanchion`, `trunnion`. Spares: `kerfline`, `hewline`, `trueline`, `gudgeon`, `stricta`, `rigora`. Check domain, GitHub org and trademark yourself. | rename (cheap until first publish), M5 |
-| 2 | Domain (porkbun) | M7 website |
-| 3 | GitHub org, plus a private repo or permission to create one | push, CI (M5) |
-| 4 | crates.io token, scoped to publish-new + publish-update for the chosen crate names | M5 publish / name reservation |
-| 5 | Model budget and an API key, or a subscription usable headless in a container, for benchmark trials | M4 pilot, M6 |
+| # | Decision | What it unblocks | Recommendation |
+|---|---|---|---|
+| 1 | **Budget for the held-out benchmark.** Calibration: 3 tasks, arm A, ≤ 90 trials, about $16–32. Held-out: 20 tasks × 3 arms × 10 trials = 600 trials per model, about $120–240 on Sonnet 5.5, about $400 with a Haiku 5.5 replication. Commands are in `bench/README.md` on the local branch `bench-heldout`. | The first result that can separate the arms (the website's headline number) | Approve calibration now; decide the held-out size after it. Also confirm the Haiku 5.5 model id. |
+| 2 | **Credentials for container trials.** Trials run in isolated containers and need `CLAUDE_CODE_OAUTH_TOKEN` (from `claude setup-token`) or `ANTHROPIC_API_KEY`, passed by name. | Item 1 | A long-lived token from `claude setup-token`, exported in the shell that runs the bench. |
+| 3 | **First publish of `tauten-check-kernel`.** Trusted publishing cannot create a new crate, and the next release (0.0.3) adds it. | Releasing the proved kernel | A one-off crates.io token scoped to publish-new for `tauten-check-kernel`, used once (`cargo publish -p tauten-check-kernel`), then revoked; then add trusted publishing for that crate. |
+| 4 | **Writfold adoption branch** (`tauten-adoption` in `~/workspace/writfold-tauten`, not pushed). | Merging into writfold | Review `docs/writfold/tauten-adoption.md` there: the tiers (writfold-core kernel, writfold-kb edge), the xtask `#[expect]` fix (needs a quality gate run on main), the `#![expect]` style, and the proof-claims adoption. |
+| 5 | **Publish the held-out suite only after it runs.** The branch stays local so the hidden oracles are not public before the run. | Honest held-out results | Merge and publish it together with the results. |
 
-## Decisions
+## Settled
 
-| # | Decision | Recommendation |
-|---|---|---|
-| 1 | License | **Decided 2026-11-18: MIT** |
-| 2 | Reserve names now with 0.0.x crates, or wait for 0.1 | Reserve now, once the name is final: the 4 crate names plus the CLI |
-| 3 | Benchmark pilot: model(s), trials, budget cap | 4 dev tasks × 3 arms × 3 trials = 36 runs on one model, before writing the held-out tasks |
-| 4 | Writfold adoption timing | Stage 1 (observe, warn-only) now. Stage 2 (baseline + tiers) after the pilot. Note: writfold's AGENTS.md pauses benchmark pilots *in writfold*; this benchmark lives in the tauten repo. |
-| 5 | Proof tier in 0.1 (Aeneas/Lean template from writfold), or 0.2 | Template in 0.1, as the differentiator, but after the pilot |
-| 6 | Sovel repo: docs-only "archived, superseded by <name>" banner commit, tag `archive-2026-11`, GitHub archive | Yes. Nothing in the Sovel repo has been changed yet. |
-| 7 | writfold-kb tier: the dry run found it does file and git IO directly | Decide whether it is edge, or whether its decision logic should move to a core crate |
+| Item | Decision |
+|---|---|
+| Name | tauten (2026-11-18) |
+| License | MIT (2026-11-18) |
+| Domain, org | tauten.dev at Porkbun; GitHub org tauten-dev (2026-11-18) |
+| Crate publishing | 0.0.1 with a token, 0.0.2 with trusted publishing; "require trusted publishing" on; the original token revoked (2026-11-18) |
+| Repo visibility | tauten-dev/tauten public (2026-11-18) |
+| Pilot budget | 36 trials on one model; run 2026-11-18 for $6.29 |
+| Proof toolchain image | ghcr.io/tauten-dev/proofs-toolchain, private, readable by the tauten repo's Actions (2026-11-18) |
+| Proof tier | Ship, then prove one slice at a time; proofs never block unrelated work (2026-11-18) |
+| Sovel repo | Leave as is for now; may be made private later (2026-11-18) |
+| Writfold adoption | In a separate worktree; the owner merges (2026-11-18) |
