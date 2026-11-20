@@ -3,3 +3,4 @@
 *.swp
 /bench/results
 /proofs/.lake
+/bench/hosts/*/target
