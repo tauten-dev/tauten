@@ -35,3 +35,9 @@ crates = ["{{CRATE_DIR}}"]
 # file = "{{CRATE_DIR}}/src/lib.rs"
 # before = "checked_add(amount)"        # must occur exactly once
 # after = "wrapping_add(amount)"
+# direct = ["Proofs.Module.apply_step"]  # optional, exact: the declarations
+#                                       # whose own proof must fail (helpers
+#                                       # included), and no others. Without
+#                                       # it, the mutant must break one of
+#                                       # its claim's theorems, directly or
+#                                       # through a dependency.

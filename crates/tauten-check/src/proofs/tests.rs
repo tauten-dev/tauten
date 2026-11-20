@@ -896,3 +896,49 @@ fn try_selects_mutants_by_theorem_and_name() {
     let (sel, affected) = try_selection(&file, &["K.nothing".to_owned()], &[]);
     assert!(sel.is_empty() && affected.is_empty());
 }
+
+/// #39: a mutant may declare the exact set of declarations whose own proof
+/// must fail. A headline `H` uses a helper `L`.
+#[test]
+fn exact_direct_failures_are_admitted_as_exact_sets() {
+    let s = |v: &[&str]| v.iter().map(|x| (*x).to_owned()).collect::<Vec<_>>();
+    // Expected {L}: {L} calibrates; {H} and {L, H} do not; nothing observed
+    // is never a kill.
+    assert!(exact_direct(&s(&["L"]), &s(&["L"])));
+    assert!(!exact_direct(&s(&["L"]), &s(&["H"])));
+    assert!(!exact_direct(&s(&["L"]), &s(&["L", "H"])));
+    assert!(!exact_direct(&s(&["L"]), &s(&[])));
+    // Expected {L, H}: both must fail directly.
+    assert!(exact_direct(&s(&["L", "H"]), &s(&["H", "L"])));
+    assert!(!exact_direct(&s(&["L", "H"]), &s(&["L"])));
+
+    // Through a claim's outcome: with `direct = ["K.helper"]` the kill is
+    // judged on the direct set, not on the claim's broken theorems.
+    let c = claim();
+    let mut report = with(
+        &without(&passing(), "add-wraps"),
+        r#"{"mutant":"add-wraps","status":"killed","broken":["K.add_spec"],"direct":["K.helper"],"dependent":["K.add_spec"]}"#,
+    );
+    assert_eq!(
+        outcome(&c, &report).0,
+        Outcome::Proved,
+        "claim-level policy by default"
+    );
+    report
+        .expected_direct
+        .insert("add-wraps".to_owned(), s(&["K.helper"]));
+    assert_eq!(outcome(&c, &report).0, Outcome::Proved);
+    report
+        .expected_direct
+        .insert("add-wraps".to_owned(), s(&["K.helper", "K.add_spec"]));
+    assert_eq!(outcome(&c, &report).0, Outcome::MutantSurvived);
+    // An infrastructure failure is not a kill, whatever it reports.
+    let mut broken_build = with(
+        &without(&passing(), "add-wraps"),
+        r#"{"mutant":"add-wraps","status":"error","broken":[],"direct":["K.helper"]}"#,
+    );
+    broken_build
+        .expected_direct
+        .insert("add-wraps".to_owned(), s(&["K.helper"]));
+    assert_eq!(outcome(&c, &broken_build).0, Outcome::MutantSurvived);
+}

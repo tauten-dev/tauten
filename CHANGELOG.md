@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- Mutant verdicts report what broke directly (#39, with #40 and #47): the
+  template gate emits, per mutant, the declarations whose own proof failed
+  (`direct`) apart from those that failed only through them
+  (`dependent`). A `[[mutant]]` may declare `direct = [...]`, the exact set
+  of declarations (helpers included) that must fail directly; that kill is
+  decided by the proved `control::admit`: for expected `{L}`, `{L}`
+  calibrates, `{H}` and `{L, H}` do not, nothing observed or an
+  infrastructure failure never does. Without `direct`, the claim-level
+  policy is unchanged.
+
 - The gate runs as the owner of the checkout, not root (#42):
   `docker/entry.sh` (the tools services' entry point) hands the cache
   volumes to that uid once and drops privileges with `setpriv`; root is an

@@ -304,12 +304,18 @@ def mutant(spec: dict, crates: list[str], theorems: set[str]) -> dict:
         if build.returncode == 0:
             return {"status": "survived", "broken": []}
         failures, elsewhere = failing(build.stdout, project)
-        broken = sorted((failures | set(SORRY_DEPENDENT.findall(build.stdout))) & theorems)
+        dependents = set(SORRY_DEPENDENT.findall(build.stdout))
+        broken = sorted((failures | dependents) & theorems)
+        # Reported apart (#39): declarations whose own proof fails, and
+        # those that only depend on one that does.
+        direct = sorted(failures)
+        dependent = sorted(dependents - failures)
         if elsewhere:
             print(build.stdout, file=sys.stderr)
-            return {"status": "error", "broken": broken,
+            return {"status": "error", "broken": broken, "direct": direct, "dependent": dependent,
                     "detail": f"errors outside the theorems: {elsewhere[:3]}"}
-        return {"status": "killed" if broken else "survived", "broken": broken}
+        return {"status": "killed" if broken or direct else "survived", "broken": broken,
+                "direct": direct, "dependent": dependent}
 
 
 def gate(only: set[str] | None = None) -> int:

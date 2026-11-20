@@ -202,6 +202,13 @@ pub struct Mutant {
     pub before: String,
     /// Its replacement.
     pub after: String,
+    /// Optional, exact: the Lean declarations whose own proofs must fail
+    /// under this mutant (helpers included), and no others. Decided by the
+    /// proved [`kernel_control::admit`]; without it the claim-level policy
+    /// applies (one of the claim's theorems broken, directly or through a
+    /// dependency).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub direct: Vec<String>,
 }
 
 /// Why `proofs/claims.toml` was rejected.
@@ -418,6 +425,12 @@ pub enum Event {
         /// Theorems that no longer build against the mutated translation.
         #[serde(default)]
         broken: Vec<String>,
+        /// Declarations whose own proof failed (#39).
+        #[serde(default)]
+        direct: Vec<String>,
+        /// Declarations that failed only through one that did.
+        #[serde(default)]
+        dependent: Vec<String>,
     },
 }
 
@@ -440,6 +453,50 @@ pub struct Report {
     pub events: Vec<Event>,
     /// The sources changed while the gate ran.
     pub changed_during_run: bool,
+    /// Mutant name -> its exact expected direct failures, for the mutants
+    /// of `proofs/claims.toml` that declare `direct` (#39).
+    pub expected_direct: BTreeMap<String, Vec<String>>,
+}
+
+/// Mutant name -> `direct`, for every mutant that declares one.
+#[must_use]
+pub fn expected_direct(file: &ClaimsFile) -> BTreeMap<String, Vec<String>> {
+    file.mutant
+        .iter()
+        .filter(|m| !m.direct.is_empty())
+        .map(|m| (m.name.clone(), m.direct.clone()))
+        .collect()
+}
+
+/// Whether the declarations that failed their own proof are exactly
+/// `expected` (#39): one `Fail` control per expected name, one observation
+/// per observed name, decided by the proved [`kernel_control::admit`]. An
+/// unexpected direct failure, a missing one, or nothing observed is never a
+/// kill.
+fn exact_direct(expected: &[String], observed: &[String]) -> bool {
+    use kernel_control::{Control, Expect, Observation, Seen};
+    let mut names: Vec<&str> = expected.iter().map(String::as_str).collect();
+    for o in observed {
+        if !names.contains(&o.as_str()) {
+            names.push(o);
+        }
+    }
+    let id = |n: &str| names.iter().position(|m| *m == n).unwrap_or(usize::MAX);
+    let controls: Vec<Control> = expected
+        .iter()
+        .map(|e| Control {
+            id: id(e),
+            expect: Expect::Fail,
+        })
+        .collect();
+    let observations: Vec<Observation> = observed
+        .iter()
+        .map(|o| Observation {
+            id: id(o),
+            seen: Seen::FailNamed,
+        })
+        .collect();
+    kernel_control::admit(&controls, &observations)
 }
 
 impl Report {
@@ -606,16 +663,22 @@ impl Report {
                     mutant,
                     status,
                     broken,
+                    direct,
+                    ..
                 } => {
                     let id = claim.mutants.iter().position(|m| m == mutant)?;
                     let broken_ids: Vec<usize> = broken
                         .iter()
                         .filter_map(|b| claim.theorems.iter().position(|t| t == b))
                         .collect();
+                    let killed = match self.expected_direct.get(mutant) {
+                        // Exact direct set: every expected declaration failed
+                        // its own proof and no other did.
+                        Some(expected) => exact_direct(expected, direct),
+                        None => kernel_control::named(&declared, &broken_ids),
+                    };
                     let seen = match status.as_str() {
-                        "killed" if kernel_control::named(&declared, &broken_ids) => {
-                            Seen::FailNamed
-                        }
+                        "killed" if killed => Seen::FailNamed,
                         "survived" => Seen::Pass,
                         "timeout" => Seen::Timeout,
                         _ => Seen::FailOther,
@@ -638,8 +701,15 @@ impl Report {
                 mutant,
                 status,
                 broken,
+                direct,
+                ..
             } => {
-                mutant == name && status == "killed" && broken.iter().any(|t| theorems.contains(t))
+                mutant == name
+                    && status == "killed"
+                    && match self.expected_direct.get(mutant) {
+                        Some(expected) => exact_direct(expected, direct),
+                        None => broken.iter().any(|t| theorems.contains(t)),
+                    }
             }
             Event::Stage { .. }
             | Event::Theorem { .. }

@@ -181,6 +181,7 @@ fn run_in(ws: &Loaded, live_root: &Path, write: bool, commit: Option<String>) ->
     let before = fingerprints(ws, &file)?;
     let mut report = run_gate(root, &file.gate.command)?;
     report.changed_during_run = !proofs::unchanged(&before, &fingerprints(ws, &file)?);
+    report.expected_direct = proofs::expected_direct(&file);
 
     let mut records = Vec::new();
     for claim in &file.claim {
@@ -349,7 +350,8 @@ pub fn try_run(ws: &Loaded, theorems: &[String], mutants: &[String]) -> Result<E
     }
     command.push(selected.join(","));
     let started = std::time::Instant::now();
-    let report = run_gate(root, &command)?;
+    let mut report = run_gate(root, &command)?;
+    report.expected_direct = proofs::expected_direct(&file);
     let mut all = true;
     for claim in &affected {
         let (outcome, detail) = proofs::outcome(claim, &report);
