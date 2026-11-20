@@ -399,3 +399,27 @@ function = "k003"
 lean = "tauten_check_kernel.layout.k003"
 theorems = ["Tauten.Kernel.k003_iff", "Tauten.Kernel.conditional_no_std_is_finding", "Tauten.Kernel.unparsed_root_is_finding"]
 mutants = ["conditional-counts-as-no-std", "unparsed-root-clean"]
+
+[[claim]]
+crate = "tauten-check-kernel"
+file = "crates/tauten-check-kernel/src/compiler.rs"
+function = "kept"
+lean = "tauten_check_kernel.compiler.kept"
+theorems = ["Tauten.Kernel.kept_iff"]
+mutants = ["summary-kept", "untiered-warning-kept"]
+
+[[claim]]
+crate = "tauten-check-kernel"
+file = "crates/tauten-check-kernel/src/compiler.rs"
+function = "applies"
+lean = "tauten_check_kernel.compiler.applies"
+theorems = ["Tauten.Kernel.applies_spec"]
+mutants = ["test-flag-inverted"]
+
+[[claim]]
+crate = "tauten-check-kernel"
+file = "crates/tauten-check-kernel/src/compiler.rs"
+function = "passes"
+lean = "tauten_check_kernel.compiler.passes"
+theorems = ["Tauten.Kernel.passes_spec", "Tauten.Kernel.check_passes_iff", "Tauten.Kernel.warnings_never_fail"]
+mutants = ["warning-fails"]

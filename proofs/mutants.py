@@ -517,6 +517,26 @@ MUTANTS = (
            "            NoStd::Unconditional | NoStd::NotTest => false,\n            NoStd::Conditional | NoStd::Absent | NoStd::Unparsed => true,",
            "            NoStd::Unconditional | NoStd::NotTest | NoStd::Unparsed => false,\n            NoStd::Conditional | NoStd::Absent => true,",
            (T + "k003_iff", T + "unparsed_root_is_finding")),
+    # compiler: summary lines kept as findings
+    Mutant("summary-kept", "compiler.rs",
+           "    reported && !summary && (tiered || blocking)",
+           "    reported && (tiered || blocking)",
+           (T + "kept_iff",)),
+    # compiler: an untiered crate's warnings kept
+    Mutant("untiered-warning-kept", "compiler.rs",
+           "    reported && !summary && (tiered || blocking)",
+           "    reported && !summary",
+           (T + "kept_iff",)),
+    # compiler: the test flag inverted, so test-only exemptions apply to libraries
+    Mutant("test-flag-inverted", "compiler.rs",
+           "        Some(_) => in_tests || !test,",
+           "        Some(_) => in_tests || test,",
+           (T + "applies_spec",)),
+    # compiler: a warning fails the check
+    Mutant("warning-fails", "compiler.rs",
+           "                    Severity::Warning => true,",
+           "                    Severity::Warning => false,",
+           (T + "passes_spec", T + "check_passes_iff", T + "warnings_never_fail")),
 ) + RATCHET_MUTANTS + TABLE_MUTANTS + SUBSUME_MUTANTS + EFFECTS_MUTANTS + OUTCOME_MUTANTS + SPAN_MUTANTS + CONTROL_MUTANTS + BINDING_MUTANTS + BADGE_MUTANTS + REGISTRY_MUTANTS + ASSUMPTION_MUTANTS + HARDENING_MUTANTS + RULE_MUTANTS
 
 I = "Tauten.Instances."

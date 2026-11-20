@@ -6,14 +6,14 @@ use std::collections::BTreeMap;
 use std::collections::hash_map::DefaultHasher;
 use std::fs;
 use std::hash::{Hash, Hasher};
-use std::io::BufReader;
+use std::io::{BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
 use anyhow::{Context, Result, bail};
 use cargo_metadata::Message;
 use tauten_check::diag::{CompilerMessage, from_compiler};
-use tauten_check::{Diagnostic, Profile, Severity, Tier};
+use tauten_check::{Diagnostic, Profile, Tier};
 
 use crate::workspace::Loaded;
 use crate::wrapper;
@@ -83,20 +83,25 @@ pub fn run(profile: &Profile, ws: &Loaded) -> Result<Vec<Diagnostic>> {
     let mut child = cmd.spawn().context("starting `cargo check`")?;
     let stdout = child.stdout.take().context("capturing compiler output")?;
     let mut diags = Vec::new();
-    for message in Message::parse_stream(BufReader::new(stdout)) {
-        let Message::CompilerMessage(m) = message.context("reading compiler output")? else {
+    // `TAUTEN_RECORD_COMPILER_JSON=<file>` keeps the raw messages, to record
+    // the golden output in `tests/golden/` for a new toolchain.
+    let mut record = match std::env::var_os("TAUTEN_RECORD_COMPILER_JSON") {
+        Some(path) => Some(fs::File::create(&path).context("creating the compiler record")?),
+        None => None,
+    };
+    for line in BufReader::new(stdout).lines() {
+        let line = line.context("reading compiler output")?;
+        if let Some(file) = record.as_mut() {
+            writeln!(file, "{line}").context("writing the compiler record")?;
+        }
+        let Ok(Message::CompilerMessage(m)) = serde_json::from_str::<Message>(&line) else {
             continue;
         };
         let Some(krate) = ws.package_name(&m.package_id) else {
             continue;
         };
         let tier = tiers.get(krate).copied();
-        if let Some(d) = from_compiler(profile, krate, tier, &convert(&m.message)) {
-            // Untiered crates are reported by TAU-T001; keep only their hard errors.
-            if tier.is_some() || d.severity == Severity::Error {
-                diags.push(d);
-            }
-        }
+        diags.extend(from_compiler(profile, krate, tier, &convert(&m.message)));
     }
     let output = child
         .wait_with_output()
@@ -151,5 +156,70 @@ fn level(level: cargo_metadata::diagnostic::DiagnosticLevel) -> &'static str {
         L::Error | L::Ice => "error",
         L::Warning => "warning",
         _ => "note",
+    }
+}
+
+/// The compiler output of the pinned toolchain on `fixtures/cases`,
+/// recorded by `scripts/record-golden`, replayed through the conversion and
+/// the proved `kept` decision: a toolchain update that changes message
+/// shapes (codes, levels, spans, notes naming a TAU rule) fails here.
+#[cfg(test)]
+mod golden {
+    use super::*;
+
+    const TOOLCHAIN: &str = "1.98.0";
+
+    fn tier_of(cases: &Path, name: &str) -> Option<Tier> {
+        let text = fs::read_to_string(cases.join(name).join("Cargo.toml")).ok()?;
+        let table: toml::Table = text.parse().ok()?;
+        let raw = table
+            .get("package")?
+            .get("metadata")?
+            .get("tauten")?
+            .get("tier")?
+            .as_str()?;
+        Tier::parse(raw)
+    }
+
+    #[test]
+    fn golden_compiler_output_maps_to_the_recorded_findings() {
+        let manifest = Path::new(env!("CARGO_MANIFEST_DIR"));
+        let golden = manifest.join("tests").join("golden");
+        let cases = manifest.join("../../fixtures/cases");
+        let profile = Profile::embedded().expect("profile");
+        let text = fs::read_to_string(golden.join(format!("rustc-{TOOLCHAIN}.jsonl")))
+            .expect("recorded compiler output");
+        let mut lines = Vec::new();
+        for line in text.lines() {
+            let Ok(Message::CompilerMessage(m)) = serde_json::from_str::<Message>(line) else {
+                panic!("not a compiler message: {line}");
+            };
+            let name = m
+                .package_id
+                .repr
+                .split('#')
+                .next()
+                .and_then(|p| p.rsplit('/').next())
+                .expect("package name")
+                .to_owned();
+            let tier = tier_of(&cases, &name);
+            if let Some(d) = from_compiler(&profile, &name, tier, &convert(&m.message)) {
+                lines.push(format!(
+                    "{name} {} {:?} {}:{}",
+                    d.id,
+                    d.severity,
+                    d.line.unwrap_or(0),
+                    d.column.unwrap_or(0)
+                ));
+            }
+        }
+        lines.sort();
+        let got = lines.join("\n") + "\n";
+        let expected_path = golden.join(format!("rustc-{TOOLCHAIN}.expected"));
+        if std::env::var_os("TAUTEN_BLESS").is_some() {
+            fs::write(&expected_path, &got).expect("bless");
+        }
+        let expected = fs::read_to_string(&expected_path).expect("expected findings");
+        assert_eq!(got, expected, "re-record with scripts/record-golden");
     }
 }

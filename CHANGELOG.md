@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Which compiler messages become findings, whether a rule applies to a
+  target (test targets included) and whether `check` passes are decided by
+  the proved kernel (`compiler::kept`, `applies`, `passes`; T5, #32):
+  `kept_iff`, `applies_spec`, `check_passes_iff`, `warnings_never_fail`.
+  The pinned toolchain's real compiler output on `fixtures/cases` is
+  recorded in `crates/cargo-tauten/tests/golden/` and replayed by a test;
+  `scripts/record-golden` re-records it for a new toolchain
+  (`TAUTEN_RECORD_COMPILER_JSON` keeps the raw messages).
+
 - TAU-T001, TAU-T003 and TAU-K003 are decided by the proved kernel
   (`layout::t001`, `t003`, `k003`; T6, #33). `no_std` is no longer found by
   substring: only `#![no_std]` or `#![cfg_attr(not(test), no_std)]` satisfies

@@ -557,6 +557,116 @@ def binding.fresh
   then binding.present recorded current
   else ok false
 
+/-- [tauten_check_kernel::compiler::MsgLevel]
+    Source: 'crates/tauten-check-kernel/src/compiler.rs', lines 20:0-27:1
+    Visibility: public -/
+@[discriminant isize]
+inductive compiler.MsgLevel where
+| Error : compiler.MsgLevel
+| Warning : compiler.MsgLevel
+| Other : compiler.MsgLevel
+
+/-- [tauten_check_kernel::severity::Severity]
+    Source: 'crates/tauten-check-kernel/src/severity.rs', lines 14:0-19:1
+    Visibility: public -/
+@[discriminant isize]
+inductive severity.Severity where
+| Warning : severity.Severity
+| Error : severity.Severity
+
+/-- [tauten_check_kernel::compiler::kept]:
+    Source: 'crates/tauten-check-kernel/src/compiler.rs', lines 35:0-45:1
+    Visibility: public -/
+def compiler.kept
+  (level : compiler.MsgLevel) (summary : Bool) (tiered : Bool)
+  (decided : severity.Severity) :
+  Result Bool
+  := do
+  let reported ←
+    match level with
+    | compiler.MsgLevel.Error => ok true
+    | compiler.MsgLevel.Warning => ok true
+    | compiler.MsgLevel.Other => ok false
+  let blocking ←
+    match decided with
+    | severity.Severity.Warning => ok false
+    | severity.Severity.Error => ok true
+  if reported
+  then if summary
+       then ok false
+       else if tiered
+            then ok true
+            else ok blocking
+  else ok false
+
+/-- [tauten_check_kernel::severity::Level]
+    Source: 'crates/tauten-check-kernel/src/severity.rs', lines 5:0-10:1
+    Visibility: public -/
+@[discriminant isize]
+inductive severity.Level where
+| Warn : severity.Level
+| Deny : severity.Level
+
+/-- [tauten_check_kernel::compiler::applies]:
+    Source: 'crates/tauten-check-kernel/src/compiler.rs', lines 51:0-56:1
+    Visibility: public -/
+def compiler.applies
+  (level : Option severity.Level) (in_tests : Bool) (test : Bool) :
+  Result Bool
+  := do
+  match level with
+  | none => ok false
+  | some _ => if in_tests
+              then ok true
+              else ok (¬ test)
+
+/-- [tauten_check_kernel::compiler::passes]: loop body 0:
+    Source: 'crates/tauten-check-kernel/src/compiler.rs', lines 63:4-72:5
+    Visibility: public -/
+@[rust_loop_body]
+def compiler.passes_loop.body
+  (findings : Slice severity.Severity) (ok1 : Bool) (i : Std.Usize) :
+  Result (ControlFlow (Bool × Std.Usize) Bool)
+  := do
+  let i1 := Slice.len findings
+  if i < i1
+  then
+    let o ←
+      core.slice.Slice.get (core.slice.index.SliceIndexUsizeSlice
+        severity.Severity) findings i
+    let ok2 ←
+      match o with
+      | none => ok ok1
+      | some s =>
+        if ok1
+        then
+          match s with
+          | severity.Severity.Warning => ok true
+          | severity.Severity.Error => ok false
+        else ok false
+    let i2 ← lift (core.num.Usize.saturating_add i 1#usize)
+    ok (cont (ok2, i2))
+  else ok (done ok1)
+
+/-- [tauten_check_kernel::compiler::passes]: loop 0:
+    Source: 'crates/tauten-check-kernel/src/compiler.rs', lines 63:4-72:5
+    Visibility: public -/
+@[rust_loop]
+def compiler.passes_loop
+  (findings : Slice severity.Severity) (ok1 : Bool) (i : Std.Usize) :
+  Result Bool
+  := do
+  loop
+    (fun (ok2, i1) => compiler.passes_loop.body findings ok2 i1)
+    (ok1, i)
+
+/-- [tauten_check_kernel::compiler::passes]:
+    Source: 'crates/tauten-check-kernel/src/compiler.rs', lines 60:0-74:1
+    Visibility: public -/
+@[reducible]
+def compiler.passes (findings : Slice severity.Severity) : Result Bool := do
+  compiler.passes_loop findings true 0#usize
+
 /-- [tauten_check_kernel::control::Expect]
     Source: 'crates/tauten-check-kernel/src/control.rs', lines 17:0-22:1
     Visibility: public -/
@@ -1198,14 +1308,6 @@ inductive tiers.Tier where
 | Kernel : tiers.Tier
 | Core : tiers.Tier
 | Edge : tiers.Tier
-
-/-- [tauten_check_kernel::severity::Level]
-    Source: 'crates/tauten-check-kernel/src/severity.rs', lines 5:0-10:1
-    Visibility: public -/
-@[discriminant isize]
-inductive severity.Level where
-| Warn : severity.Level
-| Deny : severity.Level
 
 /-- [tauten_check_kernel::exception::permitted]:
     Source: 'crates/tauten-check-kernel/src/exception.rs', lines 23:0-34:1
@@ -1930,14 +2032,6 @@ def ratchet.increases
 inductive rule.Input where
 | Read : rule.Input
 | Unparsed : rule.Input
-
-/-- [tauten_check_kernel::severity::Severity]
-    Source: 'crates/tauten-check-kernel/src/severity.rs', lines 14:0-19:1
-    Visibility: public -/
-@[discriminant isize]
-inductive severity.Severity where
-| Warning : severity.Severity
-| Error : severity.Severity
 
 /-- [tauten_check_kernel::severity::severity]:
     Source: 'crates/tauten-check-kernel/src/severity.rs', lines 37:0-48:1

@@ -1,0 +1,41 @@
+#!/bin/sh
+# Re-record the compiler output the golden test replays
+# (crates/cargo-tauten/tests/golden/): run `cargo tauten check` on
+# fixtures/cases with the pinned toolchain, keep the compiler messages,
+# strip rendered text and make paths relative. Then bless the expected
+# findings:
+#   sh scripts/record-golden && TAUTEN_BLESS=1 cargo test -p cargo-tauten golden
+set -eu
+cd "$(dirname "$0")/.."
+toolchain="$(sed -n 's/^channel = "\(.*\)"/\1/p' rust-toolchain.toml)"
+dest="crates/cargo-tauten/tests/golden/rustc-$toolchain.jsonl"
+raw="$(mktemp)"
+trap 'rm -f "$raw"' EXIT
+cargo build --quiet -p cargo-tauten
+(cd fixtures/cases && rm -rf target/tauten && TAUTEN_RECORD_COMPILER_JSON="$raw" \
+    ../../target/debug/cargo-tauten tauten check --no-baseline --format json > /dev/null) || true
+python3 - "$raw" "$dest" "$(pwd)" <<'PY'
+import json, sys
+raw, dest, root = sys.argv[1:]
+out = []
+for line in open(raw):
+    try:
+        m = json.loads(line)
+    except ValueError:
+        continue
+    if m.get("reason") != "compiler-message":
+        continue
+    name = m["package_id"].split("#")[0].rsplit("/", 1)[-1]
+    msg = m["message"]
+    def strip(d):
+        d.pop("rendered", None)
+        for c in d.get("children", []):
+            strip(c)
+        return d
+    strip(msg)
+    out.append({"reason": "compiler-message", "package_id": f"path+file:///fixtures/cases/{name}#0.0.0",
+                "manifest_path": f"/fixtures/cases/{name}/Cargo.toml", "target": m["target"], "message": msg})
+text = "".join(json.dumps(o, sort_keys=True).replace(root, "") + "\n" for o in out)
+open(dest, "w").write(text)
+print(f"recorded {len(out)} compiler messages in {dest}")
+PY

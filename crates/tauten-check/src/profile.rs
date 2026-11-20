@@ -182,6 +182,18 @@ impl Rule {
     pub fn level(&self, tier: Tier) -> Option<Level> {
         self.levels.get(&tier).copied()
     }
+
+    /// Whether the rule applies to a target of `tier` (a test target when
+    /// `test`). Decided by the proved
+    /// [`tauten_check_kernel::compiler::applies`].
+    #[must_use]
+    pub fn applies(&self, tier: Tier, test: bool) -> bool {
+        tauten_check_kernel::compiler::applies(
+            self.level(tier).map(Level::kernel),
+            self.in_tests,
+            test,
+        )
+    }
 }
 
 /// Which `disallowed-*` clippy list an API ban belongs to.
@@ -479,7 +491,7 @@ impl Profile {
     #[must_use]
     pub fn report_flags(&self, tier: Tier, test: bool) -> Vec<String> {
         let mut flags = Vec::new();
-        let applies = |rule: &&Rule| rule.level(tier).is_some() && (rule.in_tests || !test);
+        let applies = |rule: &&Rule| rule.applies(tier, test);
         for rule in self.rules.iter().filter(applies) {
             for lint in &rule.lints {
                 flags.push("-W".to_owned());

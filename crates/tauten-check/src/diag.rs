@@ -33,6 +33,26 @@ pub enum Severity {
 }
 
 impl Severity {
+    /// The same severity in the kernel's type.
+    #[must_use]
+    pub const fn kernel(self) -> kernel_severity::Severity {
+        match self {
+            Self::Warning => kernel_severity::Severity::Warning,
+            Self::Error => kernel_severity::Severity::Error,
+        }
+    }
+}
+
+/// Whether `cargo tauten check` passes: decided by the proved
+/// [`tauten_check_kernel::compiler::passes`] (no finding is an error).
+#[must_use]
+pub fn passes(diags: &[Diagnostic]) -> bool {
+    let severities: Vec<kernel_severity::Severity> =
+        diags.iter().map(|d| d.severity.kernel()).collect();
+    tauten_check_kernel::compiler::passes(&severities)
+}
+
+impl Severity {
     /// The severity of a finding whose rule has `level` in the crate's tier;
     /// without a level, `fallback`. Decided by the proved kernel
     /// ([`kernel_severity::severity`]).
@@ -182,14 +202,13 @@ pub fn from_compiler(
     tier: Option<Tier>,
     msg: &CompilerMessage,
 ) -> Option<Diagnostic> {
-    let severity = match msg.level.as_str() {
-        "error" => Severity::Error,
-        "warning" => Severity::Warning,
-        _ => return None,
+    use tauten_check_kernel::compiler::{self, MsgLevel};
+    let (level, severity) = match msg.level.as_str() {
+        "error" => (MsgLevel::Error, Severity::Error),
+        "warning" => (MsgLevel::Warning, Severity::Warning),
+        _ => (MsgLevel::Other, Severity::Warning),
     };
-    if msg.code.is_none() && is_summary(&msg.message) {
-        return None;
-    }
+    let summary = msg.code.is_none() && is_summary(&msg.message);
     let code = msg.code.clone();
     let rule = code
         .as_deref()
@@ -219,7 +238,11 @@ pub fn from_compiler(
             subsumed_by: None,
         },
     };
-    Some(diag.at(msg.file.clone(), msg.line, msg.column))
+    // Kept or dropped by the proved kernel: errors and warnings, not the
+    // compiler's summary lines; an untiered crate keeps only its errors
+    // (TAU-T001 reports the crate itself).
+    compiler::kept(level, summary, tier.is_some(), diag.severity.kernel())
+        .then(|| diag.at(msg.file.clone(), msg.line, msg.column))
 }
 
 fn rule_for<'p>(profile: &'p Profile, code: &str, notes: &[String]) -> Option<&'p Rule> {

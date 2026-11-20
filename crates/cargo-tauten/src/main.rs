@@ -15,7 +15,7 @@ use std::process::ExitCode;
 use anyhow::{Context, Result, bail};
 use clap::{Parser, Subcommand, ValueEnum};
 use tauten_check::baseline::{self, Baseline};
-use tauten_check::{Diagnostic, Profile, Severity, Tier};
+use tauten_check::{Diagnostic, Profile, Tier};
 
 #[derive(Parser)]
 #[command(name = "cargo", bin_name = "cargo")]
@@ -329,9 +329,9 @@ fn collect(profile: &Profile, target: &Target) -> Result<Collected> {
 }
 
 fn exit_code(diags: &[Diagnostic]) -> ExitCode {
-    if diags.iter().any(|d| d.severity == Severity::Error) {
-        ExitCode::FAILURE
-    } else {
+    if tauten_check::diag::passes(diags) {
         ExitCode::SUCCESS
+    } else {
+        ExitCode::FAILURE
     }
 }
