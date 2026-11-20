@@ -18,14 +18,31 @@ The roadmap reduces about sixty proposals (a durability plan, a survey of seven 
 | **Registry** | that nothing may be quietly removed or weakened | the baseline ratchet, theorems and mutants per claim, assumptions that may not grow |
 | **Effect row** | that a signature's capabilities match its declared effects | TAU-F001, later a declared label table |
 
-## Next
+## 0.0.5 (next release)
+
+A proof loop an adopter can live with: a mutant verdict says exactly what
+broke, a small kernel edit re-proves only what it touched, and a
+dependency's proof can be cited. Also ships everything done since 0.0.4.
+Triaged 2026-11-20 (Fable plan; #40 and #47 merged into #39, #43 and #45
+declined and parked in #30).
 
 | Issue | ID | Item | Days | Depends on |
 |---|---|---|---|---|
-| [#1](https://github.com/tauten-dev/tauten/issues/1) | S1 | Prove span::innermost and use it for proof subsumption | 0.5 | — | done on the `discipline-d0` branch
-| [#2](https://github.com/tauten-dev/tauten/issues/2) | S2 | Control admission kernel: exact sets, calibrated negatives | 1.5 | — |
-| [#4](https://github.com/tauten-dev/tauten/issues/4) | S4 | Binding kernel: a result is fresh only against recorded inputs | 1.0 | — |
-| [#3](https://github.com/tauten-dev/tauten/issues/3) | S3 | Claim badges and named assumptions (proved-under) | 1.0 | S2 |
+| [#21](https://github.com/tauten-dev/tauten/issues/21) | B6 | Declared layers inside a tier, decided by the proved order | 1.5 | — (implemented) |
+| [#46](https://github.com/tauten-dev/tauten/issues/46) | — | Fast stage builds the extracted Lean, so Lean decides | 0.5 | A4 |
+| [#42](https://github.com/tauten-dev/tauten/issues/42) | — | Gate stages run as the invoking user; root is a recorded opt-in | 0.5 | — |
+| [#39](https://github.com/tauten-dev/tauten/issues/39) | — | Exact direct mutant failures, reported apart from affected claims | 1.5 | S2 |
+| [#36](https://github.com/tauten-dev/tauten/issues/36) | D2 | Cadence levels and incremental proofs: ship, verify --level | 3 | S4 |
+| [#48](https://github.com/tauten-dev/tauten/issues/48) | A7b | Inherit a dependency's shipped claim | 1 | A7, D2 |
+
+Release criteria: all six closed with their fixtures in the gate; the CI
+gate, the proofs gate and the scanner mutation gate green on the tagged
+commit, `proofs/claims.json` recorded on it; D2 measured on writfold (a
+one-function kernel edit re-proves in under 15 minutes, or its no-fit exit
+is recorded); STATUS.md and this file current.
+
+Done before 0.0.5 (closed 2026-11-19/20): S1–S4, A1–A8, A11, A12, D3,
+T4–T7, #41, #44.
 
 ## 0.1.0
 
@@ -58,7 +75,6 @@ About 44 days in all. If it must shrink, cut in this order: A9 (ship the theorem
 
 | Issue | ID | Item | Days | Depends on |
 |---|---|---|---|---|
-| [#21](https://github.com/tauten-dev/tauten/issues/21) | B6 | Declared layers inside a tier, decided by the proved order | 1.5 | — |
 | [#19](https://github.com/tauten-dev/tauten/issues/19) | B3 | Effect rows over a declared label table (proc, rand, project caps) | 2.5 | — |
 | [#22](https://github.com/tauten-dev/tauten/issues/22) | B7 | Record invariants: #[refined] for structs | 2.0 | — |
 | [#20](https://github.com/tauten-dev/tauten/issues/20) | B4 | Admission kernels: Gate for stale results, once for replays | 3.0 | A6, B1 |

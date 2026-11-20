@@ -61,7 +61,7 @@
   own proof gate now derives each theorem's assumptions (`PREMISES`,
   `ESTABLISHES`), as the template's does; the machine library gains
   `RSysReachable` and `rsys_of_model` for extracted steps.
-||||||| 1bf6609
+
 - The agent profile (`AGENTS.tauten.md`) opens with the architecture on
   one page (A12, #16): decisions are total kernel functions with claims,
   protocols are machines, the world is reached only through capabilities

@@ -6,7 +6,9 @@ Updated 2026-11-20. Settled items are kept at the bottom for the record.
 
 | # | Decision | What it unblocks | Recommendation |
 |---|---|---|---|
-| 1 | **Maintenance chains (E2).** Tests whether the bounds E1 relied on survive later edits: 5-8 fresh sessions each adding a feature to one repo, union oracle at the end, arms A vs C. | The only remaining defect-reduction question | Decide whether it is worth a budget; not started. |
+| 1 | **Triage of 2026-11-20** (Fable plan, applied): milestone 0.0.5 = #21, #46, #42, #39, #36, #48; #40 and #47 merged into #39; #43 (size budgets) and #45 (build-cache budget) declined and parked in #30; #46 reworded from a keyword table to "the fast stage builds the extracted Lean". | Confirms the milestone | Reopen anything you disagree with. |
+| 2 | **0.1.0 blockers.** A10 (`tauten-kernel-std`) and A9 (`tauten-test`) are new crates: their first publish needs a crates.io token (the local copy is gone), or fold A10's helpers into `tauten-check-kernel` and ship A9 as a `tauten` feature. D1 needs the proofs image readable by writfold and gripsack (public, or read access granted). | Starting 0.1.0 | Fold A10 into the existing kernel crate; grant read access to the two adopters. |
+| 3 | **Maintenance chains (E2).** Tests whether the bounds E1 relied on survive later edits: 5-8 fresh sessions each adding a feature to one repo, union oracle at the end, arms A vs C. | The only remaining defect-reduction question | Decide whether it is worth a budget; not started. |
 
 ## Settled
 

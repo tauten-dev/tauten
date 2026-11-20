@@ -31,7 +31,7 @@ writfold's).
 
 ## Milestones
 
-`next`, `0.1.0`, `0.2` and `later`. An issue with no milestone has not been
+release versions (`0.0.5`, `0.1.0`, `0.2`) and `later`; the earliest open one is the next release. An issue with no milestone has not been
 triaged. A milestone closes when its release is tagged; anything still open
 moves to the next one, with a comment.
 
