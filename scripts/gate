@@ -43,7 +43,7 @@ step "scanner mutation gate: every mutant of the fact extraction is killed (T7)"
 scripts/mutants --file crates/tauten-check/src/scan.rs \
   --file crates/tauten-check/src/effects.rs \
   --file crates/tauten-check/src/manifest.rs \
-  --jobs "${TAUTEN_MUTANT_JOBS:-$(nproc)}"
+  --jobs "${TAUTEN_MUTANT_JOBS:-4}" --timeout 180
 
 step "dependencies: licenses, advisories, sources"
 cargo deny --locked check
