@@ -3,6 +3,10 @@
 # checkout); also runnable on a host with the pinned toolchain.
 set -euo pipefail
 cd "$(dirname "$0")/.."
+# Recorded with the result: tests that pass only as root are not a pass on
+# a developer's host (#42; root is the TAUTEN_GATE_ROOT=1 opt-in).
+ran_as="uid=$(id -u) gid=$(id -g)"
+echo "gate: running as $ran_as"
 
 # In Docker (TAUTEN_GATE_SNAPSHOT=1) the gate checks the committed HEAD, not
 # the live working tree, so a result always describes one commit and
@@ -48,4 +52,4 @@ scripts/mutants --file crates/tauten-check/src/scan.rs \
 step "dependencies: licenses, advisories, sources"
 cargo deny --locked check
 
-printf '\ngate: passed\n'
+printf '\ngate: passed (as %s)\n' "$ran_as"

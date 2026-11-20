@@ -11,11 +11,15 @@ x-tools: &tools
   image: tauten-tools:local
   pull_policy: never
   init: true
+  # Run as the owner of the checkout, not root (docker/entry.sh, #42);
+  # TAUTEN_GATE_ROOT=1 opts into root.
+  entrypoint: ["sh", "/work/tauten/docker/entry.sh"]
   cpus: ${TAUTEN_CPUS:-8}
   mem_limit: ${TAUTEN_MEMORY:-8g}
   pids_limit: 1024
   environment:
     CARGO_BUILD_JOBS: ${TAUTEN_JOBS:-8}
+    TAUTEN_GATE_ROOT: ${TAUTEN_GATE_ROOT:-0}
   volumes:
     - type: bind
       source: .
@@ -38,6 +42,7 @@ services:
     environment:
       CARGO_BUILD_JOBS: ${TAUTEN_JOBS:-8}
       TAUTEN_GATE_SNAPSHOT: "1"
+      TAUTEN_GATE_ROOT: ${TAUTEN_GATE_ROOT:-0}
     command: ["scripts/gate"]
 
   mutants:

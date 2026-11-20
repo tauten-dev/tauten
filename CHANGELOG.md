@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- The gate runs as the owner of the checkout, not root (#42):
+  `docker/entry.sh` (the tools services' entry point) hands the cache
+  volumes to that uid once and drops privileges with `setpriv`; root is an
+  explicit opt-in (`TAUTEN_GATE_ROOT=1`). The gate prints the uid it ran
+  as. `tests/host.rs` overwrites a 0444 file and expects
+  `PermissionDenied`, so a root-run gate fails it exactly as a host would.
+
 - The fast extract stage builds the translation in Lean (#46):
   `cargo tauten proofs extract` and `check --extract` now also compile the
   fresh Lean (without the proofs), so a name Lean reserves (a parameter
