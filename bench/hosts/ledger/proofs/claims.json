@@ -20,7 +20,8 @@
         "withdraw-reports-overflow"
       ],
       "outcome": "proved",
-      "fingerprint": "fnv1a64:2e504ba89b9e0a24"
+      "badge": "proved",
+      "fingerprint": "fnv1a64:3270f48bca2bc7cd"
     }
   ]
 }

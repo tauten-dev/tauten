@@ -6,3 +6,7 @@ members = ["crates/*"]
 version = "0.1.0"
 edition = "2024"
 publish = false
+
+# TAU-H001: release builds check integer overflow.
+[profile.release]
+overflow-checks = true
