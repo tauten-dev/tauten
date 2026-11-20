@@ -1,0 +1,5 @@
+error[E0599]: no method named `clone` found for struct `Permit<'s, P>` in the current scope
+  --> tests/ui/permit_clone.rs:23:24
+   |
+23 |     let again = permit.clone();
+   |                        ^^^^^ method not found in `Permit<'_, Present>`

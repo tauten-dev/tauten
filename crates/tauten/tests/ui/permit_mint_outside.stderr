@@ -1,0 +1,8 @@
+error[E0624]: associated function `mint_exclusive` is private
+  --> tests/ui/permit_mint_outside.rs:15:35
+   |
+ 7 |     #[tauten::evidence(subject = Table, exclusive)]
+   |     ----------------------------------------------- private associated function defined here
+...
+15 |     let _permit = facts::Present::mint_exclusive(&mut table, 0);
+   |                                   ^^^^^^^^^^^^^^ private associated function

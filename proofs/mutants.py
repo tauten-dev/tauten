@@ -658,6 +658,16 @@ RUNTIME_MUTANTS = (
            "        (next, Command::Rename) => (next, Command::RenameNoReplace),",
            "        (next, Command::Rename) => (next, Command::Rename),",
            (Dur + "publish_create_step_model", Dur + "create_new_never_replaces"), crate="runtime"),
+    # stamped evidence: the version is not compared (A5)
+    Mutant("stamp-ignored", "origin.rs",
+           "        if subject.version() == self.version {",
+           "        if true || subject.version() == self.version {",
+           (I + "stale_refused",), crate="runtime"),
+    # stamped evidence: a version mismatch is still accepted (A5)
+    Mutant("stale-accepted", "origin.rs",
+           "        if subject.version() == self.version {",
+           "        if subject.version() != self.version {",
+           (I + "stale_refused", I + "fresh_accepted"), crate="runtime"),
 )
 
 MUTANTS = MUTANTS + MACRO_MUTANTS + RUNTIME_MUTANTS

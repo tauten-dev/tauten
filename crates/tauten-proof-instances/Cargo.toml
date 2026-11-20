@@ -28,8 +28,9 @@ start_from = [
     "tauten_proof_instances::refined",
     "tauten_proof_instances::contracts",
     "tauten_proof_instances::machines",
+    "tauten_proof_instances::stamped::bump",
 ]
-include = ["tauten::contract", "tauten::error", "tauten::publish"]
+include = ["tauten::contract", "tauten::error", "tauten::publish", "tauten::origin"]
 
 # Stated locally, not inherited: the proofs gate translates this crate in a
 # shadow workspace that carries no `workspace.lints`.

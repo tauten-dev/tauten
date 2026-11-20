@@ -187,6 +187,9 @@ def claims : List Name := [
   ``Tauten.Durable.old_or_new_needs_rename_atomic,
   ``Tauten.Durable.old_or_new_needs_sync_file,
   ``Tauten.Durable.durable_needs_sync_dir,
+  -- a stamped kernel action (A5)
+  ``Tauten.Instances.stale_refused,
+  ``Tauten.Instances.fresh_accepted,
   -- the macros' generated code, per instance (P3)
   ``Tauten.Instances.percent_try_new_shape,
   ``Tauten.Instances.percent_try_new_ok_iff,
@@ -408,6 +411,13 @@ def reviewedFunctions : List Name := [
   ``tauten_proof_instances.machines.publish_terminal,
   ``tauten_proof_instances.machines.publish_create_step,
   ``tauten_proof_instances.machines.publish_durable,
+  ``tauten_proof_instances.tauten.origin.Evidence.__mint,
+  ``tauten_proof_instances.tauten.origin.Evidence.redeem,
+  ``tauten_proof_instances.tauten.origin.Stamped.verify,
+  ``tauten_proof_instances.stamped.Counter.Insts.TautenOriginVersioned.version,
+  ``tauten_proof_instances.stamped.__tauten_evidence_belowlimit.BelowLimit.impl.value,
+  ``tauten_proof_instances.stamped.bump,
+  ``tauten_proof_instances.tauten.origin.Versioned.version,
   ``tauten_proof_instances.contracts.scale.closure.Insts.CoreOpsFunctionFnTupleResultU32OpError.call,
   ``tauten_proof_instances.contracts.scale.closure_1.Insts.CoreOpsFunctionFnOnceTupleShared1U32Bool.call_once,
   ``tauten_proof_instances.contracts.share,

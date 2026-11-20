@@ -92,6 +92,102 @@ def tauten.error.ContractViolation.ensures
   := do
   ok (tauten.error.ContractViolation.Ensures function condition)
 
+/-- Trait declaration: [tauten::origin::Proposition]
+    Source: 'crates/tauten/src/origin.rs', lines 56:0-56:21
+    Name pattern: [tauten::origin::Proposition]
+    Visibility: public -/
+@[rust_trait "tauten::origin::Proposition"]
+structure tauten.origin.Proposition (Self : Type _) (Self_Subject : Type _)
+  where
+
+/-- [tauten::origin::Evidence]
+    Source: 'crates/tauten/src/origin.rs', lines 64:0-64:39
+    Name pattern: [tauten::origin::Evidence]
+    Visibility: public -/
+@[rust_type "tauten::origin::Evidence"]
+structure tauten.origin.Evidence (P : Type _) (Clause0_Subject : Type _) where
+  subject : Clause0_Subject
+  fact : P
+
+/-- [tauten::origin::{tauten::origin::Evidence<'s, P, Clause0_Subject>}::__mint]:
+    Source: 'crates/tauten/src/origin.rs', lines 73:4-73:65
+    Name pattern: [tauten::origin::{tauten::origin::Evidence<'s, @P, @Clause0_Subject>}::__mint]
+    Visibility: public -/
+@[rust_fun
+  "tauten::origin::{tauten::origin::Evidence<'s, @P, @Clause0_Subject>}::__mint"]
+def tauten.origin.Evidence.__mint
+  {P : Type _} {Clause0_Subject : Type _} (PropositionInst :
+  tauten.origin.Proposition P Clause0_Subject) (fact : P)
+  (subject : Clause0_Subject) :
+  Result (tauten.origin.Evidence P Clause0_Subject)
+  := do
+  ok { subject, fact }
+
+/-- [tauten::origin::{tauten::origin::Evidence<'s, P, Clause0_Subject>}::redeem]:
+    Source: 'crates/tauten/src/origin.rs', lines 92:4-92:28
+    Name pattern: [tauten::origin::{tauten::origin::Evidence<'s, @P, @Clause0_Subject>}::redeem]
+    Visibility: public -/
+@[rust_fun
+  "tauten::origin::{tauten::origin::Evidence<'s, @P, @Clause0_Subject>}::redeem"]
+def tauten.origin.Evidence.redeem
+  {P : Type _} {Clause0_Subject : Type _} (PropositionInst :
+  tauten.origin.Proposition P Clause0_Subject)
+  (self : tauten.origin.Evidence P Clause0_Subject) :
+  Result P
+  := do
+  ok self.fact
+
+/-- Trait declaration: [tauten::origin::Versioned]
+    Source: 'crates/tauten/src/origin.rs', lines 177:0-177:19
+    Name pattern: [tauten::origin::Versioned]
+    Visibility: public -/
+@[rust_trait "tauten::origin::Versioned"]
+structure tauten.origin.Versioned (Self : Type _) where
+  version : Self → Result Std.U64
+
+/-- [tauten::origin::Stale]
+    Source: 'crates/tauten/src/origin.rs', lines 185:0-185:16
+    Name pattern: [tauten::origin::Stale]
+    Visibility: public -/
+@[reducible, rust_type "tauten::origin::Stale"]
+def tauten.origin.Stale := Unit
+
+/-- [tauten::origin::Stamped]
+    Source: 'crates/tauten/src/origin.rs', lines 203:0-203:34
+    Name pattern: [tauten::origin::Stamped]
+    Visibility: public -/
+@[rust_type "tauten::origin::Stamped"]
+structure tauten.origin.Stamped (P : Type _) (Clause0_Subject : Type _) where
+  fact : P
+  version : Std.U64
+
+/-- [tauten::origin::{tauten::origin::Stamped<P, Clause0_Subject>}::verify]:
+    Source: 'crates/tauten/src/origin.rs', lines 233:4-233:79
+    Name pattern: [tauten::origin::{tauten::origin::Stamped<@P, @Clause0_Subject>}::verify]
+    Visibility: public -/
+@[rust_fun
+  "tauten::origin::{tauten::origin::Stamped<@P, @Clause0_Subject>}::verify"]
+def tauten.origin.Stamped.verify
+  {P : Type _} {Clause0_Subject : Type _} (PropositionInst :
+  tauten.origin.Proposition P Clause0_Subject) (VersionedInst :
+  tauten.origin.Versioned Clause0_Subject)
+  (self : tauten.origin.Stamped P Clause0_Subject) (subject : Clause0_Subject)
+  :
+  Result (core.result.Result (tauten.origin.Evidence P Clause0_Subject)
+    tauten.origin.Stale)
+  := do
+  let i ← VersionedInst.version subject
+  let (r, b) ←
+    if i = self.version
+    then
+      do
+      let e ← tauten.origin.Evidence.__mint PropositionInst self.fact subject
+      ok (core.result.Result.Ok e, false)
+    else ok (core.result.Result.Err (), true)
+  if b
+  then ok r
+  else ok r
+
 /-- [tauten::publish::Phase]
     Source: 'crates/tauten/src/publish.rs', lines 17:0-17:14
     Name pattern: [tauten::publish::Phase]
@@ -1472,5 +1568,82 @@ def refined.__tauten_tag.Tag.Insts.CoreDefaultDefault : core.default.Default
   refined.__tauten_tag.Tag := {
   default := refined.__tauten_tag.Tag.Insts.CoreDefaultDefault.default
 }
+
+/-- [tauten_proof_instances::stamped::Counter]
+    Source: 'crates/tauten-proof-instances/src/stamped.rs', lines 11:0-18:1
+    Visibility: public -/
+structure stamped.Counter where
+  value : Std.U64
+  limit : Std.U64
+  version : Std.U64
+
+/-- [tauten_proof_instances::stamped::{impl tauten::origin::Versioned for tauten_proof_instances::stamped::Counter}::version]:
+    Source: 'crates/tauten-proof-instances/src/stamped.rs', lines 21:4-23:5
+    Visibility: public -/
+def stamped.Counter.Insts.TautenOriginVersioned.version
+  (self : stamped.Counter) : Result Std.U64 := do
+  ok self.version
+
+/-- Trait implementation: [tauten_proof_instances::stamped::{impl tauten::origin::Versioned for tauten_proof_instances::stamped::Counter}]
+    Source: 'crates/tauten-proof-instances/src/stamped.rs', lines 20:0-24:1 -/
+@[reducible]
+def stamped.Counter.Insts.TautenOriginVersioned : tauten.origin.Versioned
+  stamped.Counter := {
+  version := stamped.Counter.Insts.TautenOriginVersioned.version
+}
+
+/-- [tauten_proof_instances::stamped::__tauten_evidence_belowlimit::BelowLimit]
+    Source: 'crates/tauten-proof-instances/src/stamped.rs', lines 27:0-27:39
+    Visibility: public -/
+structure stamped.__tauten_evidence_belowlimit.BelowLimit where
+  value : Std.U64
+
+/-- Trait implementation: [tauten_proof_instances::stamped::__tauten_evidence_belowlimit::{impl tauten::origin::Proposition<tauten_proof_instances::stamped::Counter> for tauten_proof_instances::stamped::__tauten_evidence_belowlimit::BelowLimit}]
+    Source: 'crates/tauten-proof-instances/src/stamped.rs', lines 27:0-27:39 -/
+@[reducible]
+def
+  stamped.__tauten_evidence_belowlimit.BelowLimit.Insts.TautenOriginPropositionCounter
+  : tauten.origin.Proposition stamped.__tauten_evidence_belowlimit.BelowLimit
+  stamped.Counter := {
+}
+
+/-- [tauten_proof_instances::stamped::__tauten_evidence_belowlimit::{tauten_proof_instances::stamped::__tauten_evidence_belowlimit::BelowLimit}::value]:
+    Source: 'crates/tauten-proof-instances/src/stamped.rs', lines 27:0-27:39
+    Visibility: public -/
+def stamped.__tauten_evidence_belowlimit.BelowLimit.impl.value
+  (self : stamped.__tauten_evidence_belowlimit.BelowLimit) :
+  Result Std.U64
+  := do
+  ok self.value
+
+/-- [tauten_proof_instances::stamped::bump]:
+    Source: 'crates/tauten-proof-instances/src/stamped.rs', lines 47:0-52:1
+    Visibility: public -/
+def stamped.bump
+  (counter : stamped.Counter)
+  (stamp : tauten.origin.Stamped
+  stamped.__tauten_evidence_belowlimit.BelowLimit stamped.Counter) :
+  Result ((core.result.Result Unit tauten.origin.Stale) × stamped.Counter)
+  := do
+  let r ←
+    tauten.origin.Stamped.verify
+      stamped.__tauten_evidence_belowlimit.BelowLimit.Insts.TautenOriginPropositionCounter
+      stamped.Counter.Insts.TautenOriginVersioned stamp counter
+  let cf ← core.result.Result.Insts.CoreOpsTry.branch r
+  match cf with
+  | core.ops.control_flow.ControlFlow.Continue e =>
+    let fact ←
+      tauten.origin.Evidence.redeem
+        stamped.__tauten_evidence_belowlimit.BelowLimit.Insts.TautenOriginPropositionCounter
+        e
+    let i ← stamped.__tauten_evidence_belowlimit.BelowLimit.impl.value fact
+    let i1 ← lift (core.num.U64.saturating_add i 1#u64)
+    let i2 ← lift (core.num.U64.wrapping_add counter.version 1#u64)
+    ok (core.result.Result.Ok (), { counter with value := i1, version := i2 })
+  | core.ops.control_flow.ControlFlow.Break residual =>
+    let r1 ←
+      core.result.Result.Insts.CoreOpsTry_traitFromResidualResult.from_residual
+        Unit (core.convert.FromSame tauten.origin.Stale) residual
+    ok (r1, counter)
 
 end tauten_proof_instances

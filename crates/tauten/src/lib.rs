@@ -41,7 +41,13 @@ pub mod publish;
 pub mod refine;
 
 pub use error::{ContractViolation, RefineError};
-pub use tauten_macros::{Cap, effects, ensures, evidence, newtype, refined, requires};
+pub use tauten_macros::{Bindings, Cap, effects, ensures, evidence, newtype, refined, requires};
+
+/// Used by the code `#[derive(Bindings)]` generates.
+#[doc(hidden)]
+pub mod __private {
+    pub use alloc::vec::Vec;
+}
 
 /// The effect labels `#[effects(..)]` accepts, and what each means.
 ///

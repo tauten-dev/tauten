@@ -455,3 +455,11 @@ theorems = ["Tauten.Durable.create_new_never_replaces", "Tauten.Durable.publish_
 assumes = ["FS.exclusive-create"]
 witness = "Tauten.Durable.posix_satisfies"
 mutants = ["replace-under-create-new"]
+
+[[claim]]
+crate = "tauten-proof-instances"
+file = "crates/tauten-proof-instances/src/stamped.rs"
+function = "bump"
+lean = "tauten_proof_instances.stamped.bump"
+theorems = ["Tauten.Instances.stale_refused", "Tauten.Instances.fresh_accepted"]
+mutants = ["stamp-ignored", "stale-accepted"]

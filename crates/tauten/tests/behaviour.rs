@@ -135,3 +135,102 @@ mod behaviour {
         t.compile_fail("tests/ui/*.rs");
     }
 }
+
+/// A5: the three carriers of a check, by how far the fact travels.
+#[cfg(test)]
+mod carriers {
+    use tauten::origin::{Permit, Stale, Stamped, Versioned};
+    use tauten::{Bindings, evidence};
+
+    pub struct Queue {
+        jobs: Vec<u32>,
+        version: u64,
+    }
+
+    impl Versioned for Queue {
+        fn version(&self) -> u64 {
+            self.version
+        }
+    }
+
+    impl Queue {
+        fn push(&mut self, job: u32) {
+            self.jobs.push(job);
+            self.version = self.version.wrapping_add(1);
+        }
+
+        fn check_mut(&mut self, at: usize) -> Option<Permit<'_, Queued>> {
+            (at < self.jobs.len()).then(|| Queued::mint_exclusive(self, at))
+        }
+
+        fn check_later(&self, at: usize) -> Option<Stamped<Queued>> {
+            (at < self.jobs.len()).then(|| Queued::mint_stamped(self, at))
+        }
+    }
+
+    /// Position `at` holds a job.
+    #[evidence(subject = Queue, exclusive, stamped)]
+    pub struct Queued {
+        at: usize,
+    }
+
+    #[test]
+    fn a_permit_checks_and_acts_in_one_chain() {
+        let mut queue = Queue {
+            jobs: vec![4, 5],
+            version: 0,
+        };
+        let taken = queue
+            .check_mut(1)
+            .map(|permit| permit.act(|q, fact| q.jobs.remove(*fact.at())));
+        assert_eq!(taken, Some(5));
+        assert!(queue.check_mut(3).is_none());
+    }
+
+    #[test]
+    fn a_stamped_fact_is_refused_once_the_subject_moved() {
+        let mut queue = Queue {
+            jobs: vec![4],
+            version: 0,
+        };
+        let stamp = queue.check_later(0).expect("checked");
+        assert_eq!(stamp.version(), 0);
+        let fresh = queue.check_later(0).expect("checked");
+        assert_eq!(fresh.verify(&queue).map(|ev| *ev.fact().at()), Ok(0));
+        queue.push(9);
+        assert_eq!(stamp.verify(&queue).map(|_| ()), Err(Stale));
+    }
+
+    #[derive(Debug, Clone, PartialEq, Bindings)]
+    pub struct Lock {
+        name: String,
+        revision: u32,
+        checksum: [u8; 4],
+    }
+
+    #[test]
+    fn bindings_compare_every_field() {
+        let recorded = Lock {
+            name: "core".into(),
+            revision: 3,
+            checksum: [1, 2, 3, 4],
+        };
+        let same = recorded.clone();
+        assert!(recorded.diff(&same).is_empty());
+        assert!(recorded.revalidate(&same).is_ok());
+        // `checksum` was added after `diff` was first written: it is
+        // compared without further edits.
+        let moved = Lock {
+            checksum: [1, 2, 3, 5],
+            ..recorded.clone()
+        };
+        assert_eq!(recorded.diff(&moved), vec!["checksum"]);
+        assert_eq!(recorded.revalidate(&moved).map(|_| ()), Err(Stale));
+        let renamed = Lock {
+            name: "edge".into(),
+            revision: 4,
+            ..recorded.clone()
+        };
+        assert_eq!(recorded.diff(&renamed), vec!["name", "revision"]);
+    }
+}

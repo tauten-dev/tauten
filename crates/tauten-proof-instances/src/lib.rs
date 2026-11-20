@@ -15,3 +15,4 @@
 pub mod contracts;
 pub mod machines;
 pub mod refined;
+pub mod stamped;

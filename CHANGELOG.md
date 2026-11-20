@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+- Evidence that cannot go stale (A5, #9). `#[evidence(subject = T,
+  exclusive)]` adds `mint_exclusive`, returning a `Permit` that holds the
+  only `&mut T`: check and act are one chained call (`Permit::act`);
+  mutation between them, minting outside the module and cloning do not
+  compile (three new compile-fail tests). `#[evidence(subject = T,
+  stamped)]` with `T: Versioned` adds `mint_stamped`, returning a
+  `Stamped` fact that crosses an `await` or a queue without borrowing;
+  `Stamped::verify` returns `Stale` once the version moved.
+  `#[derive(Bindings)]` generates `diff` (every differing field, new fields
+  included) and `revalidate` into `Evidence<'_, Fresh<T>>`. Proved for an
+  example kernel action (`tauten_proof_instances::stamped::bump`):
+  `stale_refused` (a stale stamp returns `Stale` and leaves the state
+  unchanged) and `fresh_accepted`; mutants `stamp-ignored`,
+  `stale-accepted`. `tauten::origin` documents each carrier's label and the
+  three hand-written token shapes it replaces.
+
 - Atomic publish, proved (A7, #11). `proofs/Tauten/Durable.lean` runs the
   publish machine against a filesystem model with crashes; each filesystem
   guarantee is a switchable flag and a named assumption
