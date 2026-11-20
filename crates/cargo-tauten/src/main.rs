@@ -2,6 +2,7 @@
 
 mod baseline_file;
 mod clippy;
+mod generated;
 mod init;
 mod output;
 mod proofs;
@@ -111,6 +112,17 @@ enum Command {
         /// located translation error per crate.
         #[command(subcommand)]
         action: Option<ProofsAction>,
+    },
+    /// Regenerate every `[[workspace.metadata.tauten.generated]]` file and
+    /// compare it byte for byte with the committed one: `ok`, `drift` or
+    /// `failed` per entry (a missing output is never `ok`).
+    Generated {
+        /// Path to Cargo.toml (default: discover from the current directory).
+        #[arg(long)]
+        manifest_path: Option<PathBuf>,
+        /// Only these entries (by name).
+        #[arg(long, num_args = 1..)]
+        only: Vec<String>,
     },
     /// Explain a rule, e.g. `cargo tauten explain TAU-P001`; without an ID, list all rules.
     Explain {
@@ -282,6 +294,13 @@ fn run(cli: Cli) -> Result<ExitCode> {
                 }
                 None => proofs::run(&ws, !no_write, live),
             }
+        }
+        Command::Generated {
+            manifest_path,
+            only,
+        } => {
+            let ws = workspace::load(manifest_path.as_deref(), &[])?;
+            generated::run(ws.root(), &only)
         }
         Command::Explain { id, markdown } => {
             if markdown {

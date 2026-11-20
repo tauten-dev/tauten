@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- `cargo tauten generated [--only NAME…]`: the generated-file stage (A11,
+  #15). Each `[[workspace.metadata.tauten.generated]]` entry names a
+  command and either the committed file its standard output must equal
+  (`stdout`) or the files it writes (`outputs`, run in a scratch copy so the
+  checkout is never written). Files are compared with the proved
+  `same_bytes` and the stage is decided by the proved `control::admit`: one
+  byte is `drift`, and an output the command did not produce or a failing
+  command is `failed`, never `ok`. tauten declares `rules`
+  (`docs/RULES.md`, now checked this way by the CI gate) and `translation`
+  (`proofs/Extracted`, needs Docker).
+
 - Which compiler messages become findings, whether a rule applies to a
   target (test targets included) and whether `check` passes are decided by
   the proved kernel (`compiler::kept`, `applies`, `passes`; T5, #32):

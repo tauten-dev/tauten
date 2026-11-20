@@ -18,3 +18,16 @@ tauten-check = { path = "crates/tauten-check", version = "0.0.4" }
 # TAU-H001: release builds check integer overflow.
 [profile.release]
 overflow-checks = true
+
+# Committed files regenerated and compared byte for byte by
+# `cargo tauten generated` (A11). The CI gate runs `rules`; `translation`
+# needs Docker and the proofs image.
+[[workspace.metadata.tauten.generated]]
+name = "rules"
+command = ["cargo", "run", "--locked", "--quiet", "-p", "cargo-tauten", "--", "tauten", "explain", "--markdown"]
+stdout = "docs/RULES.md"
+
+[[workspace.metadata.tauten.generated]]
+name = "translation"
+command = ["sh", "proofs/refresh.sh"]
+outputs = ["proofs/Extracted"]

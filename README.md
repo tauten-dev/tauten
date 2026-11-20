@@ -38,6 +38,7 @@ Then:
 $ cargo tauten check                 # human output
 $ cargo tauten check --format json   # one diagnostic per line, stable schema
 $ cargo tauten explain TAU-A001      # why the rule exists and how to fix it
+$ cargo tauten generated             # regenerate committed generated files and compare byte for byte
 ```
 
 ```text

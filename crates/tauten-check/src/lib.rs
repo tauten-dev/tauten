@@ -8,6 +8,7 @@
 pub mod baseline;
 pub mod diag;
 pub mod effects;
+pub mod generated;
 pub mod manifest;
 pub mod profile;
 pub mod proofs;

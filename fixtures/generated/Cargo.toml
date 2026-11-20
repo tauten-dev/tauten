@@ -1,0 +1,22 @@
+[package]
+name = "generated-fixture"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[package.metadata.tauten]
+tier = "edge"
+
+# The generated-file stage (A11): `report.txt` is a command's standard
+# output, `out/` a directory a script writes. The test edits copies.
+[[workspace.metadata.tauten.generated]]
+name = "report"
+command = ["sh", "-c", "printf 'hello\\n'"]
+stdout = "report.txt"
+
+[[workspace.metadata.tauten.generated]]
+name = "tree"
+command = ["sh", "gen.sh"]
+outputs = ["out"]

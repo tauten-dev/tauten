@@ -29,8 +29,8 @@ cargo test --locked --workspace
 step "self-check: tauten's own profile on tauten"
 cargo run --locked --quiet -p cargo-tauten -- tauten check
 
-step "docs/RULES.md matches the rule table"
-cargo run --locked --quiet -p cargo-tauten -- tauten explain --markdown | diff -u docs/RULES.md - \
+step "generated files: docs/RULES.md matches the rule table"
+cargo run --locked --quiet -p cargo-tauten -- tauten generated --only rules \
   || { echo "docs/RULES.md is stale: run 'cargo run -p cargo-tauten -- tauten explain --markdown > docs/RULES.md'"; exit 1; }
 
 step "benchmark tasks: admission criteria (reference/null/sloppy agents)"
