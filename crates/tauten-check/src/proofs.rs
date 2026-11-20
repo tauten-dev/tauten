@@ -1038,6 +1038,78 @@ pub struct ClaimRecord {
     /// Fingerprint of the sources the gate checked: the claim's crate and
     /// the proofs directory ([`fingerprint`]).
     pub fingerprint: String,
+    /// The claim's named inputs and their fingerprints when it was recorded
+    /// ([`inputs::claim_inputs`]): what a ship-level gate compares to decide
+    /// whether its mutants must run again.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub inputs: BTreeMap<String, String>,
+    /// Its mutants' results on the run that recorded it, reused by a
+    /// ship-level gate while the inputs are unchanged.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub mutant_results: Vec<MutantResult>,
+}
+
+/// One mutant's result as the gate reported it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct MutantResult {
+    /// Mutant name.
+    pub mutant: String,
+    /// `killed`, `survived`, `timeout`, ...
+    pub status: String,
+    /// Theorems it broke.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub broken: Vec<String>,
+    /// Declarations whose own proof failed.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub direct: Vec<String>,
+    /// Declarations that failed only through those.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub dependent: Vec<String>,
+}
+
+impl MutantResult {
+    /// The result as a gate event.
+    #[must_use]
+    pub fn event(&self) -> Event {
+        Event::Mutant {
+            mutant: self.mutant.clone(),
+            status: self.status.clone(),
+            broken: self.broken.clone(),
+            direct: self.direct.clone(),
+            dependent: self.dependent.clone(),
+        }
+    }
+}
+
+impl Report {
+    /// The results the gate reported for `names`.
+    #[must_use]
+    pub fn mutant_results(&self, names: &[String]) -> Vec<MutantResult> {
+        self.events
+            .iter()
+            .filter_map(|event| match event {
+                Event::Mutant {
+                    mutant,
+                    status,
+                    broken,
+                    direct,
+                    dependent,
+                } if names.contains(mutant) => Some(MutantResult {
+                    mutant: mutant.clone(),
+                    status: status.clone(),
+                    broken: broken.clone(),
+                    direct: direct.clone(),
+                    dependent: dependent.clone(),
+                }),
+                Event::Mutant { .. }
+                | Event::Stage { .. }
+                | Event::Theorem { .. }
+                | Event::Total { .. }
+                | Event::Premises { .. }
+                | Event::Establishes { .. } => None,
+            })
+            .collect()
+    }
 }
 
 /// `proofs/claims.json`.
@@ -1530,6 +1602,8 @@ pub fn conservation_diagnostics(
     }
     out
 }
+
+pub mod inputs;
 
 #[cfg(test)]
 mod tests;

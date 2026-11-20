@@ -72,6 +72,27 @@ enum Command {
         #[arg(long)]
         extract: bool,
     },
+    /// Before pushing: `check`, then the proof gate at ship level (only the
+    /// mutants of claims whose inputs changed). Same as `verify --level ship`.
+    Ship {
+        #[command(flatten)]
+        target: Target,
+        /// Gate the working tree instead of a snapshot of `HEAD`.
+        #[arg(long)]
+        live: bool,
+    },
+    /// Run the cadence level: `fast` is `check`; `ship` adds the proof gate
+    /// at ship level; `full` adds the whole proof gate (nightly, release).
+    Verify {
+        #[command(flatten)]
+        target: Target,
+        /// fast, ship or full.
+        #[arg(long, value_enum)]
+        level: VerifyLevel,
+        /// Gate the working tree instead of a snapshot of `HEAD`.
+        #[arg(long)]
+        live: bool,
+    },
     /// Record current error-level findings as the baseline (the ratchet).
     Baseline {
         #[command(flatten)]
@@ -121,6 +142,10 @@ enum Command {
         /// edit during the run is reported as drift).
         #[arg(long)]
         live: bool,
+        /// `full` runs every mutant; `ship` re-runs only the mutants of
+        /// claims whose recorded inputs changed and reuses the others.
+        #[arg(long, value_enum, default_value_t = proofs::Level::Full)]
+        level: proofs::Level,
         /// Only translate (`extract`): tools and extract stages, the first
         /// located translation error per crate.
         #[command(subcommand)]
@@ -161,6 +186,17 @@ enum Command {
         #[arg(value_parser = parse_tier)]
         tier: Tier,
     },
+}
+
+/// A cadence level (D2).
+#[derive(Clone, Copy, PartialEq, Eq, ValueEnum)]
+enum VerifyLevel {
+    /// `cargo tauten check`.
+    Fast,
+    /// `check`, then the proof gate at ship level.
+    Ship,
+    /// `check`, then the whole proof gate.
+    Full,
 }
 
 #[derive(Clone, Copy, ValueEnum)]
@@ -225,32 +261,21 @@ fn run(cli: Cli) -> Result<ExitCode> {
             no_baseline,
             warnings,
             extract,
-        } => {
-            let (root, diags, tiers) = collect(&profile, &target)?;
-            let baseline_path = baseline.unwrap_or_else(|| root.join(baseline_file::DEFAULT_NAME));
-            let (diags, baselined) = if no_baseline || !baseline_path.is_file() {
-                (diags, 0)
-            } else {
-                let accepted = baseline_file::read(&baseline_path)?;
-                let mut applied = baseline::apply(&profile, &accepted, diags);
-                for d in applied.diagnostics.iter_mut().filter(|d| d.tier.is_none()) {
-                    d.tier = tiers.get(&d.krate).copied();
-                }
-                (applied.diagnostics, applied.baselined)
-            };
-            let mut diags = diags;
-            diags.extend(proofs::conservation(&root, &profile)?);
-            if extract {
-                diags.extend(proofs::extract_diagnostics(&root, &profile)?);
-            }
-            let options = output::Options {
-                json: matches!(format, Format::Json),
-                all_warnings: warnings,
-                baselined,
-            };
-            output::print(&diags, &options)?;
-            Ok(exit_code(&diags))
-        }
+        } => check(
+            &profile,
+            &target,
+            matches!(format, Format::Json),
+            baseline,
+            no_baseline,
+            warnings,
+            extract,
+        ),
+        Command::Ship { target, live } => verify(&profile, &target, VerifyLevel::Ship, live),
+        Command::Verify {
+            target,
+            level,
+            live,
+        } => verify(&profile, &target, level, live),
         Command::Baseline {
             target,
             output,
@@ -311,6 +336,7 @@ fn run(cli: Cli) -> Result<ExitCode> {
             manifest_path,
             no_write,
             live,
+            level,
             action,
         } => {
             let ws = workspace::load(manifest_path.as_deref(), &[])?;
@@ -319,7 +345,7 @@ fn run(cli: Cli) -> Result<ExitCode> {
                 Some(ProofsAction::Try { theorems, mutants }) => {
                     proofs::try_run(&ws, &theorems, &mutants)
                 }
-                None => proofs::run(&ws, !no_write, live),
+                None => proofs::run(&ws, !no_write, live, level),
             }
         }
         Command::Obligations { target, list } => {
@@ -376,6 +402,68 @@ fn collect(profile: &Profile, target: &Target) -> Result<Collected> {
     });
     diags.dedup();
     Ok((ws.root().to_path_buf(), diags, tiers))
+}
+
+#[expect(
+    clippy::fn_params_excessive_bools,
+    reason = "the flags of `cargo tauten check`, passed through"
+)]
+fn check(
+    profile: &Profile,
+    target: &Target,
+    json: bool,
+    baseline: Option<PathBuf>,
+    no_baseline: bool,
+    warnings: bool,
+    extract: bool,
+) -> Result<ExitCode> {
+    let (root, diags, tiers) = collect(profile, target)?;
+    let baseline_path = baseline.unwrap_or_else(|| root.join(baseline_file::DEFAULT_NAME));
+    let (diags, baselined) = if no_baseline || !baseline_path.is_file() {
+        (diags, 0)
+    } else {
+        let accepted = baseline_file::read(&baseline_path)?;
+        let mut applied = baseline::apply(profile, &accepted, diags);
+        for d in applied.diagnostics.iter_mut().filter(|d| d.tier.is_none()) {
+            d.tier = tiers.get(&d.krate).copied();
+        }
+        (applied.diagnostics, applied.baselined)
+    };
+    let mut diags = diags;
+    diags.extend(proofs::conservation(&root, profile)?);
+    if extract {
+        diags.extend(proofs::extract_diagnostics(&root, profile)?);
+    }
+    let options = output::Options {
+        json,
+        all_warnings: warnings,
+        baselined,
+    };
+    output::print(&diags, &options)?;
+    Ok(exit_code(&diags))
+}
+
+/// `verify --level` and `ship`: `check`, then the proof gate at the level.
+fn verify(profile: &Profile, target: &Target, level: VerifyLevel, live: bool) -> Result<ExitCode> {
+    let checked = check(profile, target, false, None, false, false, false)?;
+    let gate = match level {
+        VerifyLevel::Fast => return Ok(checked),
+        VerifyLevel::Ship => proofs::Level::Ship,
+        VerifyLevel::Full => proofs::Level::Full,
+    };
+    let ws = workspace::load(target.manifest_path.as_deref(), &target.assume_tier)?;
+    if !ws.root().join(proofs::CLAIMS_TOML).is_file() {
+        eprintln!("tauten: no {}; nothing to prove", proofs::CLAIMS_TOML);
+        return Ok(checked);
+    }
+    let proved = proofs::run(&ws, true, live, gate)?;
+    Ok(
+        if checked == ExitCode::SUCCESS && proved == ExitCode::SUCCESS {
+            ExitCode::SUCCESS
+        } else {
+            ExitCode::FAILURE
+        },
+    )
 }
 
 fn exit_code(diags: &[Diagnostic]) -> ExitCode {

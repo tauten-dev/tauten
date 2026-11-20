@@ -65,9 +65,13 @@ stage=""
 python3 proofs/report.py lake /tmp/gate-lake.log "$status"
 
 stage=mutants
-if [ "${1:-}" = "--only-mutants" ]; then
-    # `cargo tauten proofs try`: only the named mutants, in parallel. A
-    # partial run: the caller never records it.
+if [ "${1:-}" = "--only-mutants" ] && [ -z "${2:-}" ]; then
+    # Ship level with no claim to re-calibrate: no mutant runs; the caller
+    # reuses the recorded kills.
+    stamp "mutant calibration: none selected"
+elif [ "${1:-}" = "--only-mutants" ]; then
+    # `cargo tauten proofs try` and the ship level: only the named mutants,
+    # in parallel.
     stamp "mutant calibration (partial: ${2:-})"
     TAUTEN_MUTANT_JOBS="${TAUTEN_MUTANT_JOBS:-$(( $(nproc) / 2 > 0 ? $(nproc) / 2 : 1 ))}" \
         python3 proofs/mutants.py $(printf '%s' "${2:-}" | tr ',' ' ')

@@ -3,7 +3,7 @@
 //! for `cargo tauten check`, read that record back to mark the findings a
 //! fresh proof subsumes (`tauten_check::proofs`).
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::io::{self, BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
@@ -33,7 +33,7 @@ pub const CLAIMS_JSON: &str = "proofs/claims.json";
 /// tree with uncommitted changes is refused. `live` runs it on the working
 /// tree instead (and outside Git there is no choice), where any edit during
 /// the run is reported as drift.
-pub fn run(ws: &Loaded, write: bool, live: bool) -> Result<ExitCode> {
+pub fn run(ws: &Loaded, write: bool, live: bool, level: Level) -> Result<ExitCode> {
     let live_root = ws.root().to_path_buf();
     let snapshot = if live {
         None
@@ -59,9 +59,93 @@ pub fn run(ws: &Loaded, write: bool, live: bool) -> Result<ExitCode> {
         &live_root,
         write,
         snapshot.as_ref().map(|s| s.commit.clone()),
+        level,
     );
     drop(snapshot);
     outcome
+}
+
+/// How much of the proof gate to run (D2, #36).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
+pub enum Level {
+    /// Every stage and every mutant.
+    Full,
+    /// Every stage, but only the mutants of claims whose recorded inputs
+    /// changed (or that were not proved); the others' kills are reused.
+    /// Needs `[gate] try` and a previous record with inputs.
+    Ship,
+}
+
+/// The texts a claim's inputs are computed from ([`proofs::inputs`]).
+struct Sources {
+    extracted: BTreeMap<String, String>,
+    lean: BTreeMap<String, String>,
+    mutants: BTreeMap<String, String>,
+    toolchain: String,
+}
+
+fn read_sources(root: &Path, file: &ClaimsFile) -> Result<Sources> {
+    let proofs_dir = root.join("proofs");
+    let mut extracted = BTreeMap::new();
+    let mut lean = BTreeMap::new();
+    let mut all = Vec::new();
+    files_under(root, Path::new("proofs"), &[CLAIMS_JSON], &mut all)?;
+    for (path, bytes) in all {
+        let Some(rel) = path.strip_prefix("proofs/") else {
+            continue;
+        };
+        if rel.starts_with(".lake/") || !rel.ends_with(".lean") {
+            continue;
+        }
+        let text = String::from_utf8_lossy(&bytes).into_owned();
+        if let Some(name) = rel.strip_prefix("Extracted/") {
+            extracted.insert(name.to_owned(), text);
+        } else {
+            lean.insert(rel.to_owned(), text);
+        }
+    }
+    let mut mutants: BTreeMap<String, String> = file
+        .mutant
+        .iter()
+        .map(|m| {
+            (
+                m.name.clone(),
+                format!(
+                    "{}\n{}\n{}\n{}\n{:?}",
+                    m.name, m.file, m.before, m.after, m.direct
+                ),
+            )
+        })
+        .collect();
+    let python = proofs_dir.join("mutants.py");
+    if python.is_file() {
+        let text =
+            fs::read_to_string(&python).with_context(|| format!("reading {}", python.display()))?;
+        for (name, def) in proofs::inputs::python_mutants(&text) {
+            mutants.entry(name).or_insert(def);
+        }
+    }
+    let mut toolchain = String::new();
+    for name in [
+        "proofs/lean-toolchain",
+        "proofs/lake-manifest.json",
+        "proofs/lakefile.toml",
+        "rust-toolchain.toml",
+        "rust-toolchain",
+    ] {
+        if let Ok(text) = fs::read_to_string(root.join(name)) {
+            toolchain.push_str(name);
+            toolchain.push('\n');
+            toolchain.push_str(&text);
+        }
+    }
+    toolchain.push_str(&format!("{:?}", file.gate));
+    Ok(Sources {
+        extracted,
+        lean,
+        mutants,
+        toolchain,
+    })
 }
 
 /// A snapshot of `HEAD` in a private directory, removed on drop.
@@ -159,7 +243,13 @@ impl Drop for Snapshot {
     }
 }
 
-fn run_in(ws: &Loaded, live_root: &Path, write: bool, commit: Option<String>) -> Result<ExitCode> {
+fn run_in(
+    ws: &Loaded,
+    live_root: &Path,
+    write: bool,
+    commit: Option<String>,
+    level: Level,
+) -> Result<ExitCode> {
     let root = ws.root();
     let path = root.join(CLAIMS_TOML);
     let text = fs::read_to_string(&path).with_context(|| {
@@ -179,12 +269,54 @@ fn run_in(ws: &Loaded, live_root: &Path, write: bool, commit: Option<String>) ->
     };
     file.check_assumptions(&assumptions)?;
     let before = fingerprints(ws, &file)?;
-    let mut report = run_gate(root, &file.gate.command)?;
+    let sources = read_sources(root, &file)?;
+    let inputs: Vec<BTreeMap<String, String>> = file
+        .claim
+        .iter()
+        .map(|claim| {
+            proofs::inputs::claim_inputs(
+                claim,
+                &proofs::inputs::Sources {
+                    extracted: &sources.extracted,
+                    lean: &sources.lean,
+                    mutants: &sources.mutants,
+                    toolchain: &sources.toolchain,
+                },
+            )
+        })
+        .collect();
+    let previous = committed_record(live_root)?;
+    let plan = match (level, &previous, &file.gate.try_) {
+        (Level::Ship, Some(previous), Some(try_)) => {
+            Some(ship_plan(&file, &inputs, previous, try_))
+        }
+        (Level::Ship, _, _) => {
+            eprintln!(
+                "tauten: ship level needs `[gate] try` and a recorded {CLAIMS_JSON} with inputs; running the full gate"
+            );
+            None
+        }
+        (Level::Full, _, _) => None,
+    };
+    let command = plan.as_ref().map_or(&file.gate.command, |p| &p.command);
+    let mut report = run_gate(root, command)?;
     report.changed_during_run = !proofs::unchanged(&before, &fingerprints(ws, &file)?);
     report.expected_direct = proofs::expected_direct(&file);
+    if let Some(plan) = &plan {
+        eprintln!(
+            "tauten: ship level: {} of {} claim(s) re-calibrated ({} mutant(s) run), {} reused",
+            plan.stale,
+            file.claim.len(),
+            plan.run,
+            file.claim.len().saturating_sub(plan.stale)
+        );
+        report
+            .events
+            .extend(plan.carried.iter().map(proofs::MutantResult::event));
+    }
 
     let mut records = Vec::new();
-    for claim in &file.claim {
+    for (claim, inputs) in file.claim.iter().zip(inputs) {
         let (outcome, detail) = proofs::outcome(claim, &report);
         let fingerprint = before.get(&claim.krate).cloned().unwrap_or_default();
         records.push(ClaimRecord {
@@ -193,6 +325,8 @@ fn run_in(ws: &Loaded, live_root: &Path, write: bool, commit: Option<String>) ->
             badge: proofs::badge(claim, outcome, true),
             detail,
             fingerprint,
+            inputs,
+            mutant_results: report.mutant_results(&claim.mutants),
         });
     }
     let stdout = io::stdout();
@@ -298,6 +432,69 @@ fn run_gate(root: &Path, command: &[String]) -> Result<Report> {
     let status = child.wait().context("waiting for the gate")?;
     eprintln!("tauten: proof gate exited with {status}");
     Ok(report)
+}
+
+/// What a ship-level run executes and reuses.
+struct ShipPlan {
+    /// The `[gate] try` command with the mutants to run.
+    command: Vec<String>,
+    /// Kills reused from the record, for the mutants not run.
+    carried: Vec<proofs::MutantResult>,
+    /// Claims re-calibrated.
+    stale: usize,
+    /// Mutants run.
+    run: usize,
+}
+
+/// A claim is re-calibrated unless it was recorded proved with inputs the
+/// proved `binding::fresh` finds unchanged ([`proofs::unchanged`]); every
+/// mutant of a re-calibrated claim runs, every other mutant's recorded
+/// result is reused.
+fn ship_plan(
+    file: &ClaimsFile,
+    inputs: &[BTreeMap<String, String>],
+    previous: &Record,
+    try_: &[String],
+) -> ShipPlan {
+    let mut run: BTreeSet<String> = BTreeSet::new();
+    let mut fresh_records = Vec::new();
+    let mut stale: usize = 0;
+    for (claim, now) in file.claim.iter().zip(inputs) {
+        let recorded = previous
+            .claims
+            .iter()
+            .find(|r| r.claim.file == claim.file && r.claim.function == claim.function);
+        match recorded {
+            Some(r)
+                if r.outcome == Outcome::Proved
+                    && !r.inputs.is_empty()
+                    && r.claim == *claim
+                    && proofs::unchanged(&r.inputs, now) =>
+            {
+                fresh_records.push(r);
+            }
+            Some(_) | None => {
+                stale = stale.saturating_add(1);
+                run.extend(claim.mutants.iter().cloned());
+            }
+        }
+    }
+    let mut carried: Vec<proofs::MutantResult> = Vec::new();
+    for r in fresh_records {
+        for result in &r.mutant_results {
+            if !run.contains(&result.mutant) && !carried.iter().any(|c| c.mutant == result.mutant) {
+                carried.push(result.clone());
+            }
+        }
+    }
+    let mut command = try_.to_vec();
+    command.push(run.iter().cloned().collect::<Vec<_>>().join(","));
+    ShipPlan {
+        command,
+        carried,
+        stale,
+        run: run.len(),
+    }
 }
 
 /// `cargo tauten proofs extract`: run `[gate] extract` and report each

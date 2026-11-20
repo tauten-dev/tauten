@@ -311,6 +311,8 @@ fn record(outcome: Outcome) -> ClaimRecord {
         badge: badge(&claim(), outcome, true),
         detail: None,
         fingerprint: "fnv1a64:0".to_owned(),
+        inputs: BTreeMap::new(),
+        mutant_results: Vec::new(),
     }
 }
 
@@ -615,6 +617,8 @@ fn assumptions_lower_the_badge() {
         badge: Badge::ProvedUnder,
         detail: None,
         fingerprint: "fnv1a64:0".to_owned(),
+        inputs: BTreeMap::new(),
+        mutant_results: Vec::new(),
     };
     let d = run(finding("TAU-N001", Tier::Kernel, 2), &rec, true);
     assert_eq!(d.severity, Severity::Error);
@@ -730,6 +734,8 @@ fn committed(claims: &ClaimsFile) -> Record {
                 badge: Badge::Proved,
                 detail: None,
                 fingerprint: String::new(),
+                inputs: BTreeMap::new(),
+                mutant_results: Vec::new(),
             })
             .collect(),
     }

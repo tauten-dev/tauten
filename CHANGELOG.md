@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- Cadence levels and incremental proofs (D2, #36). Each claim records its
+  named inputs (`inputs` in `proofs/claims.json`): the declarations of the
+  translation its function reaches, the Lean files stating and proving its
+  theorems (with their local imports), its mutants' definitions and the
+  toolchain pins. `cargo tauten proofs --level ship` runs every stage
+  (extract, drift, build, audit) but re-runs only the mutants of claims
+  whose inputs the proved `binding::fresh` finds changed (or that were not
+  proved), and reuses the other kills from the record; an edit to code the
+  translation does not reach re-runs no mutant. `cargo tauten ship` is
+  `check` then the gate at ship level; `cargo tauten verify --level
+  fast|ship|full` runs a cadence level. Needs `[gate] try`.
+
 - Mutant verdicts report what broke directly (#39, with #40 and #47): the
   template gate emits, per mutant, the declarations whose own proof failed
   (`direct`) apart from those that failed only through them
