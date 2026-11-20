@@ -434,13 +434,20 @@ fn run_gate(root: &Path, command: &[String]) -> Result<Report> {
         report.not_started = Some("[gate] command is empty".to_owned());
         return Ok(report);
     };
-    let spawned = Command::new(program)
+    let mut command = Command::new(program);
+    command
         .args(args)
         .current_dir(root)
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
-        .stderr(Stdio::inherit())
-        .spawn();
+        .stderr(Stdio::inherit());
+    // A snapshot lives in a directory named per run; Compose would name a
+    // new project (and leave a new network behind) for each. One stable
+    // project name reuses one network.
+    if std::env::var_os("COMPOSE_PROJECT_NAME").is_none() {
+        command.env("COMPOSE_PROJECT_NAME", "tauten-proofs");
+    }
+    let spawned = command.spawn();
     let mut child = match spawned {
         Ok(child) => child,
         Err(error) => {
