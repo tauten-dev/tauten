@@ -14,8 +14,14 @@ A11, A12, D3 and B6; 0.0.5 in progress (D2, #39, #42, #46, A7b; see
 `docs/ROADMAP.md`). tauten's own proof gate: 58 claims (3 of them
 `proved-under` named filesystem assumptions), 103 calibrated mutants; the
 fact-extracting scanners are calibrated by `cargo-mutants` in the CI gate
-(0 surviving); the gate runs as the checkout's owner, not root. Writfold's
-adoption branch is being merged by the owner's writfold agent.
+(0 surviving); the gate runs as the checkout's owner, not root. Writfold has
+merged its adoption (156 of 156 claims proved).
+
+D2 measured on tauten (2026-11-20; full gate 3577 s on 6d5012d): an edit to
+Rust code outside the translation ran `--level ship` in 64 s with 0 mutants
+(58 claims reused); renaming a local in the kernel's `compiler::passes`
+re-calibrated exactly that claim (1 mutant, killed) in 89 s. The writfold
+measurement needs a first full writfold run that records inputs; pending.
 
 ## Milestones (see PLAN.md §6)
 
