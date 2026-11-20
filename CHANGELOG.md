@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+- `cargo tauten proofs extract [--crate <dir>]` and `cargo tauten check
+  --extract` (TAU-K004): translate the proved kernel crates without building
+  the proofs and report the first error with its location; code that
+  translates only through opaque library functions (axioms) is refused too.
+  Without the toolchain the result is tool-missing, never clean. Needs
+  `[gate] extract` in `proofs/claims.toml` (the template writes it). The
+  agent profile's kernel section is generated from `shapes.toml`, whose
+  every entry is a fixture re-checked against the pinned toolchain
+  (`scripts/extract-fixtures`): integer casts and derived `PartialEq` do
+  translate at this pin; trait objects, floats, slices of borrowing
+  structs, early returns across two loops, `match` on `get` in a loop and
+  iterator chains do not. The planned syntax lint (old TAU-K004 plan) and
+  `#[kernel]` macro are dropped.
+
 - TAU-H001: release builds must check integer overflow
   (`overflow-checks = true` under `[profile.release]` in the workspace
   Cargo.toml, with no per-package or `.cargo/config.toml` override turning it

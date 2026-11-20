@@ -5,7 +5,7 @@ use std::fs;
 
 use anyhow::{Context, Result};
 use tauten_check::Tier;
-use tauten_check::profile::AGENT_PROFILE;
+use tauten_check::profile::agent_profile;
 
 use crate::workspace::Loaded;
 
@@ -76,7 +76,7 @@ pub fn run(ws: &Loaded, write: bool) -> Result<()> {
     };
     println!("{AGENTS_FILE:<28} {note}");
     if write && !agents.is_file() {
-        fs::write(&agents, AGENT_PROFILE)
+        fs::write(&agents, agent_profile())
             .with_context(|| format!("writing {}", agents.display()))?;
     }
     if write {

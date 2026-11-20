@@ -1,0 +1,44 @@
+# What the pinned translation toolchain accepts in kernel code. Every entry
+# names a crate under fixtures/extract that shows it, and
+# scripts/extract-fixtures re-checks all of them by running the translation:
+# a `limit` fixture must fail extraction with a located message, a
+# `translates` fixture must extract. These notes are advice; the
+# translation decides (`cargo tauten proofs extract`). They are versioned
+# with the toolchain pin and re-checked whenever it moves.
+toolchain = "lean-4.35.0-aeneas-c5eb4a2-charon-8cae8fd"
+
+[[limit]]
+fixture = "rej-dyn"
+note = "No trait objects (`dyn Trait`, `&dyn Fn`): use an enum or a generic."
+
+[[limit]]
+fixture = "rej-float"
+note = "No floating point: use integers or fixed point."
+
+[[limit]]
+fixture = "rej-nested-borrow"
+note = "No slices of structs that hold borrows: use owned data (`Vec<u8>`, indices)."
+
+[[limit]]
+fixture = "rej-early-loops"
+note = "At most one loop per function when it returns early from inside a loop: split the loops into helpers."
+
+[[limit]]
+fixture = "rej-match-get-loop"
+note = "No `match` on `xs.get(i)` directly in a loop body: use `if let Some(x) = xs.get(i)` or a helper."
+
+[[limit]]
+fixture = "rej-iterator"
+note = "No iterator chains (`iter().map(..).sum()`): they translate only as axioms, which the proof audit refuses. Write a `while` loop over `get`."
+
+[[translates]]
+fixture = "acc-shapes"
+note = "`while` loops over `get`, `matches!` / `match` on enums, owned `Vec<u8>`, `saturating_*`."
+
+[[translates]]
+fixture = "acc-cast"
+note = "Integer `as` casts translate (the profile still prefers `try_from` for narrowing)."
+
+[[translates]]
+fixture = "acc-derive"
+note = "A derived `PartialEq` used with `==` translates."

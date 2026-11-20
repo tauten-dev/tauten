@@ -12,7 +12,7 @@ use crate::tier::{Level, Tier};
 /// profile must define them, or those checks would silently report nothing.
 pub const EMITTED_BY_CODE: &[&str] = &[
     "TAU-A002", "TAU-K003", "TAU-X001", "TAU-R001", "TAU-S002", "TAU-T001", "TAU-T002", "TAU-T003",
-    "TAU-X002", "TAU-X003", "TAU-X004", "TAU-R002", "TAU-H001",
+    "TAU-X002", "TAU-X003", "TAU-X004", "TAU-R002", "TAU-H001", "TAU-K004",
 ];
 
 /// The profile shipped with this version of tauten.
@@ -21,6 +21,55 @@ pub const EMBEDDED_RULES: &str = include_str!("../rules.toml");
 /// The agent instructions shipped with this version of tauten (the fragment
 /// adopting projects add to their AGENTS.md / CLAUDE.md).
 pub const AGENT_PROFILE: &str = include_str!("../agents.md");
+
+/// What the pinned translation toolchain accepts in kernel code
+/// (`shapes.toml`, re-checked by `scripts/extract-fixtures`).
+pub const SHAPES: &str = include_str!("../shapes.toml");
+
+#[derive(Deserialize)]
+struct Shapes {
+    toolchain: String,
+    #[serde(default)]
+    limit: Vec<ShapeNote>,
+    #[serde(default)]
+    translates: Vec<ShapeNote>,
+}
+
+#[derive(Deserialize)]
+struct ShapeNote {
+    #[expect(dead_code, reason = "read by scripts/extract-fixtures, not here")]
+    fixture: String,
+    note: String,
+}
+
+/// The agent profile: [`AGENT_PROFILE`] plus the kernel section generated
+/// from [`SHAPES`].
+///
+/// The embedded file is parsed by a unit test; were it malformed, the
+/// profile would lack the kernel section rather than fail.
+#[must_use]
+pub fn agent_profile() -> String {
+    let mut out = AGENT_PROFILE.to_owned();
+    let Ok(shapes) = toml::from_str::<Shapes>(SHAPES) else {
+        return out;
+    };
+    out.push_str("\n**Proved kernel code.** A kernel function with a proof must stay inside\n");
+    out.push_str("what the pinned translation toolchain accepts (");
+    out.push_str(&shapes.toolchain);
+    out.push_str(").\n`cargo tauten proofs extract` decides; these notes are advice:\n");
+    for n in &shapes.limit {
+        out.push_str("- ");
+        out.push_str(&n.note);
+        out.push('\n');
+    }
+    out.push_str("Known to translate:\n");
+    for n in &shapes.translates {
+        out.push_str("- ");
+        out.push_str(&n.note);
+        out.push('\n');
+    }
+    out
+}
 
 /// One rule of the profile.
 #[derive(Debug, Clone, Deserialize)]
@@ -548,5 +597,16 @@ fix = "f"
             Profile::parse(&text),
             Err(ProfileError::MissingRule(id)) if id == "TAU-R001"
         ));
+    }
+
+    #[test]
+    fn the_agent_profile_lists_every_shape_note() {
+        let shapes: Shapes = toml::from_str(SHAPES).expect("shapes.toml parses");
+        let profile = agent_profile();
+        assert!(profile.contains("cargo tauten proofs extract` decides"));
+        assert!(profile.contains(&shapes.toolchain));
+        for n in shapes.limit.iter().chain(&shapes.translates) {
+            assert!(profile.contains(&n.note), "{}", n.note);
+        }
     }
 }

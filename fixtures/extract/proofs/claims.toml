@@ -1,0 +1,34 @@
+# Proof claims (tauten proof tier; `cargo tauten init --proofs` generated
+# this file). `cargo tauten proofs` runs the gate below and records one
+# outcome per claim in proofs/claims.json: proved, drift, build-failed,
+# audit-failed, mutant-survived or tool-missing.
+version = 1
+
+[gate]
+# Run from the workspace root. proofs/run.sh checks for Docker and the
+# pinned image, then runs proofs/gate.py in it.
+command = ["sh", "proofs/run.sh"]
+# Only translate (`cargo tauten proofs extract [--crate <dir>]`): the
+# authoritative check that kernel code stays inside what the toolchain
+# translates, without building the proofs.
+extract = ["sh", "proofs/run.sh", "python3", "proofs/gate.py", "--extract-only"]
+# Crate directories the gate translates with Charon/Aeneas.
+crates = ["acc-cast", "acc-derive", "acc-shapes", "rej-dyn", "rej-early-loops", "rej-float", "rej-iterator", "rej-match-get-loop", "rej-nested-borrow"]
+
+# One [[claim]] per proved Rust function:
+#
+# [[claim]]
+# crate = "acc-shapes"
+# file = "acc-shapes/src/lib.rs"     # workspace-relative
+# function = "apply"                    # `name`, `Type::name` or `module::name`
+# lean = "acc_shapes.apply"         # the extracted definition
+# theorems = ["Proofs.AccShapes.apply_total"]
+# total = "Proofs.AccShapes.apply_total"  # optional: ∀ args, apply args ⦃ _ ⦄
+# subsumes = ["TAU-N001", "TAU-P003"]    # optional; needs `total`
+# mutants = ["apply-skips-check"]       # each must break one of `theorems`
+#
+# [[mutant]]
+# name = "apply-skips-check"
+# file = "acc-shapes/src/lib.rs"
+# before = "checked_add(amount)"        # must occur exactly once
+# after = "wrapping_add(amount)"

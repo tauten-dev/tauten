@@ -64,6 +64,10 @@ enum Command {
         /// List every warning instead of a per-rule summary (human format).
         #[arg(long)]
         warnings: bool,
+        /// Also translate the proved kernel crates (TAU-K004; needs Docker
+        /// and the proofs image, about 30s; tool-missing is an error).
+        #[arg(long)]
+        extract: bool,
     },
     /// Record current error-level findings as the baseline (the ratchet).
     Baseline {
@@ -94,11 +98,15 @@ enum Command {
     /// mutant-survived or tool-missing. Records them in `proofs/claims.json`.
     Proofs {
         /// Path to Cargo.toml (default: discover from the current directory).
-        #[arg(long)]
+        #[arg(long, global = true)]
         manifest_path: Option<PathBuf>,
         /// Print the outcomes without updating `proofs/claims.json`.
         #[arg(long)]
         no_write: bool,
+        /// Only translate (`extract`): tools and extract stages, the first
+        /// located translation error per crate.
+        #[command(subcommand)]
+        action: Option<ProofsAction>,
     },
     /// Explain a rule, e.g. `cargo tauten explain TAU-P001`; without an ID, list all rules.
     Explain {
@@ -143,6 +151,19 @@ fn main() -> ExitCode {
     }
 }
 
+/// `cargo tauten proofs <action>`.
+#[derive(Debug, clap::Subcommand)]
+enum ProofsAction {
+    /// Translate the kernel crates (Charon, Aeneas) without building the
+    /// proofs: the authoritative check that kernel code stays inside the
+    /// translatable subset. Needs `[gate] extract` in proofs/claims.toml.
+    Extract {
+        /// Translate only this crate directory (one of `[gate] crates`).
+        #[arg(long = "crate")]
+        krate: Option<String>,
+    },
+}
+
 fn run(cli: Cli) -> Result<ExitCode> {
     let profile = Profile::embedded().context("loading the embedded profile")?;
     match cli.command {
@@ -152,6 +173,7 @@ fn run(cli: Cli) -> Result<ExitCode> {
             baseline,
             no_baseline,
             warnings,
+            extract,
         } => {
             let (root, diags, tiers) = collect(&profile, &target)?;
             let baseline_path = baseline.unwrap_or_else(|| root.join(baseline_file::DEFAULT_NAME));
@@ -167,6 +189,9 @@ fn run(cli: Cli) -> Result<ExitCode> {
             };
             let mut diags = diags;
             diags.extend(proofs::conservation(&root, &profile)?);
+            if extract {
+                diags.extend(proofs::extract_diagnostics(&root, &profile)?);
+            }
             let options = output::Options {
                 json: matches!(format, Format::Json),
                 all_warnings: warnings,
@@ -230,9 +255,13 @@ fn run(cli: Cli) -> Result<ExitCode> {
         Command::Proofs {
             manifest_path,
             no_write,
+            action,
         } => {
             let ws = workspace::load(manifest_path.as_deref(), &[])?;
-            proofs::run(&ws, !no_write)
+            match action {
+                Some(ProofsAction::Extract { krate }) => proofs::extract(&ws, krate.as_deref()),
+                None => proofs::run(&ws, !no_write),
+            }
         }
         Command::Explain { id, markdown } => {
             if markdown {

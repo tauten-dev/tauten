@@ -165,6 +165,146 @@ fn run_gate(root: &Path, command: &[String]) -> Result<Report> {
     Ok(report)
 }
 
+/// `cargo tauten proofs extract`: run `[gate] extract` and report each
+/// crate's translation. Exit 0 iff every crate translated
+/// ([`proofs::extraction`]).
+pub fn extract(ws: &Loaded, only: Option<&str>) -> Result<ExitCode> {
+    let started = std::time::Instant::now();
+    let run = run_extract(ws.root(), only)?;
+    for (krate, seen) in &run.results {
+        match seen {
+            proofs::Extracted::Ok => println!("{krate}: translates"),
+            proofs::Extracted::Failed(why) => println!("{krate}: does not translate: {why}"),
+            proofs::Extracted::NotRun => match &run.missing {
+                Some(why) => println!("{krate}: tool-missing: {why}"),
+                None => println!("{krate}: not run"),
+            },
+        }
+    }
+    eprintln!(
+        "tauten: extract {} in {}s",
+        if run.admitted { "passed" } else { "failed" },
+        started.elapsed().as_secs()
+    );
+    Ok(if run.admitted {
+        ExitCode::SUCCESS
+    } else {
+        ExitCode::FAILURE
+    })
+}
+
+/// The result of an extract-only run.
+struct ExtractRun {
+    admitted: bool,
+    results: Vec<(String, proofs::Extracted)>,
+    /// Why the tools did not run, when they did not.
+    missing: Option<String>,
+}
+
+fn run_extract(root: &Path, only: Option<&str>) -> Result<ExtractRun> {
+    let path = root.join(CLAIMS_TOML);
+    let text = fs::read_to_string(&path).with_context(|| format!("reading {}", path.display()))?;
+    let file = ClaimsFile::parse(&text)?;
+    let Some(mut command) = file.gate.extract.clone() else {
+        anyhow::bail!(
+            "{CLAIMS_TOML} has no `[gate] extract` command; the template's is \
+             [\"sh\", \"proofs/run.sh\", \"python3\", \"proofs/gate.py\", \"--extract-only\"]"
+        );
+    };
+    let crates: Vec<String> = match only {
+        Some(c) => {
+            command.extend(["--crate".to_owned(), c.to_owned()]);
+            vec![c.to_owned()]
+        }
+        None => file.gate.crates.clone(),
+    };
+    let report = run_gate(root, &command)?;
+    let (admitted, results) = proofs::extraction(&crates, &report);
+    let missing = report.not_started.clone().or_else(|| {
+        report.events.iter().find_map(|e| match e {
+            Event::Stage {
+                stage,
+                status,
+                detail,
+                ..
+            } if stage == "tools" && status != "ok" => {
+                Some(detail.clone().unwrap_or_else(|| status.clone()))
+            }
+            Event::Stage { .. }
+            | Event::Theorem { .. }
+            | Event::Total { .. }
+            | Event::Premises { .. }
+            | Event::Establishes { .. }
+            | Event::Mutant { .. } => None,
+        })
+    });
+    Ok(ExtractRun {
+        admitted,
+        results,
+        missing,
+    })
+}
+
+/// TAU-K004 for `cargo tauten check --extract`: one error per proved crate
+/// that does not translate, or that could not be translated (tool-missing
+/// is never clean). Nothing when the project has no `proofs/claims.toml`.
+pub fn extract_diagnostics(
+    root: &Path,
+    profile: &tauten_check::Profile,
+) -> Result<Vec<Diagnostic>> {
+    if !root.join(CLAIMS_TOML).is_file() {
+        return Ok(Vec::new());
+    }
+    let Some(rule) = profile.rule("TAU-K004") else {
+        return Ok(Vec::new());
+    };
+    let text = fs::read_to_string(root.join(CLAIMS_TOML))
+        .with_context(|| format!("reading {CLAIMS_TOML}"))?;
+    if ClaimsFile::parse(&text)?.gate.extract.is_none() {
+        return Ok(vec![
+            Diagnostic::for_rule(
+                rule,
+                tauten_check::Severity::Error,
+                "workspace",
+                None,
+                format!("{CLAIMS_TOML} has no `[gate] extract` command, so the proved crates cannot be translated"),
+            )
+            .at(Some(CLAIMS_TOML.to_owned()), None, None),
+        ]);
+    }
+    let run = run_extract(root, None)?;
+    let mut out = Vec::new();
+    for (krate, seen) in &run.results {
+        let message = match seen {
+            proofs::Extracted::Ok => continue,
+            proofs::Extracted::Failed(why) => format!("`{krate}` does not translate: {why}"),
+            proofs::Extracted::NotRun => match &run.missing {
+                Some(why) => format!(
+                    "`{krate}` was not translated (tool-missing: {why}); TAU-K004 is never clean without the toolchain"
+                ),
+                None => format!("`{krate}` was not translated: the run reported no result for it"),
+            },
+        };
+        out.push(
+            Diagnostic::for_rule(rule, tauten_check::Severity::Error, krate, None, message).at(
+                Some(format!("{krate}/src/lib.rs")),
+                None,
+                None,
+            ),
+        );
+    }
+    if !run.admitted && out.is_empty() {
+        out.push(Diagnostic::for_rule(
+            rule,
+            tauten_check::Severity::Error,
+            "workspace",
+            None,
+            "the translation results were incomplete or repeated".to_owned(),
+        ));
+    }
+    Ok(out)
+}
+
 /// The directory of a member crate, relative to the workspace root.
 fn crate_dir(ws: &Loaded, krate: &str) -> Option<PathBuf> {
     let member = ws.model.members.iter().find(|m| m.name == krate)?;

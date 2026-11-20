@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# Re-check crates/tauten-check/shapes.toml against the pinned toolchain:
+# every `limit` fixture under fixtures/extract must fail extraction with a
+# located message (file:line), every `translates` fixture must extract, and
+# every fixture crate must be listed. Needs Docker and the proofs image.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+cargo build --locked --quiet -p cargo-tauten
+bin=target/debug/cargo-tauten
+manifest=fixtures/extract/Cargo.toml
+listed=$(python3 -c 'import tomllib;d=tomllib.load(open("crates/tauten-check/shapes.toml","rb"));[print(k,e["fixture"]) for k in ("limit","translates") for e in d.get(k,[])]')
+status=0
+for dir in fixtures/extract/acc-*/ fixtures/extract/rej-*/; do
+  name=$(basename "$dir")
+  grep -q " $name\$" <<<"$listed" || { echo "FAIL $name: not listed in shapes.toml"; status=1; }
+done
+while read -r kind name; do
+  start=$(date +%s)
+  out=$("$bin" tauten proofs extract --crate "$name" --manifest-path "$manifest" 2>/dev/null) && code=0 || code=$?
+  took=$(( $(date +%s) - start ))
+  if [[ $kind == translates ]]; then
+    [[ $code == 0 ]] && echo "ok   $name translates (${took}s)" || { echo "FAIL $name: $out"; status=1; }
+  else
+    if [[ $code == 1 ]] && grep -Eq "does not translate: .*$name/src/[^:]+:[0-9]+|axioms" <<<"$out"; then
+      echo "ok   $name refused (${took}s): ${out#*does not translate: }"
+    else
+      echo "FAIL $name: expected a located refusal, got: $out"; status=1
+    fi
+  fi
+done <<<"$listed"
+exit $status

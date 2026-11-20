@@ -38,6 +38,7 @@
 | [TAU-K001](#tau-k001) | Kernel determinism and purity | deny | - | - | no | `#[expect]` + reason | Clippy |
 | [TAU-K002](#tau-k002) | Kernel uses core/alloc paths | deny | - | - | no | `#[expect]` + reason | Clippy |
 | [TAU-K003](#tau-k003) | Kernel crate attributes | deny | - | - | yes | never | Tauten |
+| [TAU-K004](#tau-k004) | Proved kernel code translates | deny | - | - | yes | never | Tauten |
 | [TAU-T001](#tau-t001) | Every workspace crate declares a tier | deny | deny | deny | yes | never | Tauten |
 | [TAU-T002](#tau-t002) | Tier dependency direction | deny | deny | deny | yes | never | Tauten |
 | [TAU-T003](#tau-t003) | Kernel dependencies are allowlisted | deny | - | - | yes | never | Tauten |
@@ -388,6 +389,14 @@ Lints: `clippy::std_instead_of_core`, `clippy::std_instead_of_alloc`
 A kernel crate root must declare `#![no_std]` so the compiler enforces the absence of IO.
 
 **Fix:** Add `#![no_std]` at the top of the kernel crate's `lib.rs`.
+
+## TAU-K004
+
+**Proved kernel code translates**
+
+A kernel crate listed in `[gate] crates` of proofs/claims.toml is proved over its Charon/Aeneas translation, so it must stay inside what the pinned toolchain translates, without opaque library functions (axioms the proof audit refuses). No syntax rule can predict that exactly across toolchain releases, so the translation decides: `cargo tauten check --extract` (or `cargo tauten proofs extract`) runs it. When the toolchain is not available the check fails as tool-missing; it is never reported clean. The kernel section of the agent profile lists the known limits of the pinned toolchain.
+
+**Fix:** Rewrite the code at the reported location inside the translatable subset (the agent profile's kernel section lists the known limits), then re-run `cargo tauten proofs extract --crate <dir>`.
 
 ## TAU-T001
 

@@ -9,6 +9,7 @@ version = 1
 
 [gate]
 command = ["sh", "proofs/run.sh"]
+extract = ["sh", "proofs/run.sh", "sh", "/repo/proofs/container.sh", "sh", "proofs/gate.sh", "--extract-only"]
 crates = ["crates/tauten-check-kernel", "crates/tauten-proof-instances"]
 
 [[claim]]

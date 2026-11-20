@@ -8,6 +8,10 @@ version = 1
 # Run from the workspace root. proofs/run.sh checks for Docker and the
 # pinned image, then runs proofs/gate.py in it.
 command = ["sh", "proofs/run.sh"]
+# Only translate (`cargo tauten proofs extract [--crate <dir>]`): the
+# authoritative check that kernel code stays inside what the toolchain
+# translates, without building the proofs.
+extract = ["sh", "proofs/run.sh", "python3", "proofs/gate.py", "--extract-only"]
 # Crate directories the gate translates with Charon/Aeneas.
 crates = ["{{CRATE_DIR}}"]
 

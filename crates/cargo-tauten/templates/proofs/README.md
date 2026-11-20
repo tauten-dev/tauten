@@ -76,10 +76,17 @@ is run again.
 
 ## Writing kernel code that translates
 
-Owned data, no nested borrows; no derives reached from translated
-functions (compare enums with `match`); no integer casts; explicit `while`
-loops over `get` (no iterator chains or closures); one loop per function
-when it returns early; flat matches; a `match` on `xs.get(i)` directly in
-a loop body may crash Aeneas (move it into a helper); no parameter named
-like its module; `Option::is_none` and similar are better written as a
-`match`.
+The translation decides what kernel code may look like: run
+`cargo tauten proofs extract [--crate <dir>]` (or `cargo tauten check
+--extract`, rule TAU-K004). It runs only the tools and extract stages
+(about 25 seconds for a small crate, mostly container start-up; 34 seconds
+for tauten's own two proved crates) and reports the first error with its
+source location. A crate that translates only by calling library functions
+Aeneas models as axioms (iterator chains, for example) is reported too: the
+axiom audit would refuse every theorem over it.
+
+The kernel section of `AGENTS.tauten.md` (written by `cargo tauten init`)
+lists the known limits of the pinned toolchain; each is shown by a fixture
+that tauten re-checks whenever the pin moves. One limit is not a
+translation error and shows only in `lake build`: a parameter named like
+its module (`span` in module `span`) clashes in Lean; rename it.

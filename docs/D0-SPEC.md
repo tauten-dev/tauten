@@ -2,6 +2,9 @@
 
 # D0 implementation spec: the discipline example (2026-11-19)
 
+> **Update (2026-11-20, roadmap issue #8):** `#[kernel]` is dropped; see `docs/TOOLKIT-PROOF-PLAN.md`. Extraction decides (`cargo tauten proofs extract`).
+
+
 Plan only; nothing was edited or run. Items marked **verify** are assumptions the executor must check first.
 
 Files read: `Cargo.toml`, `crates/tauten/{Cargo.toml,src/lib.rs,src/cap.rs,src/refine.rs}`, `crates/tauten-proof-instances/{Cargo.toml,src/lib.rs}`, `bench/hosts/ledger/**` (manifests, `proofs/claims.toml`, `proofs/Proofs/LedgerKernel.lean`, `proofs/gate.py`), `bench/README.md`, `crates/tauten-check/agents.md` (36 lines), `scripts/gate`, `compose.yaml`.

@@ -29,6 +29,14 @@ stage=extract
 stamp "extract: charon $(charon version) / aeneas $(aeneas -version)"
 sh proofs/extract-all.sh /tmp/gate-extract
 report extract ok
+if [ "${1:-}" = "--extract-only" ]; then
+    # `cargo tauten proofs extract`: one result per proved crate.
+    for crate in tauten-check-kernel tauten-proof-instances; do
+        printf 'TAUTEN-PROOFS {"stage":"extract","status":"ok","crate":"crates/%s"}\n' "$crate"
+    done
+    stage=""
+    exit 0
+fi
 
 stage=drift
 stamp "drift check against proofs/Extracted"

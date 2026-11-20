@@ -24,6 +24,8 @@ if every stage passed. Nothing here decides an outcome: a missing line is
 never read as a pass.
 
     python3 proofs/gate.py                 # the gate
+    python3 proofs/gate.py --extract-only [--crate DIR]
+                                           # tools and extract stages only
     python3 proofs/gate.py --extract-tar   # a fresh extraction as a tar on stdout
 """
 from pathlib import Path
@@ -79,6 +81,68 @@ def extract_all(crates: list[str], dest: Path) -> str | None:
             for lean in (Path(part) / "out").glob("*.lean"):
                 shutil.copy2(lean, dest / lean.name)
     return None
+
+
+ANSI = re.compile(r"\x1b\[[0-9;]*m")
+AXIOM = re.compile(r"^axiom\s+(\S+)", re.M)
+LOCATED = (
+    # Charon (rustc-style): "error: message" then "  --> file:line:col"
+    re.compile(r"^error[^\n]*?:\s*(?P<message>[^\n]+)\n\s*-->\s*(?P<where>\S+:\d+:\d+)", re.M),
+    # Aeneas: "[Error] message" then "Source: 'file', lines a:b-c:d"
+    re.compile(r"\[Error\]\s*(?P<message>[^\n]+)\nSource: '(?P<file>[^']+)', lines (?P<lines>[\d:-]+)"),
+)
+
+
+def first_located(output: str) -> str:
+    """The first translation error with its source location, or the first
+    error line when none is located."""
+    output = ANSI.sub("", output)
+    found = []
+    for pattern in LOCATED:
+        if match := pattern.search(output):
+            where = match.groupdict().get("where") or f"{match.group('file')}:{match.group('lines')}"
+            found.append((match.start(), f"{where}: {match.group('message').strip()}"))
+    if found:
+        return min(found)[1]
+    for line in output.splitlines():
+        if "error" in line.lower():
+            return line.strip()
+    return "the translation failed (no error line found; see the log)"
+
+
+def extract_only(only: str | None) -> int:
+    crates = claims().get("gate", {}).get("crates", [])
+    if only is not None:
+        if only not in crates:
+            emit(stage="extract", status="fail", detail=f"{only} is not in [gate] crates")
+            return 1
+        crates = [only]
+    missing = [tool for tool in ("charon", "aeneas") if shutil.which(tool) is None]
+    if missing:
+        emit(stage="tools", status="missing", detail=f"not on PATH: {', '.join(missing)}")
+        return 3
+    emit(stage="tools", status="ok")
+    failed = 0
+    for crate in crates:
+        log(f"extract: {crate}")
+        with tempfile.TemporaryDirectory() as part:
+            result = extract(crate, Path(part) / "out")
+            opaque = sorted({m.group(1) for lean in (Path(part) / "out").glob("*.lean")
+                             for m in AXIOM.finditer(lean.read_text())})
+        if result.returncode != 0:
+            print(result.stdout, file=sys.stderr)
+            emit(stage="extract", status="fail", crate=crate, detail=first_located(result.stdout))
+            failed += 1
+        elif opaque:
+            # Translated, but calls library functions Aeneas models as
+            # axioms: the axiom audit refuses every theorem that uses them.
+            emit(stage="extract", status="fail", crate=crate,
+                 detail=f"{crate} translates only with opaque library functions (axioms), "
+                        f"so no theorem over it passes the audit: {', '.join(opaque)}")
+            failed += 1
+        else:
+            emit(stage="extract", status="ok", crate=crate)
+    return 1 if failed else 0
 
 
 def same_tree(a: Path, b: Path) -> list[str]:
@@ -282,5 +346,17 @@ def extract_tar() -> int:
     return 0
 
 
+def main(args: list[str]) -> int:
+    if args == ["--extract-tar"]:
+        return extract_tar()
+    if args[:1] == ["--extract-only"]:
+        rest = args[1:]
+        if rest and (len(rest) != 2 or rest[0] != "--crate"):
+            print("usage: gate.py --extract-only [--crate DIR]", file=sys.stderr)
+            return 2
+        return extract_only(rest[1] if rest else None)
+    return gate()
+
+
 if __name__ == "__main__":
-    sys.exit(extract_tar() if sys.argv[1:] == ["--extract-tar"] else gate())
+    sys.exit(main(sys.argv[1:]))

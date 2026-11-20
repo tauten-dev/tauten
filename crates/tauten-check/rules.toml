@@ -365,6 +365,15 @@ enforced_by = "tauten"
 why = "A kernel crate root must declare `#![no_std]` so the compiler enforces the absence of IO."
 fix = "Add `#![no_std]` at the top of the kernel crate's `lib.rs`."
 
+[[rule]]
+id = "TAU-K004"
+title = "Proved kernel code translates"
+lints = []
+levels = { kernel = "deny" }
+enforced_by = "tauten"
+why = "A kernel crate listed in `[gate] crates` of proofs/claims.toml is proved over its Charon/Aeneas translation, so it must stay inside what the pinned toolchain translates, without opaque library functions (axioms the proof audit refuses). No syntax rule can predict that exactly across toolchain releases, so the translation decides: `cargo tauten check --extract` (or `cargo tauten proofs extract`) runs it. When the toolchain is not available the check fails as tool-missing; it is never reported clean. The kernel section of the agent profile lists the known limits of the pinned toolchain."
+fix = "Rewrite the code at the reported location inside the translatable subset (the agent profile's kernel section lists the known limits), then re-run `cargo tauten proofs extract --crate <dir>`."
+
 # ----------------------------------------------------------- structure ---
 
 [[rule]]

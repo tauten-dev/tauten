@@ -845,3 +845,33 @@ fn a_new_claim_states_its_own_assumptions() {
     let found = conservation(&ClaimsFile::parse(&extra).expect("valid"), &record);
     assert_eq!(found, Conservation::default());
 }
+
+/// A4: `cargo tauten proofs extract` passes only when every crate is
+/// observed translating exactly once.
+#[test]
+fn extraction_is_admitted_crate_by_crate() {
+    let crates = vec!["a".to_owned(), "b".to_owned()];
+    let report = |lines: &[&str]| Report {
+        events: lines.iter().map(|l| event(l)).collect(),
+        ..Report::default()
+    };
+    let ok_a = r#"{"stage":"extract","status":"ok","crate":"a"}"#;
+    let ok_b = r#"{"stage":"extract","status":"ok","crate":"b"}"#;
+    let fail_b = r#"{"stage":"extract","status":"fail","crate":"b","detail":"b/src/lib.rs:3:1-4:2: Dynamic trait types are not supported yet"}"#;
+    let (yes, seen) = extraction(&crates, &report(&[ok_a, ok_b]));
+    assert!(yes);
+    assert!(seen.iter().all(|(_, s)| *s == Extracted::Ok));
+    let (no, seen) = extraction(&crates, &report(&[ok_a, fail_b]));
+    assert!(!no);
+    assert!(matches!(&seen[1].1, Extracted::Failed(why) if why.contains("b/src/lib.rs:3")));
+    // A crate with no result, a repeated result, a missing tool or a gate
+    // that never started is never a pass.
+    assert!(!extraction(&crates, &report(&[ok_a])).0);
+    assert!(!extraction(&crates, &report(&[ok_a, ok_b, ok_b])).0);
+    let missing = r#"{"stage":"tools","status":"missing","detail":"no image"}"#;
+    assert!(!extraction(&crates, &report(&[missing])).0);
+    let mut never = report(&[ok_a, ok_b]);
+    never.not_started = Some("cannot run".to_owned());
+    assert!(!extraction(&crates, &never).0);
+    assert!(!extraction(&[], &report(&[])).0);
+}

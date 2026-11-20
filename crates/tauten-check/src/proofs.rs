@@ -95,6 +95,11 @@ pub struct GateConfig {
     /// Crate directories the gate translates (workspace-relative).
     #[serde(default)]
     pub crates: Vec<String>,
+    /// The command that runs only the tools and extract stages
+    /// (`cargo tauten proofs extract`); `--crate <dir>` is appended to
+    /// translate one crate.
+    #[serde(default)]
+    pub extract: Option<Vec<String>>,
 }
 
 /// One `[[claim]]`: a Rust function and what is proved about it.
@@ -365,6 +370,9 @@ pub enum Event {
         /// Free text for the user.
         #[serde(default)]
         detail: Option<String>,
+        /// The crate a per-crate stage (extract-only) is about.
+        #[serde(default, rename = "crate")]
+        krate: Option<String>,
     },
     /// The named assumptions a theorem's hypotheses mention, derived by
     /// the audit from its statement.
@@ -636,6 +644,62 @@ impl Report {
             | Event::Establishes { .. } => false,
         })
     }
+}
+
+/// What an extract-only run established for one crate.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Extracted {
+    /// It translated with no opaque function.
+    Ok,
+    /// It did not translate (or only with opaque functions): the first
+    /// located error.
+    Failed(String),
+    /// No result was reported for it.
+    NotRun,
+}
+
+/// The verdict of `cargo tauten proofs extract` on `crates`: whether every
+/// crate translated, and what each showed. The decision is the proved
+/// [`kernel_control::admit`]: every crate is a control that must pass,
+/// observed exactly once; a missing tool, a crate with no result or a
+/// repeated result is never a pass.
+#[must_use]
+pub fn extraction(crates: &[String], report: &Report) -> (bool, Vec<(String, Extracted)>) {
+    use kernel_control::{Control, Expect, Observation, Seen};
+    let controls: Vec<Control> = (0..crates.len())
+        .map(|id| Control {
+            id,
+            expect: Expect::Pass,
+        })
+        .collect();
+    let mut seen: Vec<Extracted> = vec![Extracted::NotRun; crates.len()];
+    let mut observed = Vec::new();
+    for event in &report.events {
+        if let Event::Stage {
+            stage,
+            status,
+            detail,
+            krate: Some(krate),
+        } = event
+            && stage == "extract"
+            && let Some(id) = crates.iter().position(|c| c == krate)
+        {
+            let ok = status == "ok";
+            observed.push(Observation {
+                id,
+                seen: if ok { Seen::Pass } else { Seen::FailOther },
+            });
+            if let Some(slot) = seen.get_mut(id) {
+                *slot = if ok {
+                    Extracted::Ok
+                } else {
+                    Extracted::Failed(detail.clone().unwrap_or_else(|| status.clone()))
+                };
+            }
+        }
+    }
+    let admitted = report.not_started.is_none() && kernel_control::admit(&controls, &observed);
+    (admitted, crates.iter().cloned().zip(seen).collect())
 }
 
 /// The claim's theorems, then its witness and necessity theorems, without

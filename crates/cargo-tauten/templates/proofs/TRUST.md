@@ -35,6 +35,11 @@ Everything below is trusted, not proved.
   existential of them). A premise written without a tagged definition is
   not seen; reviewers read the statements. The decision on the derived
   lists is the proved `tauten_check_kernel::assumption::assumptions_ok`.
+- `gate.py --extract-only` (`cargo tauten proofs extract`): the first
+  located error is read from Charon's and Aeneas's output by pattern; an
+  unrecognised message is still a failure, only less precisely located.
+  `axiom` declarations in the fresh translation are reported as opaque
+  library functions.
 - `run.sh`, `compose.yaml`, `container.sh`: run the gate in the image on a
   copy of the checkout.
 - `cargo tauten proofs`: reads the gate's `TAUTEN-PROOFS` lines, decides

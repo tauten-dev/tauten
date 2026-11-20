@@ -281,4 +281,33 @@ mod proofs {
         let after = tauten(&["check", "--format", "json"], &root);
         assert!(findings(&after).iter().all(|f| f.1 != "TAU-H001"));
     }
+    #[test]
+    fn check_extract_is_never_clean_without_the_toolchain() {
+        let root = scratch("extract-missing");
+        let out = tauten(&["check", "--extract", "--format", "json"], &root);
+        assert!(
+            findings(&out).iter().any(|f| f.1 == "TAU-K004"),
+            "no [gate] extract"
+        );
+        let claims = root.join("proofs/claims.toml");
+        let text = fs::read_to_string(&claims).expect("read");
+        let text = text.replacen(
+            "[gate]\n",
+            "[gate]\nextract = [\"sh\", \"-c\", \"echo 'TAUTEN-PROOFS {\\\"stage\\\":\\\"tools\\\",\\\"status\\\":\\\"missing\\\",\\\"detail\\\":\\\"no image\\\"}'; exit 3\"]\n",
+            1,
+        );
+        fs::write(&claims, text).expect("write");
+        let out = tauten(&["check", "--extract", "--format", "json"], &root);
+        let k004: Vec<_> = findings(&out)
+            .into_iter()
+            .filter(|f| f.1 == "TAU-K004")
+            .collect();
+        assert_eq!(k004.len(), 1, "{}", String::from_utf8_lossy(&out.stdout));
+        assert_eq!(k004[0].2, "error");
+        assert!(String::from_utf8_lossy(&out.stdout).contains("tool-missing: no image"));
+        assert_eq!(out.status.code(), Some(1));
+        let plain = tauten(&["proofs", "extract"], &root);
+        assert_eq!(plain.status.code(), Some(1));
+        assert!(String::from_utf8_lossy(&plain.stdout).contains("tool-missing"));
+    }
 }

@@ -1,0 +1,10 @@
+# Extraction fixtures (A4, #8): one crate per documented shape limit of the
+# pinned Charon/Aeneas. `cargo tauten proofs extract --crate <dir>` must
+# translate every acc-* crate and refuse every rej-* crate with a located
+# message. Checked by scripts/extract-fixtures.
+[workspace]
+resolver = "3"
+members = ["acc-cast", "acc-derive", "acc-shapes", "rej-dyn", "rej-early-loops", "rej-float", "rej-iterator", "rej-match-get-loop", "rej-nested-borrow"]
+
+[profile.release]
+overflow-checks = true

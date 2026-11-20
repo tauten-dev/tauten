@@ -2,6 +2,9 @@
 
 # Toolkit proof plan for tauten (`~/workspace/tauten`, branch `discipline-d0`)
 
+> **Update (2026-11-20, roadmap issue #8):** the K004 syntax lint and the `#[kernel]` shape macro below are dropped. A syntax rule has false negatives and would follow every toolchain release; the translation itself now decides (`cargo tauten proofs extract`, rule TAU-K004 "Proved kernel code translates"), and the known limits live in `crates/tauten-check/shapes.toml`, each backed by a fixture.
+
+
 Read-only research: nothing was compiled or run, and every defect below is read from source, not reproduced. Paths are relative to `/home/tarek/workspace/tauten/`.
 
 **State that matters first:** `crates/tauten-check-kernel/src/effects.rs` (the TAU-F001 decision) already exists, uncommitted and listed in the crate's `start_from`. It has no Lean file, no entry in `proofs/claims.toml` and no mutants, and no scanner calls it yet. `#[kernel]` and TAU-K004 do not exist yet. Proofs-first is still possible for both.
