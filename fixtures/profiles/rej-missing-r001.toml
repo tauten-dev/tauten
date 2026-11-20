@@ -128,3 +128,12 @@ levels = { core = "deny" }
 enforced_by = "tauten"
 why = "w"
 fix = "f"
+
+[[rule]]
+id = "TAU-T004"
+title = "t"
+lints = []
+levels = { core = "deny" }
+enforced_by = "tauten"
+why = "w"
+fix = "f"

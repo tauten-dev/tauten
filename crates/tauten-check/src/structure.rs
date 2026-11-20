@@ -638,7 +638,6 @@ mod tests {
                 members,
                 overflow_checks: None,
                 layers: None,
-                layers: None,
             },
         )
     }

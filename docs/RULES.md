@@ -739,7 +739,7 @@ Family: obligation. Sees: manifest. Complete: yes.
 
 **Does not see:** Dev- and build-dependencies. Workspaces that declare no `layers` are not checked.
 
-Reject fixtures: `layers`
+Reject fixtures: `fixtures/layers`
 
 ## TAU-D001
 

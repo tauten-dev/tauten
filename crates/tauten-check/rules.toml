@@ -644,7 +644,7 @@ invariant = "When the workspace declares layers, every member names one of them 
 sees = "manifest"
 dominion = "Dev- and build-dependencies. Workspaces that declare no `layers` are not checked."
 complete = true
-fixtures = ["layers"]
+fixtures = ["fixtures/layers"]
 
 [[rule]]
 id = "TAU-D001"
