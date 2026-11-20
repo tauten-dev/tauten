@@ -7,6 +7,7 @@ mod init;
 mod obligations;
 mod output;
 mod proofs;
+mod scaffold;
 mod workspace;
 mod wrapper;
 
@@ -94,6 +95,17 @@ enum Command {
         /// Set up `proofs/` (Charon/Aeneas/Lean template) for this kernel crate.
         #[arg(long, value_name = "CRATE")]
         proofs: Option<String>,
+    },
+    /// Write a fresh workspace laid out as the agent profile describes: a
+    /// kernel crate with one proved claim, a core crate with a capability,
+    /// `#[effects]` and one `Evidence` check, and a thin edge binary.
+    New {
+        /// Directory to create; its name is the edge binary's package name.
+        path: PathBuf,
+        /// Depend on the `tauten` crate at this path instead of the
+        /// crates.io release matching this cargo-tauten.
+        #[arg(long, value_name = "DIR")]
+        tauten_path: Option<PathBuf>,
     },
     /// Run the project's proof gate (`proofs/claims.toml`) and print one JSON
     /// outcome per claim: proved, drift, build-failed, audit-failed,
@@ -289,6 +301,10 @@ fn run(cli: Cli) -> Result<ExitCode> {
         } => {
             let ws = workspace::load(manifest_path.as_deref(), &[])?;
             init::run(&ws, write)?;
+            Ok(ExitCode::SUCCESS)
+        }
+        Command::New { path, tauten_path } => {
+            scaffold::run(&path, tauten_path.as_deref())?;
             Ok(ExitCode::SUCCESS)
         }
         Command::Proofs {

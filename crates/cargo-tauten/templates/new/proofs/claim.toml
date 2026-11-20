@@ -1,0 +1,22 @@
+
+# Written by `cargo tauten new`: the kernel's one decision and its proof.
+[[claim]]
+crate = "{{CRATE}}"
+file = "{{CRATE_DIR}}/src/lib.rs"
+function = "affordable"
+lean = "{{CRATE_SNAKE}}.affordable"
+theorems = ["Proofs.{{MODULE}}.affordable_spec"]
+total = "Proofs.{{MODULE}}.affordable_spec"
+mutants = ["affordable-strict", "affordable-overflow-fits"]
+
+[[mutant]]
+name = "affordable-strict"
+file = "{{CRATE_DIR}}/src/lib.rs"
+before = "total <= budget"
+after = "total < budget"
+
+[[mutant]]
+name = "affordable-overflow-fits"
+file = "{{CRATE_DIR}}/src/lib.rs"
+before = "None => false"
+after = "None => true"

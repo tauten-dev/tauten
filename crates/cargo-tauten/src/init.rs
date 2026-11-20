@@ -207,7 +207,7 @@ fn hardening(ws: &Loaded, write: bool) -> Result<()> {
 
 /// `LedgerKernel` for `ledger-kernel`: the name Aeneas gives the
 /// translation file, and the theorem module.
-fn camel(name: &str) -> String {
+pub fn camel(name: &str) -> String {
     name.split(['-', '_'])
         .map(|part| {
             let mut chars = part.chars();
@@ -218,16 +218,19 @@ fn camel(name: &str) -> String {
         .collect()
 }
 
-/// The template's files for `krate`, placeholders filled.
-fn proofs_files(krate: &str, crate_dir: &str) -> Vec<(String, String)> {
+/// `text` with the proofs template's placeholders filled for `krate`.
+pub fn fill_proofs(text: &str, krate: &str, crate_dir: &str) -> String {
     let module = camel(krate);
-    let fill = |text: &str| {
-        text.replace("{{CRATE_DIR}}", crate_dir)
-            .replace("{{CRATE_SNAKE}}", &krate.replace('-', "_"))
-            .replace("{{CRATE}}", krate)
-            .replace("{{LEAN_FILE}}", &module)
-            .replace("{{MODULE}}", &module)
-    };
+    text.replace("{{CRATE_DIR}}", crate_dir)
+        .replace("{{CRATE_SNAKE}}", &krate.replace('-', "_"))
+        .replace("{{CRATE}}", krate)
+        .replace("{{LEAN_FILE}}", &module)
+        .replace("{{MODULE}}", &module)
+}
+
+/// The template's files for `krate`, placeholders filled.
+pub fn proofs_files(krate: &str, crate_dir: &str) -> Vec<(String, String)> {
+    let fill = |text: &str| fill_proofs(text, krate, crate_dir);
     PROOFS_TEMPLATE
         .iter()
         .map(|(path, text)| (fill(path), fill(text)))

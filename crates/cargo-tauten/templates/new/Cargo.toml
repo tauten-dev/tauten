@@ -1,0 +1,19 @@
+# Written by `cargo tauten new`. Three tiers, dependencies pointing inward:
+# {{NAME}} (edge) -> {{CORE}} (core) -> {{KERNEL}} (kernel).
+[workspace]
+resolver = "3"
+members = ["crates/{{KERNEL}}", "crates/{{CORE}}", "crates/{{NAME}}"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[workspace.dependencies]
+tauten = {{TAUTEN}}
+{{KERNEL}} = { path = "crates/{{KERNEL}}" }
+{{CORE}} = { path = "crates/{{CORE}}" }
+
+# TAU-H001: release builds check integer overflow.
+[profile.release]
+overflow-checks = true

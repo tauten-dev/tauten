@@ -38,6 +38,27 @@
   own proof gate now derives each theorem's assumptions (`PREMISES`,
   `ESTABLISHES`), as the template's does; the machine library gains
   `RSysReachable` and `rsys_of_model` for extracted steps.
+||||||| 1bf6609
+- The agent profile (`AGENTS.tauten.md`) opens with the architecture on
+  one page (A12, #16): decisions are total kernel functions with claims,
+  protocols are machines, the world is reached only through capabilities
+  in the effect row, a check travels as evidence or a binding, a result is
+  shown with the badge its controls admit, registries are never weakened.
+  Each line names the rule or type that enforces it and labels it proved,
+  compiler-enforced, lint, tested or not checked.
+
+- `cargo tauten new <path> [--tauten-path DIR]` (A12, #16) writes a fresh
+  workspace: a kernel crate with one total function (`affordable`) and its
+  claim, theorem and two mutants (through the `init --proofs` template), a
+  core crate with a `Clock` capability, `#[effects]` (`effects =
+  "required"`) and one `tauten::origin::Evidence` check (to be replaced by
+  the A5 permit), and a thin edge binary calling `run(caps, args)`. It
+  passes `cargo tauten check` with no findings (tested); after
+  `sh proofs/refresh.sh`, `cargo tauten proofs` records the claim `proved`
+  with both mutants killed (run once locally, 102 s). Acceptance trial: 3
+  of 3 fresh Claude Sonnet 5.5 sessions given only the profile added a
+  feature to the template and passed `check` and the proof gate
+  (`docs/dry-runs/a12-profile-2026-11-20.md`; one request, $0.39).
 
 - `cargo tauten obligations [--list]` (D3, #37): in kernel crates,
   arithmetic and indexing findings (TAU-N001, TAU-N002, TAU-P003) are
