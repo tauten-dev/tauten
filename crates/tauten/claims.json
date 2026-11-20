@@ -1,0 +1,86 @@
+{
+  "version": 1,
+  "generated_by": "cargo tauten proofs export",
+  "claims": [
+    {
+      "crate": "tauten",
+      "file": "crates/tauten/src/publish.rs",
+      "function": "step",
+      "lean": "tauten_proof_instances.tauten.publish.step",
+      "theorems": [
+        "Tauten.Durable.publish_old_or_new"
+      ],
+      "total": null,
+      "subsumes": [],
+      "mutants": [
+        "skip-sync",
+        "rename-before-sync",
+        "failure-ignored"
+      ],
+      "assumes": [
+        "FS.rename-atomic",
+        "FS.sync-file"
+      ],
+      "witness": "Tauten.Durable.posix_satisfies",
+      "necessity": [
+        "Tauten.Durable.old_or_new_needs_rename_atomic",
+        "Tauten.Durable.old_or_new_needs_sync_file"
+      ],
+      "outcome": "proved",
+      "badge": "proved-under",
+      "fingerprint": "fnv1a64:3765a9d228f80086"
+    },
+    {
+      "crate": "tauten",
+      "file": "crates/tauten/src/publish.rs",
+      "function": "durable",
+      "lean": "tauten_proof_instances.tauten.publish.durable",
+      "theorems": [
+        "Tauten.Durable.publish_durable_on_done",
+        "Tauten.Durable.durable_model"
+      ],
+      "total": null,
+      "subsumes": [],
+      "mutants": [
+        "durable-too-early",
+        "skip-sync"
+      ],
+      "assumes": [
+        "FS.rename-atomic",
+        "FS.sync-dir",
+        "FS.sync-file"
+      ],
+      "witness": "Tauten.Durable.posix_satisfies",
+      "necessity": [
+        "Tauten.Durable.durable_needs_sync_dir",
+        "Tauten.Durable.posix_done_reachable"
+      ],
+      "outcome": "proved",
+      "badge": "proved-under",
+      "fingerprint": "fnv1a64:3765a9d228f80086"
+    },
+    {
+      "crate": "tauten",
+      "file": "crates/tauten/src/publish.rs",
+      "function": "create_step",
+      "lean": "tauten_proof_instances.tauten.publish.create_step",
+      "theorems": [
+        "Tauten.Durable.create_new_never_replaces",
+        "Tauten.Durable.publish_create_step_model"
+      ],
+      "total": null,
+      "subsumes": [],
+      "mutants": [
+        "replace-under-create-new"
+      ],
+      "assumes": [
+        "FS.exclusive-create"
+      ],
+      "witness": "Tauten.Durable.posix_satisfies",
+      "outcome": "proved",
+      "badge": "proved-under",
+      "fingerprint": "fnv1a64:3765a9d228f80086"
+    }
+  ],
+  "commit": "dee8b19063d0904dcb2c0b90120f4545519263df"
+}

@@ -479,3 +479,11 @@ function = "finding"
 lean = "tauten_check_kernel.layer.finding"
 theorems = ["Tauten.Kernel.layer_finding_iff", "Tauten.Kernel.unknown_layer_is_finding"]
 mutants = ["layer-inverted", "unknown-layer-clean"]
+
+[[claim]]
+crate = "tauten-check-kernel"
+file = "crates/tauten-check-kernel/src/badge.rs"
+function = "inherit"
+lean = "tauten_check_kernel.badge.inherit"
+theorems = ["Tauten.Kernel.inherit_spec", "Tauten.Kernel.inherited_badge_le", "Tauten.Kernel.inherit_needs_version_and_record"]
+mutants = ["inherit-ignores-version", "inherit-strengthens"]

@@ -1,0 +1,8 @@
+# A7b: a project claim inherits tauten's proved publish claim instead of
+# re-proving it. Checked by crates/cargo-tauten/tests/proofs.rs.
+[workspace]
+resolver = "3"
+members = ["consumer"]
+
+[profile.release]
+overflow-checks = true

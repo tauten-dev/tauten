@@ -948,3 +948,44 @@ fn exact_direct_failures_are_admitted_as_exact_sets() {
         .insert("add-wraps".to_owned(), s(&["K.helper"]));
     assert_eq!(outcome(&c, &broken_build).0, Outcome::MutantSurvived);
 }
+
+/// A7b: an inherited claim is never stronger than the dependency's, and a
+/// version mismatch or a missing record establishes nothing.
+#[test]
+fn inheriting_never_strengthens_a_claim() {
+    let mut mine = claim();
+    mine.theorems.clear();
+    mine.mutants.clear();
+    mine.inherit = Some("dep@1.2.3:apply".to_owned());
+    let mut theirs = claim();
+    theirs.function = "apply".to_owned();
+    theirs.assumes = vec!["FS.sync-file".to_owned()];
+    let shipped = Record {
+        version: 1,
+        generated_by: "cargo tauten proofs export".to_owned(),
+        claims: vec![ClaimRecord {
+            claim: theirs,
+            outcome: Outcome::Proved,
+            badge: Badge::ProvedUnder,
+            detail: None,
+            fingerprint: String::new(),
+            inputs: BTreeMap::new(),
+            mutant_results: Vec::new(),
+        }],
+        commit: None,
+    };
+    let (record, outcome, badge, _) = inherited(&mine, Some("1.2.3"), Some(&shipped));
+    assert_eq!((outcome, badge), (Outcome::Proved, Badge::ProvedUnder));
+    assert_eq!(record.assumes, vec!["FS.sync-file".to_owned()]);
+    let (_, _, badge, why) = inherited(&mine, Some("1.2.4"), Some(&shipped));
+    assert_eq!(badge, Badge::NotEstablished);
+    assert!(why.is_some_and(|w| w.contains("locked at 1.2.4")));
+    assert_eq!(
+        inherited(&mine, Some("1.2.3"), None).2,
+        Badge::NotEstablished
+    );
+    assert_eq!(
+        inherited(&mine, None, Some(&shipped)).2,
+        Badge::NotEstablished
+    );
+}

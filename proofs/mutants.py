@@ -537,6 +537,16 @@ MUTANTS = (
            "                    Severity::Warning => true,",
            "                    Severity::Warning => false,",
            (T + "passes_spec", T + "check_passes_iff", T + "warnings_never_fail")),
+    # inherit: the locked version is not compared
+    Mutant("inherit-ignores-version", "badge.rs",
+           "    if version_matches && recorded {",
+           "    if recorded {",
+           (T + "inherit_spec", T + "inherit_needs_version_and_record", T + "inherited_badge_le")),
+    # inherit: an inherited claim shows as proved whatever it inherits
+    Mutant("inherit-strengthens", "badge.rs",
+           "    if version_matches && recorded {\n        inherited",
+           "    if version_matches && recorded {\n        Badge::Proved",
+           (T + "inherit_spec", T + "inherited_badge_le")),
     # layers: a crate may not use its own layer
     Mutant("layer-strict", "layer.rs",
            "    dep <= of",

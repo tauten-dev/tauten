@@ -145,6 +145,120 @@ pub struct Claim {
     /// without it). Optional; each must pass like the claim's theorems.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub necessity: Vec<String>,
+    /// `"crate@version:function"`: the claim is a dependency's, read from
+    /// the `claims.json` that crate ships and checked against the locked
+    /// version ([`inherited`]). Such a claim lists no theorems or mutants
+    /// of its own. Version 2 only.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub inherit: Option<String>,
+}
+
+/// A parsed `inherit = "crate@version:function"`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Inherit {
+    /// The dependency's package name.
+    pub krate: String,
+    /// The version the claim was recorded for.
+    pub version: String,
+    /// The function, as the dependency's claim names it.
+    pub function: String,
+}
+
+impl Inherit {
+    /// Parse `crate@version:function`.
+    #[must_use]
+    pub fn parse(text: &str) -> Option<Self> {
+        let (krate, rest) = text.split_once('@')?;
+        let (version, function) = rest.split_once(':')?;
+        (!krate.is_empty() && !version.is_empty() && !function.is_empty()).then(|| Self {
+            krate: krate.to_owned(),
+            version: version.to_owned(),
+            function: function.to_owned(),
+        })
+    }
+}
+
+/// The record of an inheriting claim: the dependency's claim (its theorems
+/// and assumptions) with the badge the proved
+/// [`kernel_badge::inherit`] gives it, never stronger than the inherited
+/// one. `locked` is the dependency's version in the lock file; `shipped`
+/// the `claims.json` it ships. A version mismatch, a missing record or a
+/// claim the record does not hold establishes nothing.
+#[must_use]
+pub fn inherited(
+    claim: &Claim,
+    locked: Option<&str>,
+    shipped: Option<&Record>,
+) -> (Claim, Outcome, Badge, Option<String>) {
+    let parsed = claim.inherit.as_deref().and_then(Inherit::parse);
+    let found = parsed.as_ref().and_then(|p| {
+        shipped?
+            .claims
+            .iter()
+            .find(|r| r.claim.function == p.function)
+    });
+    let version_matches = parsed
+        .as_ref()
+        .is_some_and(|p| locked == Some(p.version.as_str()));
+    let from = found.map_or(Badge::NotEstablished, |r| r.badge);
+    let badge = badge_of(kernel_badge::inherit(
+        kernel_of(from),
+        version_matches,
+        found.is_some(),
+    ));
+    let mut record_claim = claim.clone();
+    if let Some(r) = found {
+        record_claim.theorems.clone_from(&r.claim.theorems);
+        record_claim.assumes.clone_from(&r.claim.assumes);
+    }
+    let detail = match (&parsed, locked, found) {
+        (None, _, _) => Some("`inherit` is not `crate@version:function`".to_owned()),
+        (Some(p), None, _) => Some(format!("{} is not a dependency", p.krate)),
+        (Some(p), Some(v), _) if v != p.version => Some(format!(
+            "{} is locked at {v}, the claim names {}",
+            p.krate, p.version
+        )),
+        (Some(p), Some(_), None) => Some(format!(
+            "{}@{} ships no claim for `{}`",
+            p.krate, p.version, p.function
+        )),
+        (Some(_), Some(_), Some(r)) if !matches!(badge, Badge::Proved | Badge::ProvedUnder) => {
+            Some(format!("the inherited claim is {}", r.outcome.name()))
+        }
+        (Some(_), Some(_), Some(_)) => None,
+    };
+    let outcome = if matches!(badge, Badge::Proved | Badge::ProvedUnder) {
+        Outcome::Proved
+    } else {
+        Outcome::Drift
+    };
+    (record_claim, outcome, badge, detail)
+}
+
+const fn kernel_of(b: Badge) -> kernel_badge::Badge {
+    match b {
+        Badge::Proved => kernel_badge::Badge::Proved,
+        Badge::ProvedUnder => kernel_badge::Badge::ProvedUnder,
+        Badge::ModelProved => kernel_badge::Badge::ModelProved,
+        Badge::Bounded => kernel_badge::Badge::Bounded,
+        Badge::Tested => kernel_badge::Badge::Tested,
+        Badge::Reviewed => kernel_badge::Badge::Reviewed,
+        Badge::Pending => kernel_badge::Badge::Pending,
+        Badge::NotEstablished => kernel_badge::Badge::NotEstablished,
+    }
+}
+
+const fn badge_of(b: kernel_badge::Badge) -> Badge {
+    match b {
+        kernel_badge::Badge::Proved => Badge::Proved,
+        kernel_badge::Badge::ProvedUnder => Badge::ProvedUnder,
+        kernel_badge::Badge::ModelProved => Badge::ModelProved,
+        kernel_badge::Badge::Bounded => Badge::Bounded,
+        kernel_badge::Badge::Tested => Badge::Tested,
+        kernel_badge::Badge::Reviewed => Badge::Reviewed,
+        kernel_badge::Badge::Pending => Badge::Pending,
+        kernel_badge::Badge::NotEstablished => Badge::NotEstablished,
+    }
 }
 
 /// `proofs/assumptions.toml`: the named assumptions claims may rest on.
@@ -259,10 +373,10 @@ impl ClaimsFile {
                 function: claim.function.clone(),
                 problem: text.to_owned(),
             };
-            if claim.theorems.is_empty() {
+            if claim.theorems.is_empty() && claim.inherit.is_none() {
                 return Err(problem("lists no theorem"));
             }
-            if claim.mutants.is_empty() {
+            if claim.mutants.is_empty() && claim.inherit.is_none() {
                 return Err(problem(
                     "lists no mutant; a claim needs a mutant that breaks it",
                 ));
@@ -293,6 +407,20 @@ impl ClaimsFile {
                 return Err(problem(
                     "`assumes`, `witness` and `necessity` need `version = 2`",
                 ));
+            }
+            if let Some(inherit) = &claim.inherit {
+                if file.version < 2 {
+                    return Err(problem("`inherit` needs `version = 2`"));
+                }
+                if Inherit::parse(inherit).is_none() {
+                    return Err(problem("`inherit` is not `crate@version:function`"));
+                }
+                if !claim.theorems.is_empty() || !claim.mutants.is_empty() {
+                    return Err(problem(
+                        "an inheriting claim lists no theorems or mutants of its own",
+                    ));
+                }
+                continue;
             }
             if !claim.assumes.is_empty() && claim.witness.is_none() {
                 return Err(problem(
@@ -1003,22 +1131,13 @@ impl Badge {
 #[must_use]
 pub fn badge(claim: &Claim, outcome: Outcome, fresh: bool) -> Badge {
     use kernel_badge::{Method, Relation};
-    match kernel_badge::badge(
+    badge_of(kernel_badge::badge(
         outcome == Outcome::Proved,
         fresh,
         Method::Lean,
         Relation::Extracted,
         !claim.assumes.is_empty(),
-    ) {
-        kernel_badge::Badge::Proved => Badge::Proved,
-        kernel_badge::Badge::ProvedUnder => Badge::ProvedUnder,
-        kernel_badge::Badge::ModelProved => Badge::ModelProved,
-        kernel_badge::Badge::Bounded => Badge::Bounded,
-        kernel_badge::Badge::Tested => Badge::Tested,
-        kernel_badge::Badge::Reviewed => Badge::Reviewed,
-        kernel_badge::Badge::Pending => Badge::Pending,
-        kernel_badge::Badge::NotEstablished => Badge::NotEstablished,
-    }
+    ))
 }
 
 /// One claim as recorded in `proofs/claims.json` (also the badge data).
@@ -1436,15 +1555,25 @@ pub fn conservation<'a>(file: &'a ClaimsFile, record: &'a Record) -> Conservatio
             })
             .collect::<Vec<_>>()
     };
+    // An inherited claim's theorems and assumptions are the dependency's,
+    // checked against its version (`inherited`), not this file's registry.
+    let own = |c: &&ClaimRecord| c.claim.inherit.is_none();
     let recorded_keys: Vec<_> = record
         .claims
         .iter()
+        .filter(own)
         .flat_map(|c| claim_entries(&c.claim))
         .collect();
-    let current_keys: Vec<_> = file.claim.iter().flat_map(claim_entries).collect();
+    let current_keys: Vec<_> = file
+        .claim
+        .iter()
+        .filter(|c| c.inherit.is_none())
+        .flat_map(claim_entries)
+        .collect();
     let recorded_assumes: Vec<_> = record
         .claims
         .iter()
+        .filter(own)
         .flat_map(|c| assumption_entries(&c.claim))
         .collect();
     // Only claims already on record may not gain assumptions; a new claim
@@ -1453,10 +1582,11 @@ pub fn conservation<'a>(file: &'a ClaimsFile, record: &'a Record) -> Conservatio
         .claim
         .iter()
         .filter(|c| {
-            record
-                .claims
-                .iter()
-                .any(|r| r.claim.file == c.file && r.claim.function == c.function)
+            c.inherit.is_none()
+                && record
+                    .claims
+                    .iter()
+                    .any(|r| r.claim.file == c.file && r.claim.function == c.function)
         })
         .flat_map(assumption_entries)
         .collect();

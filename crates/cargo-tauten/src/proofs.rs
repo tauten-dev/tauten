@@ -286,6 +286,7 @@ fn run_in(
         })
         .collect();
     let previous = committed_record(live_root)?;
+    let own = file.claim.iter().any(|c| c.inherit.is_none());
     let plan = match (level, &previous, &file.gate.try_) {
         (Level::Ship, Some(previous), Some(try_)) => {
             Some(ship_plan(&file, &inputs, previous, try_))
@@ -299,7 +300,12 @@ fn run_in(
         (Level::Full, _, _) => None,
     };
     let command = plan.as_ref().map_or(&file.gate.command, |p| &p.command);
-    let mut report = run_gate(root, command)?;
+    // Inherited claims need no gate run of their own.
+    let mut report = if own {
+        run_gate(root, command)?
+    } else {
+        proofs::Report::default()
+    };
     report.changed_during_run = !proofs::unchanged(&before, &fingerprints(ws, &file)?);
     report.expected_direct = proofs::expected_direct(&file);
     if let Some(plan) = &plan {
@@ -316,7 +322,30 @@ fn run_in(
     }
 
     let mut records = Vec::new();
+    let mut resolved: BTreeMap<String, (Option<String>, Option<Record>)> = BTreeMap::new();
     for (claim, inputs) in file.claim.iter().zip(inputs) {
+        if let Some(inherit) = claim.inherit.as_deref().and_then(proofs::Inherit::parse) {
+            let (locked, shipped) = match resolved.get(&inherit.krate) {
+                Some(found) => found.clone(),
+                None => {
+                    let found = dependency_record(root, &inherit.krate)?;
+                    resolved.insert(inherit.krate.clone(), found.clone());
+                    found
+                }
+            };
+            let (record_claim, outcome, badge, detail) =
+                proofs::inherited(claim, locked.as_deref(), shipped.as_ref());
+            records.push(ClaimRecord {
+                claim: record_claim,
+                outcome,
+                badge,
+                detail,
+                fingerprint: String::new(),
+                inputs: BTreeMap::new(),
+                mutant_results: Vec::new(),
+            });
+            continue;
+        }
         let (outcome, detail) = proofs::outcome(claim, &report);
         let fingerprint = before.get(&claim.krate).cloned().unwrap_or_default();
         records.push(ClaimRecord {
@@ -432,6 +461,58 @@ fn run_gate(root: &Path, command: &[String]) -> Result<Report> {
     let status = child.wait().context("waiting for the gate")?;
     eprintln!("tauten: proof gate exited with {status}");
     Ok(report)
+}
+
+/// A dependency's locked version and the `claims.json` it ships (next to
+/// its `Cargo.toml`), from `cargo metadata` with dependencies.
+fn dependency_record(root: &Path, krate: &str) -> Result<(Option<String>, Option<Record>)> {
+    let metadata = cargo_metadata::MetadataCommand::new()
+        .manifest_path(root.join("Cargo.toml"))
+        .exec()
+        .context("running `cargo metadata` to resolve inherited claims")?;
+    let Some(package) = metadata.packages.iter().find(|p| p.name.as_str() == krate) else {
+        return Ok((None, None));
+    };
+    let shipped = package
+        .manifest_path
+        .parent()
+        .map(|dir| dir.as_std_path().join("claims.json"))
+        .filter(|p| p.is_file())
+        .map(|p| -> Result<Record> {
+            let text =
+                fs::read_to_string(&p).with_context(|| format!("reading {}", p.display()))?;
+            serde_json::from_str(&text).with_context(|| format!("parsing {}", p.display()))
+        })
+        .transpose()?;
+    Ok((Some(package.version.to_string()), shipped))
+}
+
+/// `cargo tauten proofs export --crate <name>`: the recorded claims of one
+/// crate, as the `claims.json` that crate ships for `inherit`.
+pub fn export(ws: &Loaded, krate: &str) -> Result<ExitCode> {
+    let Some(record) = committed_record(ws.root())? else {
+        anyhow::bail!("no {CLAIMS_JSON} to export from");
+    };
+    let shipped = Record {
+        version: record.version,
+        generated_by: "cargo tauten proofs export".to_owned(),
+        claims: record
+            .claims
+            .into_iter()
+            .filter(|c| c.claim.krate == krate)
+            .map(|mut c| {
+                // What a consumer needs: the claim, its outcome and badge.
+                c.inputs.clear();
+                c.mutant_results.clear();
+                c
+            })
+            .collect(),
+        commit: record.commit,
+    };
+    let mut json = serde_json::to_string_pretty(&shipped)?;
+    json.push('\n');
+    print!("{json}");
+    Ok(ExitCode::SUCCESS)
 }
 
 /// What a ship-level run executes and reuses.

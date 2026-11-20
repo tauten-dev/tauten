@@ -28,6 +28,11 @@ command = ["cargo", "run", "--locked", "--quiet", "-p", "cargo-tauten", "--", "t
 stdout = "docs/RULES.md"
 
 [[workspace.metadata.tauten.generated]]
+name = "shipped-claims"
+command = ["cargo", "run", "--locked", "--quiet", "-p", "cargo-tauten", "--", "tauten", "proofs", "export", "--crate", "tauten"]
+stdout = "crates/tauten/claims.json"
+
+[[workspace.metadata.tauten.generated]]
 name = "translation"
 command = ["sh", "proofs/refresh.sh"]
 outputs = ["proofs/Extracted"]

@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- Inherit a dependency's claim (A7b, #48): `inherit =
+  "crate@version:function"` in `proofs/claims.toml` reuses a claim the
+  dependency ships in the `claims.json` next to its `Cargo.toml`
+  (`cargo tauten proofs export --crate <name>` writes it; `tauten` ships
+  its publish claims). The badge is the proved `badge::inherit`
+  (`inherited_badge_le`: never stronger than the inherited one;
+  `inherit_needs_version_and_record`): a version other than the locked one
+  or a missing record establishes nothing. The record carries the
+  dependency's theorems and assumptions. Mutants `inherit-ignores-version`,
+  `inherit-strengthens`. Fixture `fixtures/inherit`.
+
 - Cadence levels and incremental proofs (D2, #36). Each claim records its
   named inputs (`inputs` in `proofs/claims.json`): the declarations of the
   translation its function reaches, the Lean files stating and proving its

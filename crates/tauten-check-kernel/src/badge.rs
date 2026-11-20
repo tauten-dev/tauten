@@ -99,9 +99,30 @@ pub const fn rank(b: Badge) -> u8 {
     }
 }
 
+/// The badge of a claim inherited from a dependency's shipped record
+/// (`inherit = "crate@version:function"`): the inherited badge when the
+/// locked version is the one named and the record holds the claim;
+/// otherwise nothing is established. Never stronger than what is
+/// inherited.
+#[must_use]
+pub const fn inherit(inherited: Badge, version_matches: bool, recorded: bool) -> Badge {
+    if version_matches && recorded {
+        inherited
+    } else {
+        Badge::NotEstablished
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn inheriting_never_strengthens() {
+        assert_eq!(inherit(Badge::ProvedUnder, true, true), Badge::ProvedUnder);
+        assert_eq!(inherit(Badge::Proved, false, true), Badge::NotEstablished);
+        assert_eq!(inherit(Badge::Proved, true, false), Badge::NotEstablished);
+    }
 
     #[test]
     fn badges() {

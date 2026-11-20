@@ -1,0 +1,15 @@
+# The publish protocol is tauten's; its claim is inherited, checked against
+# the locked version and tauten's shipped crates/tauten/claims.json.
+version = 2
+
+[gate]
+command = ["false"]
+
+[[claim]]
+crate = "consumer"
+file = "consumer/src/lib.rs"
+function = "step"
+lean = "tauten.publish.step"
+theorems = []
+mutants = []
+inherit = "tauten@0.0.4:step"

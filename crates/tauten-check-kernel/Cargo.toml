@@ -66,6 +66,7 @@ start_from = [
     "tauten_check_kernel::outcome::of_run",
     "tauten_check_kernel::badge::badge",
     "tauten_check_kernel::badge::rank",
+    "tauten_check_kernel::badge::inherit",
     "tauten_check_kernel::binding::same_bytes",
     "tauten_check_kernel::binding::has_key",
     "tauten_check_kernel::binding::agrees",

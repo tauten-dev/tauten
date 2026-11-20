@@ -461,4 +461,31 @@ open({lib:?}, "a").write("// edited during the run\n")
             "{text}"
         );
     }
+
+    /// A7b: a claim inherited from tauten's shipped record is proved under
+    /// the same assumptions; a version other than the locked one is not.
+    #[test]
+    fn an_inherited_claim_carries_the_dependency_badge() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/inherit");
+        let run = |args: &[&str]| tauten(args, &root);
+        let out = run(&["proofs", "--live", "--no-write"]);
+        let text = String::from_utf8_lossy(&out.stdout);
+        assert!(
+            out.status.success(),
+            "{text}{}",
+            String::from_utf8_lossy(&out.stderr)
+        );
+        let record: serde_json::Value =
+            serde_json::from_str(text.lines().next().expect("a record")).expect("json");
+        assert_eq!(record["badge"], "proved-under");
+        assert_eq!(
+            record["assumes"],
+            serde_json::json!(["FS.rename-atomic", "FS.sync-file"])
+        );
+        let shipped = fs::read_to_string(
+            Path::new(env!("CARGO_MANIFEST_DIR")).join("../../crates/tauten/claims.json"),
+        )
+        .expect("tauten ships its claims");
+        assert!(shipped.contains("\"function\": \"step\""));
+    }
 }

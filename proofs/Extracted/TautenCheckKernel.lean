@@ -284,6 +284,19 @@ def badge.rank (b : badge.Badge) : Result Std.U8 := do
   | badge.Badge.Pending => ok 1#u8
   | badge.Badge.NotEstablished => ok 0#u8
 
+/-- [tauten_check_kernel::badge::inherit]:
+    Source: 'crates/tauten-check-kernel/src/badge.rs', lines 108:0-114:1
+    Visibility: public -/
+def badge.inherit
+  (inherited : badge.Badge) (version_matches : Bool) (recorded : Bool) :
+  Result badge.Badge
+  := do
+  if version_matches
+  then if recorded
+       then ok inherited
+       else ok badge.Badge.NotEstablished
+  else ok badge.Badge.NotEstablished
+
 /-- [tauten_check_kernel::binding::Binding]
     Source: 'crates/tauten-check-kernel/src/binding.rs', lines 19:0-24:1
     Visibility: public -/

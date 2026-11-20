@@ -82,4 +82,22 @@ theorem badge_monotone (e f : Bool) (m m' : badge.Method) (r : badge.Relation) (
   cases e <;> cases f <;> cases m <;> cases m' <;> cases r <;> cases a <;>
     simp [badgeN, badgeRankN, methodRank]
 
+/-- Inheriting a dependency's claim (A7b): the inherited badge when the
+locked version is the one named and the record holds the claim, otherwise
+nothing is established. -/
+theorem inherit_spec (b : badge.Badge) (v r : Bool) :
+    badge.inherit b v r = ok (if v = true ∧ r = true then b else .NotEstablished) := by
+  cases v <;> cases r <;> rfl
+
+/-- An inheriting claim's badge is never stronger than the inherited one. -/
+theorem inherited_badge_le (b : badge.Badge) (v r : Bool) :
+    badge.inherit b v r ⦃ x => badgeRankN x ≤ badgeRankN b ⦄ := by
+  rw [inherit_spec]
+  split <;> simp [badgeRankN] <;> cases b <;> simp [badgeRankN]
+
+/-- A version mismatch or a missing record never inherits anything. -/
+theorem inherit_needs_version_and_record (b : badge.Badge) (v r : Bool)
+    (h : v = false ∨ r = false) : badge.inherit b v r = ok .NotEstablished := by
+  cases v <;> cases r <;> simp_all <;> rfl
+
 end Tauten.Kernel

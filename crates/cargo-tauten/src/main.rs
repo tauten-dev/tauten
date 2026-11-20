@@ -229,6 +229,13 @@ fn main() -> ExitCode {
 /// `cargo tauten proofs <action>`.
 #[derive(Debug, clap::Subcommand)]
 enum ProofsAction {
+    /// Print the recorded claims of one crate as the `claims.json` it ships
+    /// next to its `Cargo.toml`, for projects that `inherit` them.
+    Export {
+        /// The crate whose claims to export.
+        #[arg(long = "crate")]
+        krate: String,
+    },
     /// Translate the kernel crates (Charon, Aeneas) without building the
     /// proofs: the authoritative check that kernel code stays inside the
     /// translatable subset. Needs `[gate] extract` in proofs/claims.toml.
@@ -342,6 +349,7 @@ fn run(cli: Cli) -> Result<ExitCode> {
             let ws = workspace::load(manifest_path.as_deref(), &[])?;
             match action {
                 Some(ProofsAction::Extract { krate }) => proofs::extract(&ws, krate.as_deref()),
+                Some(ProofsAction::Export { krate }) => proofs::export(&ws, &krate),
                 Some(ProofsAction::Try { theorems, mutants }) => {
                     proofs::try_run(&ws, &theorems, &mutants)
                 }
