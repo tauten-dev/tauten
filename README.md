@@ -39,6 +39,7 @@ $ cargo tauten check                 # human output
 $ cargo tauten check --format json   # one diagnostic per line, stable schema
 $ cargo tauten explain TAU-A001      # why the rule exists and how to fix it
 $ cargo tauten generated             # regenerate committed generated files and compare byte for byte
+$ cargo tauten new my-app            # a fresh kernel/core/edge workspace with one proved claim
 ```
 
 ```text
@@ -111,10 +112,11 @@ Layout:
 | `crates/tauten-check-kernel` | The checker's decisions in plain `no_std` Rust (tier `kernel`), proved in `proofs/` |
 | `crates/cargo-tauten` | The CLI (tier `edge`): workspace loading, the rustc wrapper, output, `cargo tauten proofs` |
 | `crates/cargo-tauten/templates/proofs` | The proof-tier template `cargo tauten init --proofs` writes |
+| `crates/cargo-tauten/templates/new` | The workspace `cargo tauten new` writes (with the proofs template) |
 | `proofs/` | Lean proofs over the kernel and the macros' instances; `claims.toml`/`claims.json` (badge data); `TRUST.md` |
 | `fixtures/cases` | One crate per rule, each listing the exact rule IDs it must produce; three accept crates must produce none |
 | `docs/` | Plan, guidelines, mapping, status, dry-run reports |
-| `crates/tauten-check/agents.md` | The agent instructions adopting projects include (written by `cargo tauten init`) |
+| `crates/tauten-check/agents.md` | The agent instructions adopting projects include, starting with the architecture on one page (written by `cargo tauten init` and `new`) |
 
 tauten checks itself with its own profile on every gate run.
 

@@ -1,0 +1,13 @@
+[package]
+name = "{{KERNEL}}"
+description = "Decisions: total functions, translated to Lean and proved (proofs/)."
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[package.metadata.tauten]
+tier = "kernel"
+
+# No dependencies: the proof gate translates this crate on its own, and
+# anything it depended on would be trusted.
+[dependencies]

@@ -1,0 +1,13 @@
+[package]
+name = "{{NAME}}"
+description = "The edge: acquires authority, builds the capabilities, calls the core."
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[package.metadata.tauten]
+tier = "edge"
+
+[dependencies]
+tauten.workspace = true
+{{CORE}}.workspace = true

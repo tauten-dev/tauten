@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+- The agent profile (`AGENTS.tauten.md`) opens with the architecture on
+  one page (A12, #16): decisions are total kernel functions with claims,
+  protocols are machines, the world is reached only through capabilities
+  in the effect row, a check travels as evidence or a binding, a result is
+  shown with the badge its controls admit, registries are never weakened.
+  Each line names the rule or type that enforces it and labels it proved,
+  compiler-enforced, lint, tested or not checked.
+
+- `cargo tauten new <path> [--tauten-path DIR]` (A12, #16) writes a fresh
+  workspace: a kernel crate with one total function (`affordable`) and its
+  claim, theorem and two mutants (through the `init --proofs` template), a
+  core crate with a `Clock` capability, `#[effects]` (`effects =
+  "required"`) and one `tauten::origin::Evidence` check (to be replaced by
+  the A5 permit), and a thin edge binary calling `run(caps, args)`. It
+  passes `cargo tauten check` with no findings (tested); after
+  `sh proofs/refresh.sh`, `cargo tauten proofs` records the claim `proved`
+  with both mutants killed (run once locally, 102 s).
+
 - `cargo tauten obligations [--list]` (D3, #37): in kernel crates,
   arithmetic and indexing findings (TAU-N001, TAU-N002, TAU-P003) are
   listed as proof obligations: proved (subsumed by a recorded proof that the

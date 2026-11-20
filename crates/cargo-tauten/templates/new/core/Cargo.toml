@@ -1,0 +1,16 @@
+[package]
+name = "{{CORE}}"
+description = "Library logic: reaches the world only through capabilities passed in."
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[package.metadata.tauten]
+tier = "core"
+# Every `pub fn` declares its effect row with `#[tauten::effects(..)]`;
+# a row that disagrees with the signature is an error (TAU-F001).
+effects = "required"
+
+[dependencies]
+tauten.workspace = true
+{{KERNEL}}.workspace = true
