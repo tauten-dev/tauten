@@ -18,7 +18,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:6520762299e07678"
+      "fingerprint": "fnv1a64:c0cb2594c47b2480"
     },
     {
       "crate": "tauten-check-kernel",
@@ -43,7 +43,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:6520762299e07678"
+      "fingerprint": "fnv1a64:c0cb2594c47b2480"
     },
     {
       "crate": "tauten-check-kernel",
@@ -60,7 +60,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:6520762299e07678"
+      "fingerprint": "fnv1a64:c0cb2594c47b2480"
     },
     {
       "crate": "tauten-check-kernel",
@@ -78,7 +78,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:6520762299e07678"
+      "fingerprint": "fnv1a64:c0cb2594c47b2480"
     },
     {
       "crate": "tauten-check-kernel",
@@ -96,7 +96,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:6520762299e07678"
+      "fingerprint": "fnv1a64:c0cb2594c47b2480"
     },
     {
       "crate": "tauten-check-kernel",
@@ -118,7 +118,65 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:6520762299e07678"
+      "fingerprint": "fnv1a64:c0cb2594c47b2480"
+    },
+    {
+      "crate": "tauten-check-kernel",
+      "file": "crates/tauten-check-kernel/src/exception.rs",
+      "function": "worst",
+      "lean": "tauten_check_kernel.exception.worst",
+      "theorems": [
+        "Tauten.Kernel.worst_spec"
+      ],
+      "total": null,
+      "subsumes": [],
+      "mutants": [
+        "group-allowed"
+      ],
+      "outcome": "proved",
+      "badge": "proved",
+      "fingerprint": "fnv1a64:c0cb2594c47b2480"
+    },
+    {
+      "crate": "tauten-check-kernel",
+      "file": "crates/tauten-check-kernel/src/exception.rs",
+      "function": "decide",
+      "lean": "tauten_check_kernel.exception.decide",
+      "theorems": [
+        "Tauten.Kernel.decide_spec",
+        "Tauten.Kernel.conditional_never_allowed_in_kernel",
+        "Tauten.Kernel.group_never_weaker",
+        "Tauten.Kernel.decide_single"
+      ],
+      "total": null,
+      "subsumes": [],
+      "mutants": [
+        "conditional-allowed",
+        "group-allowed"
+      ],
+      "outcome": "proved",
+      "badge": "proved",
+      "fingerprint": "fnv1a64:c0cb2594c47b2480"
+    },
+    {
+      "crate": "tauten-check-kernel",
+      "file": "crates/tauten-check-kernel/src/exception.rs",
+      "function": "loosens",
+      "lean": "tauten_check_kernel.exception.loosens",
+      "theorems": [
+        "Tauten.Kernel.weakens_spec",
+        "Tauten.Kernel.loosens_spec",
+        "Tauten.Kernel.x003_iff"
+      ],
+      "total": null,
+      "subsumes": [],
+      "mutants": [
+        "loosens-ignores-level",
+        "expect-not-weakening"
+      ],
+      "outcome": "proved",
+      "badge": "proved",
+      "fingerprint": "fnv1a64:c0cb2594c47b2480"
     },
     {
       "crate": "tauten-check-kernel",
@@ -146,7 +204,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:6520762299e07678"
+      "fingerprint": "fnv1a64:c0cb2594c47b2480"
     },
     {
       "crate": "tauten-check-kernel",
@@ -169,7 +227,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:6520762299e07678"
+      "fingerprint": "fnv1a64:c0cb2594c47b2480"
     },
     {
       "crate": "tauten-check-kernel",
@@ -186,7 +244,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:6520762299e07678"
+      "fingerprint": "fnv1a64:c0cb2594c47b2480"
     },
     {
       "crate": "tauten-check-kernel",
@@ -208,7 +266,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:6520762299e07678"
+      "fingerprint": "fnv1a64:c0cb2594c47b2480"
     },
     {
       "crate": "tauten-check-kernel",
@@ -230,7 +288,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:6520762299e07678"
+      "fingerprint": "fnv1a64:c0cb2594c47b2480"
     },
     {
       "crate": "tauten-check-kernel",
@@ -253,7 +311,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:6520762299e07678"
+      "fingerprint": "fnv1a64:c0cb2594c47b2480"
     },
     {
       "crate": "tauten-check-kernel",
@@ -273,7 +331,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:6520762299e07678"
+      "fingerprint": "fnv1a64:c0cb2594c47b2480"
     },
     {
       "crate": "tauten-check-kernel",
@@ -290,7 +348,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:6520762299e07678"
+      "fingerprint": "fnv1a64:c0cb2594c47b2480"
     },
     {
       "crate": "tauten-check-kernel",
@@ -307,7 +365,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:6520762299e07678"
+      "fingerprint": "fnv1a64:c0cb2594c47b2480"
     },
     {
       "crate": "tauten-check-kernel",
@@ -327,7 +385,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:6520762299e07678"
+      "fingerprint": "fnv1a64:c0cb2594c47b2480"
     },
     {
       "crate": "tauten-check-kernel",
@@ -347,7 +405,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:6520762299e07678"
+      "fingerprint": "fnv1a64:c0cb2594c47b2480"
     },
     {
       "crate": "tauten-check-kernel",
@@ -369,7 +427,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:6520762299e07678"
+      "fingerprint": "fnv1a64:c0cb2594c47b2480"
     },
     {
       "crate": "tauten-check-kernel",
@@ -390,7 +448,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:6520762299e07678"
+      "fingerprint": "fnv1a64:c0cb2594c47b2480"
     },
     {
       "crate": "tauten-proof-instances",
@@ -415,7 +473,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:54cdd1f6395e1d40"
+      "fingerprint": "fnv1a64:7df8bee5d63f7872"
     },
     {
       "crate": "tauten-proof-instances",
@@ -440,7 +498,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:54cdd1f6395e1d40"
+      "fingerprint": "fnv1a64:7df8bee5d63f7872"
     },
     {
       "crate": "tauten-proof-instances",
@@ -465,7 +523,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:54cdd1f6395e1d40"
+      "fingerprint": "fnv1a64:7df8bee5d63f7872"
     },
     {
       "crate": "tauten-proof-instances",
@@ -490,7 +548,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:54cdd1f6395e1d40"
+      "fingerprint": "fnv1a64:7df8bee5d63f7872"
     },
     {
       "crate": "tauten-proof-instances",
@@ -515,7 +573,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:54cdd1f6395e1d40"
+      "fingerprint": "fnv1a64:7df8bee5d63f7872"
     },
     {
       "crate": "tauten-proof-instances",
@@ -542,7 +600,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:54cdd1f6395e1d40"
+      "fingerprint": "fnv1a64:7df8bee5d63f7872"
     },
     {
       "crate": "tauten-proof-instances",
@@ -567,7 +625,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:54cdd1f6395e1d40"
+      "fingerprint": "fnv1a64:7df8bee5d63f7872"
     },
     {
       "crate": "tauten-proof-instances",
@@ -589,7 +647,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:54cdd1f6395e1d40"
+      "fingerprint": "fnv1a64:7df8bee5d63f7872"
     },
     {
       "crate": "tauten-check-kernel",
@@ -614,7 +672,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:6520762299e07678"
+      "fingerprint": "fnv1a64:c0cb2594c47b2480"
     },
     {
       "crate": "tauten-check-kernel",
@@ -633,7 +691,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:6520762299e07678"
+      "fingerprint": "fnv1a64:c0cb2594c47b2480"
     },
     {
       "crate": "tauten-check-kernel",
@@ -650,7 +708,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:6520762299e07678"
+      "fingerprint": "fnv1a64:c0cb2594c47b2480"
     },
     {
       "crate": "tauten-check-kernel",
@@ -667,7 +725,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:6520762299e07678"
+      "fingerprint": "fnv1a64:c0cb2594c47b2480"
     },
     {
       "crate": "tauten-check-kernel",
@@ -691,7 +749,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:6520762299e07678"
+      "fingerprint": "fnv1a64:c0cb2594c47b2480"
     },
     {
       "crate": "tauten-check-kernel",
@@ -709,7 +767,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:6520762299e07678"
+      "fingerprint": "fnv1a64:c0cb2594c47b2480"
     },
     {
       "crate": "tauten-check-kernel",
@@ -735,7 +793,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:6520762299e07678"
+      "fingerprint": "fnv1a64:c0cb2594c47b2480"
     },
     {
       "crate": "tauten-check-kernel",
@@ -756,7 +814,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:6520762299e07678"
+      "fingerprint": "fnv1a64:c0cb2594c47b2480"
     },
     {
       "crate": "tauten-check-kernel",
@@ -774,7 +832,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:6520762299e07678"
+      "fingerprint": "fnv1a64:c0cb2594c47b2480"
     },
     {
       "crate": "tauten-check-kernel",
@@ -796,7 +854,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:6520762299e07678"
+      "fingerprint": "fnv1a64:c0cb2594c47b2480"
     },
     {
       "crate": "tauten-check-kernel",
@@ -815,7 +873,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:6520762299e07678"
+      "fingerprint": "fnv1a64:c0cb2594c47b2480"
     },
     {
       "crate": "tauten-check-kernel",
@@ -833,7 +891,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:6520762299e07678"
+      "fingerprint": "fnv1a64:c0cb2594c47b2480"
     },
     {
       "crate": "tauten-check-kernel",
@@ -851,7 +909,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:6520762299e07678"
+      "fingerprint": "fnv1a64:c0cb2594c47b2480"
     },
     {
       "crate": "tauten-check-kernel",
@@ -868,7 +926,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:6520762299e07678"
+      "fingerprint": "fnv1a64:c0cb2594c47b2480"
     },
     {
       "crate": "tauten-proof-instances",
@@ -888,8 +946,62 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:54cdd1f6395e1d40"
+      "fingerprint": "fnv1a64:7df8bee5d63f7872"
+    },
+    {
+      "crate": "tauten-check-kernel",
+      "file": "crates/tauten-check-kernel/src/layout.rs",
+      "function": "t001",
+      "lean": "tauten_check_kernel.layout.t001",
+      "theorems": [
+        "Tauten.Kernel.t001_iff"
+      ],
+      "total": null,
+      "subsumes": [],
+      "mutants": [
+        "unknown-tier-accepted"
+      ],
+      "outcome": "proved",
+      "badge": "proved",
+      "fingerprint": "fnv1a64:c0cb2594c47b2480"
+    },
+    {
+      "crate": "tauten-check-kernel",
+      "file": "crates/tauten-check-kernel/src/layout.rs",
+      "function": "t003",
+      "lean": "tauten_check_kernel.layout.t003",
+      "theorems": [
+        "Tauten.Kernel.t003_iff"
+      ],
+      "total": null,
+      "subsumes": [],
+      "mutants": [
+        "allowlist-inverted"
+      ],
+      "outcome": "proved",
+      "badge": "proved",
+      "fingerprint": "fnv1a64:c0cb2594c47b2480"
+    },
+    {
+      "crate": "tauten-check-kernel",
+      "file": "crates/tauten-check-kernel/src/layout.rs",
+      "function": "k003",
+      "lean": "tauten_check_kernel.layout.k003",
+      "theorems": [
+        "Tauten.Kernel.k003_iff",
+        "Tauten.Kernel.conditional_no_std_is_finding",
+        "Tauten.Kernel.unparsed_root_is_finding"
+      ],
+      "total": null,
+      "subsumes": [],
+      "mutants": [
+        "conditional-counts-as-no-std",
+        "unparsed-root-clean"
+      ],
+      "outcome": "proved",
+      "badge": "proved",
+      "fingerprint": "fnv1a64:c0cb2594c47b2480"
     }
   ],
-  "commit": "e3cad5e72e82ad76b0233b39dbd16c4f580d34d2"
+  "commit": "231e96bc9858e9e0bcff23d2477764c705d4e44e"
 }
