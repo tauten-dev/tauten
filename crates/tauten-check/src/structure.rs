@@ -4,6 +4,7 @@ use std::collections::BTreeMap;
 
 use tauten_check_kernel::effects::{self as kernel_effects, Verdict};
 use tauten_check_kernel::exception::{self, Excuse};
+use tauten_check_kernel::layout;
 use tauten_check_kernel::severity::Level as KernelLevel;
 
 use crate::diag::{Diagnostic, Severity};
@@ -189,22 +190,22 @@ impl Ctx<'_> {
         self.out.push(diag);
     }
 
+    /// TAU-T001, decided by the proved [`layout::t001`].
     fn tier_declared(&mut self) {
-        match self.member.tier_raw.as_deref() {
-            None => self.emit(
-                "TAU-T001",
-                None,
-                format!("crate `{}` declares no tier", self.member.name),
-                None,
-            ),
-            Some(raw) if Tier::parse(raw).is_none() => self.emit(
-                "TAU-T001",
-                None,
-                format!("crate `{}` declares unknown tier `{raw}`", self.member.name),
-                None,
-            ),
-            Some(_) => {}
+        let raw = self.member.tier_raw.as_deref();
+        let declared = match raw.map(Tier::parse) {
+            None => layout::Declared::Missing,
+            Some(None) => layout::Declared::Unknown,
+            Some(Some(tier)) => layout::Declared::Known(tier.kernel()),
+        };
+        if !layout::t001(declared) {
+            return;
         }
+        let message = match raw {
+            None => format!("crate `{}` declares no tier", self.member.name),
+            Some(raw) => format!("crate `{}` declares unknown tier `{raw}`", self.member.name),
+        };
+        self.emit("TAU-T001", None, message, None);
     }
 
     fn dependency_direction(&mut self, tier: Tier, tiers: &BTreeMap<&str, Option<Tier>>) {
@@ -225,12 +226,31 @@ impl Ctx<'_> {
         }
     }
 
+    /// TAU-T003, decided by the proved [`layout::t003`]: dependency names
+    /// are interned by their position among the member's dependencies and
+    /// allowlist.
     fn kernel_deps(&mut self, tier: Tier) {
-        if tier != Tier::Kernel {
-            return;
-        }
-        for dep in &self.member.external_deps {
-            if !self.member.kernel_dep_allowlist.contains(dep) {
+        let mut names: Vec<String> = Vec::new();
+        let mut intern = |name: &str| -> usize {
+            names.iter().position(|n| n == name).unwrap_or_else(|| {
+                names.push(name.to_owned());
+                names.len().saturating_sub(1)
+            })
+        };
+        let allowed: Vec<usize> = self
+            .member
+            .kernel_dep_allowlist
+            .iter()
+            .map(|d| intern(d.as_str()))
+            .collect();
+        let deps: Vec<(usize, String)> = self
+            .member
+            .external_deps
+            .iter()
+            .map(|d| (intern(d.as_str()), d.clone()))
+            .collect();
+        for (id, dep) in deps {
+            if layout::t003(tier.kernel(), id, &allowed) {
                 self.emit(
                     "TAU-T003",
                     Some(tier),
@@ -292,9 +312,6 @@ impl Ctx<'_> {
         if tier != Tier::Edge && file.kind == SourceKind::Src {
             rules.push("TAU-A002");
         }
-        if tier == Tier::Kernel && file.is_crate_root {
-            rules.push("TAU-K003");
-        }
         for id in rules {
             self.emit(
                 id,
@@ -345,22 +362,32 @@ impl Ctx<'_> {
         }
     }
 
+    /// TAU-K003, decided by the proved [`layout::k003`] on the library root.
     fn crate_root(&mut self, tier: Tier, file: &SourceFile) {
-        let Some(attrs) = scan::crate_attrs(&file.text) else {
+        if !file.path.ends_with("lib.rs") {
             return;
-        };
-        let is_lib = file.path.ends_with("lib.rs");
-        if tier == Tier::Kernel && is_lib && !attrs.no_std {
-            self.emit(
-                "TAU-K003",
-                Some(tier),
-                format!(
-                    "kernel crate `{}` is missing `#![no_std]`",
-                    self.member.name
-                ),
-                Some((&file.path, scan::Hit { line: 1, column: 1 })),
-            );
         }
+        let fact = scan::no_std(&file.text);
+        if !layout::k003(tier.kernel(), fact) {
+            return;
+        }
+        let what = match fact {
+            layout::NoStd::Conditional => {
+                "declares `no_std` only under a condition other than `not(test)`"
+            }
+            layout::NoStd::Unparsed => {
+                "has a library root that could not be parsed, so `#![no_std]` was not seen"
+            }
+            layout::NoStd::Unconditional | layout::NoStd::NotTest | layout::NoStd::Absent => {
+                "is missing `#![no_std]`"
+            }
+        };
+        self.emit(
+            "TAU-K003",
+            Some(tier),
+            format!("kernel crate `{}` {what}", self.member.name),
+            Some((&file.path, scan::Hit { line: 1, column: 1 })),
+        );
     }
 
     /// TAU-F001: facts from [`effects::facts`], decided by the proved

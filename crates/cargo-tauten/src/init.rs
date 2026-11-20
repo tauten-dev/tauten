@@ -2,6 +2,7 @@
 //! agent profile. Prints the plan; changes files only with `--write`.
 
 use std::fs;
+use tauten_check::scan::NoStd;
 
 use anyhow::{Context, Result};
 use tauten_check::Tier;
@@ -27,7 +28,12 @@ fn propose(ws: &Loaded) -> Vec<Proposal<'_>> {
             .iter()
             .find(|f| f.is_crate_root && f.path.ends_with("lib.rs"));
         let (tier, reason) = match lib_root {
-            Some(root) if tauten_check::scan::crate_attrs(&root.text).is_some_and(|a| a.no_std) => {
+            Some(root)
+                if matches!(
+                    tauten_check::scan::no_std(&root.text),
+                    NoStd::Unconditional | NoStd::NotTest
+                ) =>
+            {
                 (Tier::Kernel, "no_std library")
             }
             Some(_) => (Tier::Core, "library"),

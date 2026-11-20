@@ -1,0 +1,12 @@
+[package]
+name = "acc-kernel-not-test"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[package.metadata.tauten]
+tier = "kernel"
+
+# T6: `no_std` whenever the crate is built as a library is accepted.
+[package.metadata.fixture]
+expect = []

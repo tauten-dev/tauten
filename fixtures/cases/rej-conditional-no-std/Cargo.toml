@@ -1,0 +1,16 @@
+[package]
+name = "rej-conditional-no-std"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[features]
+std = []
+
+[package.metadata.tauten]
+tier = "kernel"
+
+# T6: `no_std` was found by substring, so a `no_std` that a feature turns
+# off passed as a kernel.
+[package.metadata.fixture]
+expect = ["TAU-K003"]

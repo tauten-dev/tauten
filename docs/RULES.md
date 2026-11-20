@@ -650,15 +650,15 @@ Lints: `clippy::std_instead_of_core`, `clippy::std_instead_of_alloc`
 
 A kernel crate root must declare `#![no_std]` so the compiler enforces the absence of IO.
 
-**Fix:** Add `#![no_std]` at the top of the kernel crate's `lib.rs`.
+**Fix:** Add `#![no_std]` (or `#![cfg_attr(not(test), no_std)]`) at the top of the kernel crate's `lib.rs`, with no other condition.
 
-**Decides:** A kernel crate root declares `#![no_std]`.
+**Decides:** A kernel library root declares `#![no_std]` unconditionally or as `#![cfg_attr(not(test), no_std)]`; any other condition, and a root that does not parse, is a finding.
 
 Family: obligation. Sees: source. Complete: yes.
 
 **Does not see:** Nothing: the crate root is read in full.
 
-Reject fixtures: `rej-kernel-impure`
+Reject fixtures: `rej-kernel-impure`, `rej-conditional-no-std`
 
 ## TAU-K004
 

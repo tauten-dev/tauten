@@ -22,6 +22,7 @@ pub mod binding;
 pub mod control;
 pub mod effects;
 pub mod exception;
+pub mod layout;
 pub mod manifest;
 pub mod outcome;
 pub mod ratchet;

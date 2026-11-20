@@ -1430,6 +1430,63 @@ def exception.loosens
   then exception.loosens_loop levels false 0#usize
   else ok false
 
+/-- [tauten_check_kernel::layout::Declared]
+    Source: 'crates/tauten-check-kernel/src/layout.rs', lines 19:0-26:1
+    Visibility: public -/
+@[discriminant isize]
+inductive layout.Declared where
+| Known : tiers.Tier → layout.Declared
+| Unknown : layout.Declared
+| Missing : layout.Declared
+
+/-- [tauten_check_kernel::layout::t001]:
+    Source: 'crates/tauten-check-kernel/src/layout.rs', lines 30:0-35:1
+    Visibility: public -/
+def layout.t001 (declared : layout.Declared) : Result Bool := do
+  match declared with
+  | layout.Declared.Known _ => ok false
+  | layout.Declared.Unknown => ok true
+  | layout.Declared.Missing => ok true
+
+/-- [tauten_check_kernel::layout::t003]:
+    Source: 'crates/tauten-check-kernel/src/layout.rs', lines 40:0-45:1
+    Visibility: public -/
+def layout.t003
+  (tier : tiers.Tier) (dep : Std.Usize) (allowed : Slice Std.Usize) :
+  Result Bool
+  := do
+  match tier with
+  | tiers.Tier.Kernel => let b ← control.member allowed dep
+                         ok (¬ b)
+  | tiers.Tier.Core => ok false
+  | tiers.Tier.Edge => ok false
+
+/-- [tauten_check_kernel::layout::NoStd]
+    Source: 'crates/tauten-check-kernel/src/layout.rs', lines 49:0-61:1
+    Visibility: public -/
+@[discriminant isize]
+inductive layout.NoStd where
+| Unconditional : layout.NoStd
+| NotTest : layout.NoStd
+| Conditional : layout.NoStd
+| Absent : layout.NoStd
+| Unparsed : layout.NoStd
+
+/-- [tauten_check_kernel::layout::k003]:
+    Source: 'crates/tauten-check-kernel/src/layout.rs', lines 66:0-74:1
+    Visibility: public -/
+def layout.k003 (tier : tiers.Tier) (fact : layout.NoStd) : Result Bool := do
+  match tier with
+  | tiers.Tier.Kernel =>
+    match fact with
+    | layout.NoStd.Unconditional => ok false
+    | layout.NoStd.NotTest => ok false
+    | layout.NoStd.Conditional => ok true
+    | layout.NoStd.Absent => ok true
+    | layout.NoStd.Unparsed => ok true
+  | tiers.Tier.Core => ok false
+  | tiers.Tier.Edge => ok false
+
 /-- [tauten_check_kernel::manifest::Fact]
     Source: 'crates/tauten-check-kernel/src/manifest.rs', lines 13:0-20:1
     Visibility: public -/

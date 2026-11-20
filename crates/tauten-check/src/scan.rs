@@ -3,6 +3,7 @@
 
 use proc_macro2::Span;
 use syn::visit::Visit;
+pub use tauten_check_kernel::layout::NoStd;
 
 /// A location found by a scan (1-based line and column).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -21,23 +22,79 @@ fn hit(span: Span) -> Hit {
     }
 }
 
-/// Crate-level facts read from a crate root (`lib.rs` / `main.rs`).
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
-pub struct CrateAttrs {
-    /// `#![no_std]` (possibly under `cfg_attr`) is present.
-    pub no_std: bool,
+/// How a crate root declares `no_std`: the fact TAU-K003 is decided on
+/// ([`tauten_check_kernel::layout::k003`]). `Unparsed` when the file does
+/// not parse.
+#[must_use]
+pub fn no_std(source: &str) -> NoStd {
+    let Ok(file) = syn::parse_file(source) else {
+        return NoStd::Unparsed;
+    };
+    let mut found = NoStd::Absent;
+    for attr in &file.attrs {
+        let here = if attr.path().is_ident("no_std") {
+            NoStd::Unconditional
+        } else if attr.path().is_ident("cfg_attr") {
+            match &attr.meta {
+                syn::Meta::List(list) => cfg_attr_no_std(list),
+                syn::Meta::Path(_) | syn::Meta::NameValue(_) => NoStd::Absent,
+            }
+        } else {
+            NoStd::Absent
+        };
+        found = stronger(found, here);
+    }
+    found
 }
 
-/// Read crate-level attributes. Returns `None` if the file does not parse.
-#[must_use]
-pub fn crate_attrs(source: &str) -> Option<CrateAttrs> {
-    let file = syn::parse_file(source).ok()?;
-    let no_std = file.attrs.iter().any(|attr| {
-        let path = attr.path();
-        path.is_ident("no_std")
-            || (path.is_ident("cfg_attr") && attr_tokens(attr).contains("no_std"))
-    });
-    Some(CrateAttrs { no_std })
+/// The better of two declarations: unconditional over `not(test)` over
+/// any other condition over none.
+const fn stronger(a: NoStd, b: NoStd) -> NoStd {
+    const fn rank(f: NoStd) -> u8 {
+        match f {
+            NoStd::Unconditional => 3,
+            NoStd::NotTest => 2,
+            NoStd::Conditional => 1,
+            NoStd::Absent | NoStd::Unparsed => 0,
+        }
+    }
+    if rank(b) > rank(a) { b } else { a }
+}
+
+/// `cfg_attr(predicate, ...)` naming `no_std`: `NotTest` only for exactly
+/// `not(test)`, `Conditional` for any other predicate or nesting.
+fn cfg_attr_no_std(list: &syn::MetaList) -> NoStd {
+    let Ok(metas) = list.parse_args_with(
+        syn::punctuated::Punctuated::<syn::Meta, syn::Token![,]>::parse_terminated,
+    ) else {
+        return NoStd::Absent;
+    };
+    let mut iter = metas.iter();
+    let Some(predicate) = iter.next() else {
+        return NoStd::Absent;
+    };
+    let mut named = false;
+    for meta in iter {
+        match meta {
+            syn::Meta::Path(path) if path.is_ident("no_std") => named = true,
+            syn::Meta::List(inner) if inner.path.is_ident("cfg_attr") => {
+                if cfg_attr_no_std(inner) != NoStd::Absent {
+                    return NoStd::Conditional;
+                }
+            }
+            syn::Meta::Path(_) | syn::Meta::List(_) | syn::Meta::NameValue(_) => {}
+        }
+    }
+    if !named {
+        return NoStd::Absent;
+    }
+    let not_test = matches!(predicate, syn::Meta::List(not) if not.path.is_ident("not")
+        && not.tokens.to_string().trim() == "test");
+    if not_test {
+        NoStd::NotTest
+    } else {
+        NoStd::Conditional
+    }
 }
 
 /// A lint named in an `#[allow]`/`#[expect]` attribute written in source.
@@ -130,13 +187,6 @@ impl ExceptionVisitor {
 impl<'ast> Visit<'ast> for ExceptionVisitor {
     fn visit_attribute(&mut self, attr: &'ast syn::Attribute) {
         self.record(attr, false);
-    }
-}
-
-fn attr_tokens(attr: &syn::Attribute) -> String {
-    match &attr.meta {
-        syn::Meta::List(list) => list.tokens.to_string().replace(' ', ""),
-        syn::Meta::Path(_) | syn::Meta::NameValue(_) => String::new(),
     }
 }
 
@@ -302,11 +352,22 @@ mod tests {
     #[test]
     fn reads_crate_attrs() {
         let src = "#![no_std]\n#![expect(clippy::unwrap_used, reason = \"x\")]\npub fn f() {}\n";
-        let attrs = crate_attrs(src).expect("parses");
-        assert!(attrs.no_std);
-        let cfg = crate_attrs("#![cfg_attr(not(test), no_std)]\n").expect("parses");
-        assert!(cfg.no_std);
-        assert!(!crate_attrs("pub fn f() {}").expect("parses").no_std);
+        assert_eq!(no_std(src), NoStd::Unconditional);
+        assert_eq!(no_std("#![cfg_attr(not(test), no_std)]\n"), NoStd::NotTest);
+        assert_eq!(
+            no_std("#![cfg_attr(feature = \"x\", no_std)]\n"),
+            NoStd::Conditional
+        );
+        assert_eq!(
+            no_std("#![cfg_attr(not(feature = \"std\"), no_std)]\n"),
+            NoStd::Conditional
+        );
+        assert_eq!(
+            no_std("#![cfg_attr(unix, cfg_attr(not(test), no_std))]\n"),
+            NoStd::Conditional
+        );
+        assert_eq!(no_std("pub fn f() {}"), NoStd::Absent);
+        assert_eq!(no_std("pub fn f( {"), NoStd::Unparsed);
     }
 
     #[test]
@@ -330,8 +391,10 @@ mod tests {
 
     #[test]
     fn cfg_attr_without_no_std_is_not_no_std() {
-        let attrs = crate_attrs("#![cfg_attr(test, allow(dead_code))]\n").expect("parses");
-        assert!(!attrs.no_std);
+        assert_eq!(
+            no_std("#![cfg_attr(test, allow(dead_code))]\n"),
+            NoStd::Absent
+        );
     }
 
     #[test]

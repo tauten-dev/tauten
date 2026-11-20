@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- TAU-T001, TAU-T003 and TAU-K003 are decided by the proved kernel
+  (`layout::t001`, `t003`, `k003`; T6, #33). `no_std` is no longer found by
+  substring: only `#![no_std]` or `#![cfg_attr(not(test), no_std)]` satisfies
+  TAU-K003; `no_std` under any other condition (a feature, nesting) and a
+  library root that does not parse are findings. New fixtures
+  `rej-conditional-no-std` and `acc-kernel-not-test`.
+
 - Lint exceptions are decided by the proved kernel in more places (T4,
   #31). `exception::decide` takes how the attribute is written and every
   rule it may cover: an exception inside `cfg_attr` is never accepted in a

@@ -29,6 +29,10 @@ name = "acc-kernel"
 version = "0.0.0"
 
 [[package]]
+name = "acc-kernel-not-test"
+version = "0.0.0"
+
+[[package]]
 name = "ambient-authority"
 version = "0.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -183,6 +187,10 @@ version = "0.0.0"
 
 [[package]]
 name = "rej-cfg-attr-allow"
+version = "0.0.0"
+
+[[package]]
+name = "rej-conditional-no-std"
 version = "0.0.0"
 
 [[package]]

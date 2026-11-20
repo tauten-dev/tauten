@@ -375,3 +375,27 @@ function = "publish_step"
 lean = "tauten_proof_instances.machines.publish_step"
 theorems = ["Tauten.Instances.publish_step_model", "Tauten.Instances.publish_inv", "Tauten.Instances.publish_discharged"]
 mutants = ["cleanup-skipped", "rename-before-sync"]
+
+[[claim]]
+crate = "tauten-check-kernel"
+file = "crates/tauten-check-kernel/src/layout.rs"
+function = "t001"
+lean = "tauten_check_kernel.layout.t001"
+theorems = ["Tauten.Kernel.t001_iff"]
+mutants = ["unknown-tier-accepted"]
+
+[[claim]]
+crate = "tauten-check-kernel"
+file = "crates/tauten-check-kernel/src/layout.rs"
+function = "t003"
+lean = "tauten_check_kernel.layout.t003"
+theorems = ["Tauten.Kernel.t003_iff"]
+mutants = ["allowlist-inverted"]
+
+[[claim]]
+crate = "tauten-check-kernel"
+file = "crates/tauten-check-kernel/src/layout.rs"
+function = "k003"
+lean = "tauten_check_kernel.layout.k003"
+theorems = ["Tauten.Kernel.k003_iff", "Tauten.Kernel.conditional_no_std_is_finding", "Tauten.Kernel.unparsed_root_is_finding"]
+mutants = ["conditional-counts-as-no-std", "unparsed-root-clean"]

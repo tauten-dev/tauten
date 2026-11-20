@@ -497,6 +497,26 @@ MUTANTS = (
            "        Setting::Allow | Setting::Warn | Setting::Expect => true,\n        Setting::Deny | Setting::Forbid => false,",
            "        Setting::Allow | Setting::Warn => true,\n        Setting::Expect | Setting::Deny | Setting::Forbid => false,",
            (T + "weakens_spec", T + "loosens_spec", T + "x003_iff")),
+    # layout: an unknown tier accepted as declared
+    Mutant("unknown-tier-accepted", "layout.rs",
+           "        Declared::Known(_) => false,\n        Declared::Unknown | Declared::Missing => true,",
+           "        Declared::Known(_) | Declared::Unknown => false,\n        Declared::Missing => true,",
+           (T + "t001_iff",)),
+    # layout: the kernel dependency allowlist inverted
+    Mutant("allowlist-inverted", "layout.rs",
+           "        Tier::Kernel => !member(allowed, dep),",
+           "        Tier::Kernel => member(allowed, dep),",
+           (T + "t003_iff",)),
+    # layout: a conditional `no_std` counts as `no_std`
+    Mutant("conditional-counts-as-no-std", "layout.rs",
+           "            NoStd::Unconditional | NoStd::NotTest => false,\n            NoStd::Conditional | NoStd::Absent | NoStd::Unparsed => true,",
+           "            NoStd::Unconditional | NoStd::NotTest | NoStd::Conditional => false,\n            NoStd::Absent | NoStd::Unparsed => true,",
+           (T + "k003_iff", T + "conditional_no_std_is_finding")),
+    # layout: a crate root that did not parse counts as `no_std`
+    Mutant("unparsed-root-clean", "layout.rs",
+           "            NoStd::Unconditional | NoStd::NotTest => false,\n            NoStd::Conditional | NoStd::Absent | NoStd::Unparsed => true,",
+           "            NoStd::Unconditional | NoStd::NotTest | NoStd::Unparsed => false,\n            NoStd::Conditional | NoStd::Absent => true,",
+           (T + "k003_iff", T + "unparsed_root_is_finding")),
 ) + RATCHET_MUTANTS + TABLE_MUTANTS + SUBSUME_MUTANTS + EFFECTS_MUTANTS + OUTCOME_MUTANTS + SPAN_MUTANTS + CONTROL_MUTANTS + BINDING_MUTANTS + BADGE_MUTANTS + REGISTRY_MUTANTS + ASSUMPTION_MUTANTS + HARDENING_MUTANTS + RULE_MUTANTS
 
 I = "Tauten.Instances."
