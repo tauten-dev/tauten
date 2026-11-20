@@ -1,0 +1,12 @@
+[package]
+name = "rej-kernel-std"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[package.metadata.tauten]
+tier = "kernel"
+
+# A2 (#6): reject fixture for TAU-K002
+[package.metadata.fixture]
+expect = ["TAU-K002"]

@@ -95,6 +95,41 @@ pub struct Rule {
     /// Whether the rule applies when compiling test targets.
     #[serde(default = "default_true")]
     pub in_tests: bool,
+    /// `safety`, `obligation` (an architectural or process duty) or
+    /// `style`.
+    #[serde(default)]
+    pub family: Option<Family>,
+    /// Exactly what the rule decides.
+    #[serde(default)]
+    pub invariant: Option<String>,
+    /// What it reads: `source`, `resolved` (the compiler's view),
+    /// `manifest`, `record` or `translation`.
+    #[serde(default)]
+    pub sees: Option<String>,
+    /// What it does not see.
+    #[serde(default)]
+    pub dominion: Option<String>,
+    /// It misses no violation among the inputs it sees. An incomplete rule
+    /// never blocks (`tauten_check_kernel::rule::finding_severity`); a rule
+    /// without this field is incomplete.
+    #[serde(default)]
+    pub complete: bool,
+    /// Reject cases that exercise it: a `fixtures/cases` crate name, or a
+    /// path to a fixture or test. A complete rule that blocks needs one.
+    #[serde(default)]
+    pub fixtures: Vec<String>,
+}
+
+/// What kind of guarantee a rule gives.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Family {
+    /// Violations can make the program wrong, crash or unsound.
+    Safety,
+    /// An architectural or process duty (tiers, capabilities, records).
+    Obligation,
+    /// Readability.
+    Style,
 }
 
 const fn default_true() -> bool {
@@ -193,9 +228,36 @@ pub enum ProfileError {
     /// An API ban references a rule that does not exist.
     #[error("api ban references unknown rule {0}")]
     UnknownRule(String),
+    /// A complete rule that blocks names no reject fixture.
+    #[error("rule {0} is complete and blocks but names no reject fixture")]
+    Unfixtured(String),
     /// The generated clippy configuration could not be serialised.
     #[error("cannot render clippy configuration: {0}")]
     Render(#[from] toml::ser::Error),
+}
+
+/// Every complete rule that blocks names a reject fixture: the proved
+/// [`tauten_check_kernel::rule::fixtures_ok`] decides; this names the
+/// first offender.
+fn fixtures(rules: &[Rule]) -> Result<(), ProfileError> {
+    use tauten_check_kernel::rule::{RuleFacts, fixtures_ok};
+    let facts: Vec<RuleFacts> = rules
+        .iter()
+        .map(|r| RuleFacts {
+            complete: r.complete,
+            blocks: r.levels.values().any(|l| l.is_blocking()),
+            fixture: !r.fixtures.is_empty(),
+        })
+        .collect();
+    if fixtures_ok(&facts) {
+        return Ok(());
+    }
+    let offender = rules
+        .iter()
+        .zip(&facts)
+        .find(|(_, f)| !fixtures_ok(core::slice::from_ref(*f)))
+        .map_or_else(String::new, |(r, _)| r.id.clone());
+    Err(ProfileError::Unfixtured(offender))
 }
 
 /// Names interned to indices for the kernel: one index per distinct string.
@@ -284,6 +346,7 @@ impl Profile {
         // The well-formedness decision is the proved kernel's
         // (`tauten_check_kernel::table::validate`, `validate_ok_iff`).
         validate(&raw)?;
+        fixtures(&raw.rule)?;
         let mut lint_owner = BTreeMap::new();
         for (index, rule) in raw.rule.iter().enumerate() {
             for lint in &rule.lints {
@@ -608,5 +671,69 @@ fix = "f"
         for n in shapes.limit.iter().chain(&shapes.translates) {
             assert!(profile.contains(&n.note), "{}", n.note);
         }
+    }
+
+    /// A2: every rule states what it decides and sees; every listed
+    /// fixture exists and, for a `fixtures/cases` crate, expects the rule.
+    #[test]
+    fn every_rule_carries_its_metadata_and_fixtures() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let profile = Profile::embedded().expect("profile");
+        let incomplete: Vec<&str> = profile
+            .rules()
+            .iter()
+            .filter(|r| !r.complete)
+            .map(|r| r.id.as_str())
+            .collect();
+        assert_eq!(incomplete, ["TAU-S002"]);
+        for rule in profile.rules() {
+            assert!(rule.family.is_some(), "{} family", rule.id);
+            assert!(rule.invariant.is_some(), "{} invariant", rule.id);
+            assert!(
+                matches!(
+                    rule.sees.as_deref(),
+                    Some("source" | "resolved" | "manifest" | "record" | "translation")
+                ),
+                "{} sees",
+                rule.id
+            );
+            assert!(rule.dominion.is_some(), "{} dominion", rule.id);
+            for fixture in &rule.fixtures {
+                if fixture.contains('/') {
+                    assert!(root.join(fixture).exists(), "{}: {fixture}", rule.id);
+                    continue;
+                }
+                let manifest = root.join("fixtures/cases").join(fixture).join("Cargo.toml");
+                let text = std::fs::read_to_string(&manifest).expect("fixture manifest");
+                let table: toml::Table = text.parse().expect("toml");
+                let expect: Vec<&str> = table["package"]["metadata"]["fixture"]["expect"]
+                    .as_array()
+                    .expect("expect")
+                    .iter()
+                    .filter_map(toml::Value::as_str)
+                    .collect();
+                // TAU-A000 is reported under the specific rule a ban names.
+                let wanted = if rule.id == "TAU-A000" {
+                    "TAU-A001"
+                } else {
+                    rule.id.as_str()
+                };
+                assert!(
+                    expect.contains(&wanted),
+                    "{}: {fixture} expects {expect:?}",
+                    rule.id
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn a_complete_blocking_rule_needs_a_fixture() {
+        let text = EMBEDDED_RULES.replacen(r#"fixtures = ["rej-unwrap"]"#, "fixtures = []", 1);
+        assert_ne!(text, EMBEDDED_RULES);
+        assert!(matches!(
+            Profile::parse(&text),
+            Err(ProfileError::Unfixtured(id)) if id == "TAU-P001"
+        ));
     }
 }

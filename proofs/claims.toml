@@ -315,3 +315,27 @@ function = "hardening"
 lean = "tauten_check_kernel.manifest.hardening"
 theorems = ["Tauten.Kernel.hardening_iff", "Tauten.Kernel.unparsed_never_clean"]
 mutants = ["unparsed-is-clean", "not-required-still-fires"]
+
+[[claim]]
+crate = "tauten-check-kernel"
+file = "crates/tauten-check-kernel/src/rule.rs"
+function = "finding_severity"
+lean = "tauten_check_kernel.rule.finding_severity"
+theorems = ["Tauten.Kernel.incomplete_never_error", "Tauten.Kernel.finding_severity_spec"]
+mutants = ["incomplete-can-block"]
+
+[[claim]]
+crate = "tauten-check-kernel"
+file = "crates/tauten-check-kernel/src/rule.rs"
+function = "clean"
+lean = "tauten_check_kernel.rule.clean"
+theorems = ["Tauten.Kernel.unparsed_not_clean", "Tauten.Kernel.clean_spec"]
+mutants = ["unparsed-input-is-clean"]
+
+[[claim]]
+crate = "tauten-check-kernel"
+file = "crates/tauten-check-kernel/src/rule.rs"
+function = "fixtures_ok"
+lean = "tauten_check_kernel.rule.fixtures_ok"
+theorems = ["Tauten.Kernel.fixtures_ok_iff"]
+mutants = ["fixtureless-rule-valid"]

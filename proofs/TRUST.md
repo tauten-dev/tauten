@@ -60,6 +60,25 @@ production calls. Everything below is trusted, not proved.
   `assumption::assumptions_ok`. tauten's own claims rest on no assumption,
   and its own `Audit.lean` does not run the derivation.
 
+## What each scanner does not see (A2)
+
+Every rule in `crates/tauten-check/rules.toml` states what it reads
+(`sees`) and what it does not see (`dominion`); `docs/RULES.md` lists them
+per rule. In short:
+
+| Reads | Rules | Does not see |
+|---|---|---|
+| `resolved` (rustc and clippy) | the lint rules (P, N, E, M, S001, X001, U, C002, O001, L001, K002, D001) and the ban-list rules (A000, A001, A002, G001, C001, K001, P005) | code expanded from macros defined in other crates (clippy skips it); `cfg`-disabled code; build scripts; for ban lists, APIs not on the list and dependency functions that wrap a banned one |
+| `source` (`syn`) | X002, X004, K003, F001, S002 | attributes and items produced by macros; files outside a member's `src/`. A file `syn` cannot parse is reported under each of these rules, never treated as clean |
+| `manifest` | T001, T002, T003, X003, H001 | dev- and build-dependencies (T002, T003); settings from the environment or Cargo configs outside the workspace (H001) |
+| `record` | R001, R002 | the committed record itself; its diff is reviewed |
+| `translation` | K004 | kernel crates not listed in `[gate] crates` |
+
+The two laws over these labels are proved (`tauten_check_kernel::rule`): a
+rule marked incomplete (today only S002, a text heuristic) never blocks, and
+an input a rule could not read is never clean. The labels themselves are
+reviewed text, not derived.
+
 ## What tauten's own proofs additionally trust
 
 - Interning in the shell (`baseline::Interned`, `profile::validate`):

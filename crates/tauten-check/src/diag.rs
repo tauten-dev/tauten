@@ -37,6 +37,7 @@ impl Severity {
     /// without a level, `fallback`. Decided by the proved kernel
     /// ([`kernel_severity::severity`]).
     #[must_use]
+    #[cfg(test)]
     pub(crate) fn decide(level: Option<Level>, fallback: Self) -> Self {
         let level = level.map(Level::kernel);
         let fallback = match fallback {
@@ -44,6 +45,29 @@ impl Severity {
             Self::Error => kernel_severity::Severity::Error,
         };
         match kernel_severity::severity(level, fallback) {
+            kernel_severity::Severity::Warning => Self::Warning,
+            kernel_severity::Severity::Error => Self::Error,
+        }
+    }
+}
+
+impl Severity {
+    /// The severity of a finding of `rule` with `level` in the crate's
+    /// tier: [`Severity::decide`], except that an incomplete rule never
+    /// blocks. Decided by the proved kernel
+    /// ([`tauten_check_kernel::rule::finding_severity`]).
+    #[must_use]
+    pub(crate) fn of_rule(
+        rule: &crate::profile::Rule,
+        level: Option<Level>,
+        fallback: Self,
+    ) -> Self {
+        let level = level.map(Level::kernel);
+        let fallback = match fallback {
+            Self::Warning => kernel_severity::Severity::Warning,
+            Self::Error => kernel_severity::Severity::Error,
+        };
+        match tauten_check_kernel::rule::finding_severity(level, fallback, rule.complete) {
             kernel_severity::Severity::Warning => Self::Warning,
             kernel_severity::Severity::Error => Self::Error,
         }
@@ -173,7 +197,7 @@ pub fn from_compiler(
     let diag = match rule {
         Some(rule) => {
             // Lints are compiled at warn level; the profile decides severity.
-            let severity = Severity::decide(tier.and_then(|t| rule.level(t)), severity);
+            let severity = Severity::of_rule(rule, tier.and_then(|t| rule.level(t)), severity);
             let mut d = Diagnostic::for_rule(rule, severity, krate, tier, msg.message.clone());
             d.source = code.unwrap_or_default();
             d

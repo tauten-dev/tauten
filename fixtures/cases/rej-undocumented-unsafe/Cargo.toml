@@ -1,0 +1,12 @@
+[package]
+name = "rej-undocumented-unsafe"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[package.metadata.tauten]
+tier = "edge"
+
+# A2 (#6): reject fixture for TAU-U002
+[package.metadata.fixture]
+expect = ["TAU-U002"]

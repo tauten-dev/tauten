@@ -128,7 +128,7 @@ fn hardening(profile: &Profile, workspace: &Workspace) -> Option<Diagnostic> {
         Fact::Unparsed => "`overflow-checks` in `[profile.release]` (Cargo.toml or .cargo/config.toml) is not a boolean tauten can read".to_owned(),
         Fact::No | Fact::Yes => "release builds do not check integer overflow: set `overflow-checks = true` under `[profile.release]` in the workspace Cargo.toml, with no override setting it to false".to_owned(),
     };
-    let severity = Severity::decide(level, Severity::Error);
+    let severity = Severity::of_rule(rule, level, Severity::Error);
     Some(
         Diagnostic::for_rule(rule, severity, "workspace", None, message).at(
             Some("Cargo.toml".to_owned()),
@@ -156,7 +156,7 @@ impl Ctx<'_> {
             return;
         };
         // Structural findings without a level in the tier block.
-        let severity = Severity::decide(tier.and_then(|t| rule.level(t)), Severity::Error);
+        let severity = Severity::of_rule(rule, tier.and_then(|t| rule.level(t)), Severity::Error);
         let mut diag = Diagnostic::for_rule(rule, severity, &self.member.name, tier, message);
         diag = match at {
             Some((file, hit)) => diag.at(Some(file.to_owned()), Some(hit.line), Some(hit.column)),
@@ -238,8 +238,38 @@ impl Ctx<'_> {
         }
     }
 
+    /// An input a rule could not read is never clean
+    /// ([`tauten_check_kernel::rule::clean`]): a source file `syn` cannot
+    /// parse is reported under every source-scanning rule that applies in
+    /// the tier, at the rule's own severity.
+    fn unparsed(&mut self, tier: Tier, file: &SourceFile) {
+        use tauten_check_kernel::rule::{Input, clean};
+        if syn::parse_file(&file.text).is_ok() || clean(Input::Unparsed, false) {
+            return;
+        }
+        let mut rules = vec!["TAU-X002", "TAU-X004", "TAU-F001"];
+        if tier != Tier::Edge {
+            rules.push("TAU-A002");
+        }
+        if tier == Tier::Kernel && file.is_crate_root {
+            rules.push("TAU-K003");
+        }
+        for id in rules {
+            self.emit(
+                id,
+                Some(tier),
+                format!(
+                    "`{}` could not be parsed, so {id} was not checked in it; an unread file is never reported clean",
+                    file.path
+                ),
+                Some((&file.path, scan::Hit { line: 1, column: 1 })),
+            );
+        }
+    }
+
     fn sources(&mut self, tier: Tier) {
         for file in &self.member.sources {
+            self.unparsed(tier, file);
             if file.is_crate_root {
                 self.crate_root(tier, file);
             }
@@ -646,5 +676,46 @@ mod hardening_tests {
         // Not required without a tiered member; not read, not checked.
         assert!(h001(None, Some(Fact::No)).is_empty());
         assert!(h001(Some("core"), None).is_empty());
+    }
+}
+
+#[cfg(test)]
+mod unparsed_tests {
+    use super::*;
+
+    #[test]
+    fn an_unparsed_file_is_never_clean() {
+        let profile = Profile::embedded().expect("profile");
+        let member = Member {
+            name: "k".to_owned(),
+            tier_raw: Some("kernel".to_owned()),
+            manifest: "k/Cargo.toml".to_owned(),
+            workspace_deps: Vec::new(),
+            external_deps: Vec::new(),
+            kernel_dep_allowlist: Vec::new(),
+            manifest_lints: Vec::new(),
+            sources: vec![SourceFile {
+                path: "k/src/lib.rs".to_owned(),
+                text: "#![no_std]\npub fn broken( {".to_owned(),
+                is_crate_root: true,
+            }],
+            effects_required: false,
+        };
+        let ws = Workspace {
+            members: vec![member],
+            overflow_checks: None,
+        };
+        let found: Vec<(String, Severity)> = check(&profile, &ws)
+            .into_iter()
+            .filter(|d| d.message.contains("could not be parsed"))
+            .map(|d| (d.id, d.severity))
+            .collect();
+        let ids: Vec<&str> = found.iter().map(|(id, _)| id.as_str()).collect();
+        for id in ["TAU-X002", "TAU-X004", "TAU-F001", "TAU-A002", "TAU-K003"] {
+            assert!(ids.contains(&id), "{id}: {found:?}");
+        }
+        // A blocking rule reports it as an error; F001 at its level (warn).
+        assert!(found.contains(&("TAU-K003".to_owned(), Severity::Error)));
+        assert!(found.contains(&("TAU-F001".to_owned(), Severity::Warning)));
     }
 }

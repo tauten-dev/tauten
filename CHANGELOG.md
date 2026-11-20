@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- Every rule states its `family` (safety, obligation, style), exactly what it
+  decides (`invariant`), what it reads (`sees`), what it does not see
+  (`dominion`), whether it is `complete`, and its reject `fixtures`
+  (`docs/RULES.md`, `cargo tauten explain`). Proved laws: an incomplete rule
+  never blocks (only TAU-S002 is incomplete), an input a rule could not read
+  is never clean (a source file `syn` cannot parse is now reported under each
+  source-scanning rule instead of being skipped), and a complete rule that
+  blocks must name a reject fixture or the rule table is invalid. Nine new
+  reject fixtures cover the rules that had none.
+
 - `cargo tauten proofs extract [--crate <dir>]` and `cargo tauten check
   --extract` (TAU-K004): translate the proved kernel crates without building
   the proofs and report the first error with its location; code that

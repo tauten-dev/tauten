@@ -178,6 +178,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "rej-await-lock"
+version = "0.0.0"
+
+[[package]]
 name = "rej-contract-overflow"
 version = "0.0.0"
 
@@ -204,7 +208,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "rej-exit"
+version = "0.0.0"
+
+[[package]]
 name = "rej-file-allow"
+version = "0.0.0"
+
+[[package]]
+name = "rej-float-eq"
 version = "0.0.0"
 
 [[package]]
@@ -232,11 +244,22 @@ name = "rej-infinite-loop"
 version = "0.0.0"
 
 [[package]]
+name = "rej-kernel-dep"
+version = "0.0.0"
+dependencies = [
+ "tauten-check-kernel",
+]
+
+[[package]]
 name = "rej-kernel-exception"
 version = "0.0.0"
 
 [[package]]
 name = "rej-kernel-impure"
+version = "0.0.0"
+
+[[package]]
+name = "rej-kernel-std"
 version = "0.0.0"
 
 [[package]]
@@ -247,11 +270,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "rej-let-underscore"
+version = "0.0.0"
+
+[[package]]
 name = "rej-lossy-cast"
 version = "0.0.0"
 
 [[package]]
 name = "rej-no-tier"
+version = "0.0.0"
+
+[[package]]
+name = "rej-panic"
+version = "0.0.0"
+
+[[package]]
+name = "rej-panic-in-result"
 version = "0.0.0"
 
 [[package]]
@@ -272,6 +307,10 @@ version = "0.0.0"
 
 [[package]]
 name = "rej-test-hygiene"
+version = "0.0.0"
+
+[[package]]
+name = "rej-undocumented-unsafe"
 version = "0.0.0"
 
 [[package]]
@@ -331,6 +370,10 @@ dependencies = [
  "cap-std",
  "tauten-macros",
 ]
+
+[[package]]
+name = "tauten-check-kernel"
+version = "0.0.3"
 
 [[package]]
 name = "tauten-macros"

@@ -17,3 +17,4 @@ import Tauten.Badge
 import Tauten.Registry
 import Tauten.Assumption
 import Tauten.Manifest
+import Tauten.Rule

@@ -30,6 +30,12 @@ levels = { kernel = "deny", core = "deny", edge = "deny" }
 enforced_by = "clippy"
 why = "unwrap/expect turn every unexpected input into a crash, and agents use them to silence the type checker instead of handling the case."
 fix = "Propagate with `?` and a typed error, or handle the None/Err case explicitly with match, if let, or a default chosen on purpose."
+family = "safety"
+invariant = "No `unwrap`/`expect` call on a fallible value in linted code."
+sees = "resolved"
+dominion = "Code expanded from macros defined in other crates (clippy skips it); code disabled by `cfg`; build scripts."
+complete = true
+fixtures = ["rej-unwrap"]
 
 [[rule]]
 id = "TAU-P002"
@@ -40,6 +46,12 @@ levels = { kernel = "deny", core = "deny", edge = "warn" }
 enforced_by = "clippy"
 why = "A panic is an untyped, unrecoverable failure that callers cannot see in the signature."
 fix = "Return a typed error variant. If the state is truly impossible, restructure the types so it cannot be represented."
+family = "safety"
+invariant = "No `panic!`/`unreachable!` in linted code."
+sees = "resolved"
+dominion = "Code expanded from macros defined in other crates (clippy skips it); code disabled by `cfg`; build scripts."
+complete = true
+fixtures = ["rej-panic"]
 
 [[rule]]
 id = "TAU-P003"
@@ -50,6 +62,12 @@ levels = { kernel = "deny", core = "deny", edge = "warn" }
 enforced_by = "clippy"
 why = "`v[i]` and `&s[a..b]` panic on out-of-range or non-char-boundary input; off-by-one errors become crashes."
 fix = "Use `.get(i)` / `.get(a..b)` and handle None, iterate instead of indexing, or use `split_at_checked`."
+family = "safety"
+invariant = "No panicking index or string slice in linted code."
+sees = "resolved"
+dominion = "Code expanded from macros defined in other crates (clippy skips it); code disabled by `cfg`; build scripts."
+complete = true
+fixtures = ["rej-index"]
 
 [[rule]]
 id = "TAU-P004"
@@ -60,6 +78,12 @@ levels = { kernel = "deny", core = "deny", edge = "deny" }
 enforced_by = "clippy"
 why = "A function that returns Result has promised to report failure as a value; panicking inside it breaks that promise."
 fix = "Map the failure into the function's error type and return it with `?`."
+family = "safety"
+invariant = "No panic or unwrap inside a function that returns `Result`."
+sees = "resolved"
+dominion = "Code expanded from macros defined in other crates (clippy skips it); code disabled by `cfg`; build scripts."
+complete = true
+fixtures = ["rej-panic-in-result"]
 
 [[rule]]
 id = "TAU-P005"
@@ -70,6 +94,12 @@ levels = { kernel = "deny", core = "deny" }
 enforced_by = "clippy"
 why = "Exiting skips cleanup and hides control flow from callers; mem::forget silently leaks resources."
 fix = "Return an error to the edge and let `main` decide the exit code; drop values normally."
+family = "safety"
+invariant = "No `process::exit` or `mem::forget` outside the edge."
+sees = "resolved"
+dominion = "Code expanded from macros defined in other crates (clippy skips it); code disabled by `cfg`; build scripts. APIs not on the tier's ban list (clippy.toml), including dependency functions that wrap a banned one; foreign code."
+complete = true
+fixtures = ["rej-exit"]
 
 # ------------------------------------------------------------- numerics ---
 
@@ -82,6 +112,12 @@ levels = { kernel = "deny", core = "deny", edge = "warn" }
 enforced_by = "clippy"
 why = "Integer overflow and division by zero either panic or wrap silently depending on build profile; both are logic errors agents rarely test."
 fix = "Use `checked_*` and return an error on None, or `saturating_*`/`wrapping_*` when that behaviour is the specification. Say which in a comment."
+family = "safety"
+invariant = "No arithmetic that can overflow, divide by zero or truncate silently in linted code."
+sees = "resolved"
+dominion = "Code expanded from macros defined in other crates (clippy skips it); code disabled by `cfg`; build scripts."
+complete = true
+fixtures = ["rej-contract-overflow"]
 
 [[rule]]
 id = "TAU-N002"
@@ -92,6 +128,12 @@ levels = { kernel = "deny", core = "deny", edge = "warn" }
 enforced_by = "clippy"
 why = "`as` silently truncates, wraps and changes sign."
 fix = "Use `From`/`TryFrom` (`u32::try_from(x)?`) so out-of-range values become errors."
+family = "safety"
+invariant = "No `as` conversion that can lose information in linted code."
+sees = "resolved"
+dominion = "Code expanded from macros defined in other crates (clippy skips it); code disabled by `cfg`; build scripts."
+complete = true
+fixtures = ["rej-lossy-cast"]
 
 [[rule]]
 id = "TAU-N003"
@@ -102,6 +144,12 @@ levels = { kernel = "deny" }
 enforced_by = "clippy"
 why = "Floating point is not associative and has NaN; kernel decisions must be exact and proof-friendly."
 fix = "Use integers in fixed units (cents, milliseconds, basis points) or a rational type."
+family = "obligation"
+invariant = "No floating-point arithmetic in kernel crates."
+sees = "resolved"
+dominion = "Code expanded from macros defined in other crates (clippy skips it); code disabled by `cfg`; build scripts."
+complete = true
+fixtures = ["rej-kernel-impure"]
 
 [[rule]]
 id = "TAU-N004"
@@ -112,6 +160,12 @@ levels = { kernel = "deny", core = "deny", edge = "deny" }
 enforced_by = "clippy"
 why = "Exact equality of computed floats is almost always a bug."
 fix = "Compare with an explicit tolerance, or use integers in fixed units."
+family = "safety"
+invariant = "No exact `==` comparison of floating-point values."
+sees = "resolved"
+dominion = "Code expanded from macros defined in other crates (clippy skips it); code disabled by `cfg`; build scripts."
+complete = true
+fixtures = ["rej-float-eq"]
 
 # --------------------------------------------------------------- errors ---
 
@@ -123,6 +177,12 @@ levels = { kernel = "deny", core = "deny", edge = "deny" }
 enforced_by = "rustc"
 why = "Dropping a Result or discarding the original error is how failures go silent."
 fix = "Propagate with `?`, handle the error, or wrap it with context (`.map_err(|e| MyError::Io(e))`) instead of discarding it."
+family = "safety"
+invariant = "No `#[must_use]` value (a `Result`) dropped silently."
+sees = "resolved"
+dominion = "Code expanded from macros defined in other crates (clippy skips it); code disabled by `cfg`; build scripts."
+complete = true
+fixtures = ["rej-ignored-result"]
 
 [[rule]]
 id = "TAU-E003"
@@ -133,6 +193,12 @@ levels = { kernel = "deny", core = "deny", edge = "deny" }
 enforced_by = "clippy"
 why = "`let _ = fallible()` is visible but still loses the failure. In library code that is rarely right; in tests it is the normal idiom for best-effort cleanup, so tests are exempt."
 fix = "Handle or propagate the result. If discarding is correct, say why: `#[expect(clippy::let_underscore_must_use, reason = \"best-effort cleanup\")]`."
+family = "safety"
+invariant = "No `let _ =` discard of a `#[must_use]` value."
+sees = "resolved"
+dominion = "Code expanded from macros defined in other crates (clippy skips it); code disabled by `cfg`; build scripts."
+complete = true
+fixtures = ["rej-let-underscore"]
 
 [[rule]]
 id = "TAU-E002"
@@ -143,6 +209,12 @@ levels = { kernel = "deny", core = "deny" }
 enforced_by = "clippy"
 why = "`Result<T, ()>`, `anyhow::Error` and similar erase which failures are possible, so callers cannot handle them exhaustively."
 fix = "Define an error enum (for example with `thiserror`) whose variants name each failure. Convert to anyhow/eyre only in edge crates."
+family = "obligation"
+invariant = "No `Result<_, ()>` error type outside the edge."
+sees = "resolved"
+dominion = "Code expanded from macros defined in other crates (clippy skips it); code disabled by `cfg`; build scripts."
+complete = true
+fixtures = ["rej-unit-error"]
 
 # ---------------------------------------------------------------- match ---
 
@@ -155,6 +227,12 @@ levels = { kernel = "deny", core = "deny", edge = "warn" }
 enforced_by = "clippy"
 why = "A `_` arm silently absorbs variants added later; exhaustive matches turn a new variant into a compile error at every decision site."
 fix = "List every variant. Group them with `A | B => ...` if they share behaviour."
+family = "obligation"
+invariant = "No wildcard arm in a `match` over an enum of the workspace."
+sees = "resolved"
+dominion = "Code expanded from macros defined in other crates (clippy skips it); code disabled by `cfg`; build scripts."
+complete = true
+fixtures = ["rej-wildcard"]
 
 # ---------------------------------------------------------------- stubs ---
 
@@ -167,6 +245,12 @@ levels = { kernel = "deny", core = "deny", edge = "deny" }
 enforced_by = "clippy"
 why = "Agents leave `todo!()` and `unimplemented!()` behind and report the task done."
 fix = "Implement the branch, or return a typed `Unsupported` error if the case is deliberately out of scope."
+family = "obligation"
+invariant = "No `todo!`, `unimplemented!` or `dbg!` in linted code."
+sees = "resolved"
+dominion = "Code expanded from macros defined in other crates (clippy skips it); code disabled by `cfg`; build scripts."
+complete = true
+fixtures = ["rej-stub"]
 
 [[rule]]
 id = "TAU-S002"
@@ -176,6 +260,12 @@ levels = { kernel = "warn", core = "warn", edge = "warn" }
 enforced_by = "tauten"
 why = "Comments such as 'for now', 'placeholder', 'TODO' or 'FIXME' usually mark unfinished work that tests do not cover."
 fix = "Finish the work, or track it in your issue tracker and remove the comment."
+family = "style"
+invariant = "Comments that read like placeholders (\"for now\", \"TODO\") are flagged (a text heuristic)."
+sees = "source"
+dominion = "Attributes and items produced by macros; files outside a member's `src/`. Placeholder wording it has no pattern for."
+complete = false
+fixtures = ["rej-placeholder"]
 
 # ---------------------------------------------------------- escape hatch ---
 
@@ -187,6 +277,12 @@ levels = { kernel = "deny", core = "deny", edge = "deny" }
 enforced_by = "clippy"
 why = "`#[allow]` silently outlives the code it excused. `#[expect(lint, reason = \"...\")]` documents why and fails once the exception is no longer needed."
 fix = "Replace `#[allow(x)]` with `#[expect(x, reason = \"why this is safe here\")]` on the smallest item possible, or fix the code."
+family = "obligation"
+invariant = "Every lint exception is `#[expect]` with a reason."
+sees = "resolved"
+dominion = "Code expanded from macros defined in other crates (clippy skips it); code disabled by `cfg`; build scripts."
+complete = true
+fixtures = ["rej-allow", "rej-file-allow"]
 
 [[rule]]
 id = "TAU-X002"
@@ -196,6 +292,12 @@ levels = { kernel = "deny", core = "deny", edge = "deny" }
 enforced_by = "tauten"
 why = "A crate-level `#![expect(...)]` or `#![allow(...)]` of a profile lint switches the rule off for the whole crate."
 fix = "Move the exception to the single item that needs it, with a reason."
+family = "obligation"
+invariant = "No crate-level `#![allow]`/`#![expect]` of a profile lint."
+sees = "source"
+dominion = "Attributes and items produced by macros; files outside a member's `src/`."
+complete = true
+fixtures = ["rej-crate-wide"]
 
 [[rule]]
 id = "TAU-X003"
@@ -205,6 +307,12 @@ levels = { kernel = "warn", core = "warn", edge = "warn" }
 enforced_by = "tauten"
 why = "`[lints]` entries that allow or warn profile lints have no effect under `cargo tauten check` but mislead readers and plain `cargo clippy` runs."
 fix = "Remove the entry from `[lints]` / `[workspace.lints]`."
+family = "obligation"
+invariant = "No `[lints]` entry that lowers a lint the profile keeps blocking."
+sees = "manifest"
+dominion = "Settings outside the workspace manifests (environment variables, Cargo configs outside the workspace)."
+complete = true
+fixtures = []
 
 [[rule]]
 id = "TAU-X004"
@@ -214,6 +322,12 @@ levels = { kernel = "deny", core = "deny", edge = "deny" }
 enforced_by = "tauten"
 why = "Some rules admit no exceptions: stub macros anywhere, and any profile lint in a kernel crate, whose code must stay extractable and provable."
 fix = "Remove the `#[expect]`/`#[allow]` and fix the code it excused."
+family = "obligation"
+invariant = "No exception of a rule that admits none (any rule, in kernel crates)."
+sees = "source"
+dominion = "Attributes and items produced by macros; files outside a member's `src/`."
+complete = true
+fixtures = ["rej-kernel-exception", "rej-stub-excused"]
 
 # --------------------------------------------------------------- unsafe ---
 
@@ -226,6 +340,12 @@ levels = { kernel = "deny", core = "deny" }
 enforced_by = "rustc"
 why = "Every guarantee in this profile assumes safe Rust."
 fix = "Move the unsafe code into an edge crate (or a dedicated `-sys` crate) behind a safe, documented API."
+family = "safety"
+invariant = "No `unsafe` code outside the edge."
+sees = "resolved"
+dominion = "Code expanded from macros defined in other crates (clippy skips it); code disabled by `cfg`; build scripts."
+complete = true
+fixtures = ["rej-unsafe"]
 
 [[rule]]
 id = "TAU-U002"
@@ -235,6 +355,12 @@ levels = { edge = "deny" }
 enforced_by = "clippy"
 why = "Each unsafe operation needs its own stated justification for review."
 fix = "Split blocks to one unsafe operation each and add a `// SAFETY:` comment explaining why the contract holds."
+family = "safety"
+invariant = "Every `unsafe` block in the edge has a `SAFETY:` comment and one unsafe operation."
+sees = "resolved"
+dominion = "Code expanded from macros defined in other crates (clippy skips it); code disabled by `cfg`; build scripts."
+complete = true
+fixtures = ["rej-undocumented-unsafe"]
 
 # ------------------------------------------------- authority and globals ---
 
@@ -247,6 +373,12 @@ levels = { kernel = "deny", core = "deny" }
 enforced_by = "clippy"
 why = "The API is banned in this tier; see the specific rule named in the diagnostic."
 fix = "See the specific rule named in the diagnostic."
+family = "obligation"
+invariant = "No call to an API on the tier's ban list (reported under the specific rule the ban names)."
+sees = "resolved"
+dominion = "Code expanded from macros defined in other crates (clippy skips it); code disabled by `cfg`; build scripts. APIs not on the tier's ban list (clippy.toml), including dependency functions that wrap a banned one; foreign code."
+complete = true
+fixtures = ["rej-ambient-clock"]
 
 [[rule]]
 id = "TAU-A001"
@@ -257,6 +389,12 @@ levels = { kernel = "deny", core = "deny" }
 enforced_by = "clippy"
 why = "Filesystem, network, environment, clock, randomness and process access must arrive as parameters (capabilities), so a signature shows everything a function can touch and tests can substitute them."
 fix = "Take a capability parameter (for example a `&cap_std::fs::Dir` from `Authority::dir`, `&dyn tauten::cap::Clock`, or `&tauten::cap::Env`) and let an edge crate construct it."
+family = "obligation"
+invariant = "No call to a banned ambient-authority API (filesystem, network, environment, clock, randomness, process) outside the edge."
+sees = "resolved"
+dominion = "Code expanded from macros defined in other crates (clippy skips it); code disabled by `cfg`; build scripts. APIs not on the tier's ban list (clippy.toml), including dependency functions that wrap a banned one; foreign code."
+complete = true
+fixtures = ["rej-ambient-clock", "rej-hidden-authority"]
 
 [[rule]]
 id = "TAU-A002"
@@ -266,6 +404,12 @@ levels = { kernel = "deny", core = "deny" }
 enforced_by = "clippy"
 why = "Capabilities may only be created at startup in edge crates; minting them deeper defeats the point of passing them."
 fix = "Accept the capability as a parameter and create it in the edge crate's `main`."
+family = "obligation"
+invariant = "No `Authority::acquire` outside the edge."
+sees = "resolved"
+dominion = "Code expanded from macros defined in other crates (clippy skips it); code disabled by `cfg`; build scripts. APIs not on the tier's ban list (clippy.toml), including dependency functions that wrap a banned one; foreign code."
+complete = true
+fixtures = ["rej-forged-capability", "rej-authority-alias"]
 
 [[rule]]
 id = "TAU-F001"
@@ -275,6 +419,12 @@ levels = { kernel = "warn", core = "warn", edge = "warn" }
 enforced_by = "tauten"
 why = "A function's capability parameters, `Result` return and `async` bound what it can do; `#[effects(..)]` states that row so readers and agents see it without reading the body. The decision is proved (tauten_check_kernel::effects::verdict); classifying parameter types is by name, so a type tauten cannot classify only ever warns."
 fix = "Make `#[effects(..)]` list exactly the labels the signature grants (the message names the missing and extra ones), or change the signature. In a crate with `effects = \"required\"` under `[package.metadata.tauten]`, every `pub fn` needs `#[effects(..)]`; mismatches there are errors."
+family = "obligation"
+invariant = "`#[effects(..)]` lists exactly the labels the signature grants."
+sees = "source"
+dominion = "Attributes and items produced by macros; files outside a member's `src/`. Parameter types it cannot classify by name (reported as unresolved, never clean); effects of called functions."
+complete = true
+fixtures = ["rej-effects"]
 
 [[rule]]
 id = "TAU-G001"
@@ -285,6 +435,12 @@ levels = { kernel = "deny", core = "deny" }
 enforced_by = "clippy"
 why = "Global and thread-local state creates invisible coupling between calls and breaks test isolation."
 fix = "Pass the state explicitly, or own it in a struct created by the edge."
+family = "obligation"
+invariant = "No banned global-state type or API (`static mut`, `thread_local!`, interior-mutable statics) outside the edge."
+sees = "resolved"
+dominion = "Code expanded from macros defined in other crates (clippy skips it); code disabled by `cfg`; build scripts. APIs not on the tier's ban list (clippy.toml), including dependency functions that wrap a banned one; foreign code."
+complete = true
+fixtures = ["rej-global-state"]
 
 [[rule]]
 id = "TAU-C001"
@@ -295,6 +451,12 @@ levels = { kernel = "deny", core = "deny" }
 enforced_by = "clippy"
 why = "Detached threads and tasks can outlive their caller, leak errors and race with shutdown."
 fix = "Use `std::thread::scope`, or `tokio::task::JoinSet` owned by the caller and awaited before returning."
+family = "obligation"
+invariant = "No detached thread or task spawn outside the edge."
+sees = "resolved"
+dominion = "Code expanded from macros defined in other crates (clippy skips it); code disabled by `cfg`; build scripts. APIs not on the tier's ban list (clippy.toml), including dependency functions that wrap a banned one; foreign code."
+complete = true
+fixtures = ["rej-detached-thread"]
 
 [[rule]]
 id = "TAU-C002"
@@ -304,6 +466,12 @@ levels = { kernel = "deny", core = "deny", edge = "deny" }
 enforced_by = "clippy"
 why = "Holding a lock across `.await` deadlocks, and dropping a future means the work never runs."
 fix = "Release guards before awaiting; await or explicitly spawn-and-join futures."
+family = "safety"
+invariant = "No lock guard or `RefCell` borrow held across `.await`."
+sees = "resolved"
+dominion = "Code expanded from macros defined in other crates (clippy skips it); code disabled by `cfg`; build scripts."
+complete = true
+fixtures = ["rej-await-lock"]
 
 [[rule]]
 id = "TAU-O001"
@@ -314,6 +482,12 @@ levels = { kernel = "deny", core = "deny" }
 enforced_by = "clippy"
 why = "Console output is an effect; library code that prints cannot be tested or redirected."
 fix = "Return the data, or write to an `impl std::io::Write` passed in by the caller."
+family = "obligation"
+invariant = "No `print!`/`eprint!` outside the edge."
+sees = "resolved"
+dominion = "Code expanded from macros defined in other crates (clippy skips it); code disabled by `cfg`; build scripts."
+complete = true
+fixtures = ["rej-print"]
 
 [[rule]]
 id = "TAU-L001"
@@ -324,6 +498,12 @@ levels = { kernel = "deny", core = "deny" }
 enforced_by = "clippy"
 why = "A loop with no exit cannot be reasoned about or terminated by the caller."
 fix = "Bound the loop, return a value from it, or move the event loop to the edge."
+family = "safety"
+invariant = "No loop without an exit outside the edge."
+sees = "resolved"
+dominion = "Code expanded from macros defined in other crates (clippy skips it); code disabled by `cfg`; build scripts."
+complete = true
+fixtures = ["rej-infinite-loop"]
 
 # --------------------------------------------------------------- kernel ---
 
@@ -335,6 +515,12 @@ levels = { kernel = "deny", core = "deny", edge = "deny" }
 enforced_by = "tauten"
 why = "Integer overflow panics in debug builds but silently wraps in release builds unless `overflow-checks` is on. The arithmetic lints cover the source tauten scans; this setting covers everything compiled in the workspace, dependencies included. The decision is proved (tauten_check_kernel::manifest::hardening): a setting tauten cannot read is never clean. Limits: it covers binaries built from this workspace, not downstream users of a library crate (their own profile decides), and an environment override (`CARGO_PROFILE_RELEASE_OVERFLOW_CHECKS`) or a Cargo config outside the workspace (for example `~/.cargo/config.toml`) at build time is not seen."
 fix = "Add `overflow-checks = true` under `[profile.release]` in the workspace Cargo.toml (`cargo tauten init --write` does), and remove any `[profile.release.package.<name>]` or `.cargo/config.toml` entry that sets it to false."
+family = "safety"
+invariant = "Release builds of the workspace check integer overflow."
+sees = "manifest"
+dominion = "Settings outside the workspace manifests (environment variables, Cargo configs outside the workspace). Downstream builds of a library crate."
+complete = true
+fixtures = ["fixtures/rej-overflow"]
 
 [[rule]]
 id = "TAU-K001"
@@ -345,6 +531,12 @@ levels = { kernel = "deny" }
 enforced_by = "clippy"
 why = "Kernel decisions must be deterministic and free of shared mutable state so they can be extracted and proved (Aeneas) and replayed exactly."
 fix = "Use `BTreeMap`/`BTreeSet` and plain owned values; pass state explicitly."
+family = "obligation"
+invariant = "No banned non-deterministic or impure API in kernel crates."
+sees = "resolved"
+dominion = "Code expanded from macros defined in other crates (clippy skips it); code disabled by `cfg`; build scripts. APIs not on the tier's ban list (clippy.toml), including dependency functions that wrap a banned one; foreign code."
+complete = true
+fixtures = ["rej-kernel-impure"]
 
 [[rule]]
 id = "TAU-K002"
@@ -355,6 +547,12 @@ levels = { kernel = "deny" }
 enforced_by = "clippy"
 why = "Kernel crates are `no_std`; `std` paths hide the dependency."
 fix = "Import from `core::` or `alloc::`."
+family = "obligation"
+invariant = "Kernel crates name `core`/`alloc` items through `core`/`alloc`."
+sees = "resolved"
+dominion = "Code expanded from macros defined in other crates (clippy skips it); code disabled by `cfg`; build scripts."
+complete = true
+fixtures = ["rej-kernel-std"]
 
 [[rule]]
 id = "TAU-K003"
@@ -364,6 +562,12 @@ levels = { kernel = "deny" }
 enforced_by = "tauten"
 why = "A kernel crate root must declare `#![no_std]` so the compiler enforces the absence of IO."
 fix = "Add `#![no_std]` at the top of the kernel crate's `lib.rs`."
+family = "obligation"
+invariant = "A kernel crate root declares `#![no_std]`."
+sees = "source"
+dominion = "Nothing: the crate root is read in full."
+complete = true
+fixtures = ["rej-kernel-impure"]
 
 [[rule]]
 id = "TAU-K004"
@@ -373,6 +577,12 @@ levels = { kernel = "deny" }
 enforced_by = "tauten"
 why = "A kernel crate listed in `[gate] crates` of proofs/claims.toml is proved over its Charon/Aeneas translation, so it must stay inside what the pinned toolchain translates, without opaque library functions (axioms the proof audit refuses). No syntax rule can predict that exactly across toolchain releases, so the translation decides: `cargo tauten check --extract` (or `cargo tauten proofs extract`) runs it. When the toolchain is not available the check fails as tool-missing; it is never reported clean. The kernel section of the agent profile lists the known limits of the pinned toolchain."
 fix = "Rewrite the code at the reported location inside the translatable subset (the agent profile's kernel section lists the known limits), then re-run `cargo tauten proofs extract --crate <dir>`."
+family = "safety"
+invariant = "The crates of `[gate] crates` translate with the pinned Charon/Aeneas, without opaque functions."
+sees = "translation"
+dominion = "Kernel crates not listed in `[gate] crates`."
+complete = true
+fixtures = ["fixtures/extract/rej-dyn", "fixtures/extract/rej-iterator"]
 
 # ----------------------------------------------------------- structure ---
 
@@ -384,6 +594,12 @@ levels = { kernel = "deny", core = "deny", edge = "deny" }
 enforced_by = "tauten"
 why = "Rules depend on the tier; an undeclared crate would escape the profile."
 fix = "Add `[package.metadata.tauten]` with `tier = \"kernel\"`, `\"core\"` or `\"edge\"` to the crate's Cargo.toml."
+family = "obligation"
+invariant = "Every workspace member declares a valid tier."
+sees = "manifest"
+dominion = "Nothing: `cargo metadata` lists every member."
+complete = true
+fixtures = ["rej-no-tier"]
 
 [[rule]]
 id = "TAU-T002"
@@ -393,6 +609,12 @@ levels = { kernel = "deny", core = "deny", edge = "deny" }
 enforced_by = "tauten"
 why = "Dependencies must point inward (edge -> core -> kernel); otherwise a pure crate can reach IO through its dependency."
 fix = "Invert the dependency: move the shared code down a tier, or pass the capability in."
+family = "obligation"
+invariant = "Normal dependencies between members point inward (edge to core to kernel)."
+sees = "manifest"
+dominion = "Dev- and build-dependencies."
+complete = true
+fixtures = ["rej-kernel-up"]
 
 [[rule]]
 id = "TAU-T003"
@@ -402,6 +624,12 @@ levels = { kernel = "deny" }
 enforced_by = "tauten"
 why = "Each external dependency of the kernel widens what must be trusted and may block proof extraction."
 fix = "Remove the dependency, or list it in `[package.metadata.tauten] kernel-deps = [\"name\"]` with a justification in review."
+family = "obligation"
+invariant = "A kernel crate depends only on allowlisted crates outside the workspace."
+sees = "manifest"
+dominion = "Dev- and build-dependencies."
+complete = true
+fixtures = ["rej-kernel-dep"]
 
 [[rule]]
 id = "TAU-D001"
@@ -412,6 +640,12 @@ levels = { kernel = "warn", core = "warn" }
 enforced_by = "rustc"
 why = "Undocumented public items and error cases are where callers, human or agent, guess wrong."
 fix = "Add a doc comment; document each error variant a function can return under `# Errors`."
+family = "style"
+invariant = "Public items are documented, with `# Errors`/`# Panics` sections where they apply."
+sees = "resolved"
+dominion = "Code expanded from macros defined in other crates (clippy skips it); code disabled by `cfg`; build scripts."
+complete = true
+fixtures = []
 
 # -------------------------------------------------------------- ratchet ---
 
@@ -423,6 +657,12 @@ levels = { kernel = "deny", core = "deny", edge = "deny" }
 enforced_by = "tauten"
 why = "The baseline records existing violations so a project can adopt the profile gradually. It may only shrink: once a violation is fixed, its slot must be removed, or a new violation could silently take it."
 fix = "Run `cargo tauten baseline` and commit the smaller baseline file."
+family = "obligation"
+invariant = "The lint baseline accepts no more findings than exist."
+sees = "record"
+dominion = "The committed baseline itself (its diff is reviewed)."
+complete = true
+fixtures = ["crates/cargo-tauten/tests/ratchet.rs"]
 
 [[rule]]
 id = "TAU-R002"
@@ -432,6 +672,12 @@ levels = { kernel = "deny", core = "deny", edge = "deny" }
 enforced_by = "tauten"
 why = "A proof claim is only as strong as its theorems and the mutants that show they bite, and as the assumptions it rests on. Deleting a mutant, dropping a theorem or adding an assumption makes a claim weaker while its badge still says proved. The committed proofs/claims.json is the record; proofs/claims.toml may not drop a recorded theorem or mutant, or add an assumption, unless an `[[amend]]` entry names the change and gives a reason. The decision is proved (tauten_check_kernel::registry::conserves); it is relative to the committed record, and reviewing that record's diff is trusted."
 fix = "Restore the theorem, mutant or assumption, or add `[[amend]]` with `file`, `function`, `kind` (theorem, mutant or assumption), `name` and `reason` to proofs/claims.toml. After `cargo tauten proofs` re-records proofs/claims.json, remove the amendment."
+family = "obligation"
+invariant = "A recorded proof claim keeps its theorems and mutants and gains no assumption, unless amended with a reason."
+sees = "record"
+dominion = "The committed `proofs/claims.json` itself (its diff is reviewed)."
+complete = true
+fixtures = ["crates/cargo-tauten/tests/proofs.rs"]
 
 # ---------------------------------------------------------- banned APIs ---
 # Each entry becomes a `disallowed-*` entry in the generated clippy.toml of the

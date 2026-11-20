@@ -1692,6 +1692,14 @@ def ratchet.increases
   := do
   ratchet.increases_loop old next (alloc.vec.Vec.new Bool) 0#usize
 
+/-- [tauten_check_kernel::rule::Input]
+    Source: 'crates/tauten-check-kernel/src/rule.rs', lines 18:0-23:1
+    Visibility: public -/
+@[discriminant isize]
+inductive rule.Input where
+| Read : rule.Input
+| Unparsed : rule.Input
+
 /-- [tauten_check_kernel::severity::Severity]
     Source: 'crates/tauten-check-kernel/src/severity.rs', lines 14:0-19:1
     Visibility: public -/
@@ -1714,6 +1722,83 @@ def severity.severity
     if b
     then ok severity.Severity.Error
     else ok severity.Severity.Warning
+
+/-- [tauten_check_kernel::rule::finding_severity]:
+    Source: 'crates/tauten-check-kernel/src/rule.rs', lines 28:0-38:1
+    Visibility: public -/
+def rule.finding_severity
+  (level : Option severity.Level) (fallback : severity.Severity)
+  (complete : Bool) :
+  Result severity.Severity
+  := do
+  if complete
+  then severity.severity level fallback
+  else ok severity.Severity.Warning
+
+/-- [tauten_check_kernel::rule::clean]:
+    Source: 'crates/tauten-check-kernel/src/rule.rs', lines 42:0-47:1
+    Visibility: public -/
+def rule.clean (input : rule.Input) (violated : Bool) : Result Bool := do
+  match input with
+  | rule.Input.Read => ok (¬ violated)
+  | rule.Input.Unparsed => ok false
+
+/-- [tauten_check_kernel::rule::RuleFacts]
+    Source: 'crates/tauten-check-kernel/src/rule.rs', lines 51:0-58:1
+    Visibility: public -/
+structure rule.RuleFacts where
+  complete : Bool
+  blocks : Bool
+  fixture : Bool
+
+/-- [tauten_check_kernel::rule::fixtures_ok]: loop body 0:
+    Source: 'crates/tauten-check-kernel/src/rule.rs', lines 65:4-70:5
+    Visibility: public -/
+@[rust_loop_body]
+def rule.fixtures_ok_loop.body
+  (rules : Slice rule.RuleFacts) (ok1 : Bool) (i : Std.Usize) :
+  Result (ControlFlow (Bool × Std.Usize) Bool)
+  := do
+  let i1 := Slice.len rules
+  if i < i1
+  then
+    let o ←
+      core.slice.Slice.get (core.slice.index.SliceIndexUsizeSlice
+        rule.RuleFacts) rules i
+    let ok2 ←
+      match o with
+      | none => ok ok1
+      | some r =>
+        if ok1
+        then
+          if r.complete
+          then if r.blocks
+               then ok r.fixture
+               else ok true
+          else ok true
+        else ok false
+    let i2 ← lift (core.num.Usize.saturating_add i 1#usize)
+    ok (cont (ok2, i2))
+  else ok (done ok1)
+
+/-- [tauten_check_kernel::rule::fixtures_ok]: loop 0:
+    Source: 'crates/tauten-check-kernel/src/rule.rs', lines 65:4-70:5
+    Visibility: public -/
+@[rust_loop]
+def rule.fixtures_ok_loop
+  (rules : Slice rule.RuleFacts) (ok1 : Bool) (i : Std.Usize) :
+  Result Bool
+  := do
+  loop
+    (fun (ok2, i1) => rule.fixtures_ok_loop.body rules ok2 i1)
+    (ok1, i)
+
+/-- [tauten_check_kernel::rule::fixtures_ok]:
+    Source: 'crates/tauten-check-kernel/src/rule.rs', lines 62:0-72:1
+    Visibility: public -/
+@[reducible]
+def rule.fixtures_ok (rules : Slice rule.RuleFacts) : Result Bool := do
+  rule.fixtures_ok_loop rules true 0#usize
 
 /-- [tauten_check_kernel::span::covers]:
     Source: 'crates/tauten-check-kernel/src/span.rs', lines 12:0-14:1

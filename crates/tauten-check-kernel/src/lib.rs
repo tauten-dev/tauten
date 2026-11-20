@@ -26,6 +26,7 @@ pub mod manifest;
 pub mod outcome;
 pub mod ratchet;
 pub mod registry;
+pub mod rule;
 pub mod severity;
 pub mod span;
 pub mod subsume;

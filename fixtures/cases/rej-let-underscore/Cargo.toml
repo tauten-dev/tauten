@@ -1,0 +1,12 @@
+[package]
+name = "rej-let-underscore"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[package.metadata.tauten]
+tier = "core"
+
+# A2 (#6): reject fixture for TAU-E003
+[package.metadata.fixture]
+expect = ["TAU-E003"]

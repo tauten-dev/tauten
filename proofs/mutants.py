@@ -384,6 +384,24 @@ HARDENING_MUTANTS = (
            (T + "hardening_iff", T + "unparsed_never_clean")),
 )
 
+RULE_MUTANTS = (
+    # rule: an incomplete rule blocks at a deny level
+    Mutant("incomplete-can-block", "rule.rs",
+           "    } else {\n        Severity::Warning\n    }",
+           "    } else {\n        severity(level, fallback)\n    }",
+           (T + "incomplete_never_error",)),
+    # rule: an input the rule could not read counts as clean
+    Mutant("unparsed-input-is-clean", "rule.rs",
+           "        Input::Unparsed => false,",
+           "        Input::Unparsed => true,",
+           (T + "unparsed_not_clean", T + "clean_spec")),
+    # rule: a complete blocking rule without a reject fixture passes
+    Mutant("fixtureless-rule-valid", "rule.rs",
+           "ok = ok && (!r.complete || !r.blocks || r.fixture);",
+           "ok = ok && (!r.complete || !r.blocks || r.fixture || r.blocks);",
+           (T + "fixtures_ok_spec", T + "fixtures_ok_iff")),
+)
+
 BADGE_MUTANTS = (
     # badge: a claim with assumptions shows as proved outright
     Mutant("assumptions-ignored", "badge.rs",
@@ -458,7 +476,7 @@ MUTANTS = (
            "    if crate_wide && blocking {",
            "    if crate_wide || blocking {",
            (T + "exception_spec",)),
-) + RATCHET_MUTANTS + TABLE_MUTANTS + SUBSUME_MUTANTS + EFFECTS_MUTANTS + OUTCOME_MUTANTS + SPAN_MUTANTS + CONTROL_MUTANTS + BINDING_MUTANTS + BADGE_MUTANTS + REGISTRY_MUTANTS + ASSUMPTION_MUTANTS + HARDENING_MUTANTS
+) + RATCHET_MUTANTS + TABLE_MUTANTS + SUBSUME_MUTANTS + EFFECTS_MUTANTS + OUTCOME_MUTANTS + SPAN_MUTANTS + CONTROL_MUTANTS + BINDING_MUTANTS + BADGE_MUTANTS + REGISTRY_MUTANTS + ASSUMPTION_MUTANTS + HARDENING_MUTANTS + RULE_MUTANTS
 
 I = "Tauten.Instances."
 REFINED_TYPES = ("percent", "port", "offset", "count")

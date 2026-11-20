@@ -43,7 +43,7 @@ $ cargo tauten explain TAU-A001      # why the rule exists and how to fix it
 ```text
 error[TAU-A001]: use of a disallowed method `std::fs::read_to_string`
   --> crates/config/src/lib.rs:12:5 (core crate `config`)
-  = rule: No ambient authority (enforced by Clippy)
+  = rule: No ambient authority (decided by Clippy)
   = fix: Take a capability parameter (for example a `&cap_std::fs::Dir` from `Authority::dir`, `&dyn tauten::cap::Clock`, or `&tauten::cap::Env`) and let an edge crate construct it.
 ```
 
@@ -54,8 +54,10 @@ table does not weaken the check. Exceptions are possible only as
 `#[expect(lint, reason = "...")]` on the smallest item, and never for stubs,
 `unsafe` outside the edge, or anything in a kernel crate.
 
-Every rule says what enforces it (rustc, clippy, a tauten structural check,
-or convention). The full table, including what Rust **cannot** enforce, is in
+Every rule says what decides it (rustc, clippy, a tauten structural check,
+or convention), exactly what it decides, what it reads and what it does not
+see; only a rule that misses nothing among the inputs it sees is called
+enforced, and a heuristic never blocks (`docs/RULES.md`). The full table, including what Rust **cannot** enforce, is in
 [docs/MAPPING.md](docs/MAPPING.md).
 
 ## Proofs

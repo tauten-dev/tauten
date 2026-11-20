@@ -1,0 +1,14 @@
+[package]
+name = "rej-kernel-dep"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[package.metadata.tauten]
+tier = "kernel"
+
+[dependencies]
+tauten-check-kernel = { path = "../../../crates/tauten-check-kernel" }
+# A2 (#6): reject fixture for TAU-T003
+[package.metadata.fixture]
+expect = ["TAU-T003"]
