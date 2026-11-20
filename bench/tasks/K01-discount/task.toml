@@ -1,0 +1,7 @@
+id = "K01-discount"
+split = "calibration"
+host = "ledger"
+stratum = "T"
+expected_rules = ["TAU-N001"]
+title = "Volume-discounted purchases"
+defect_classes = ["arithmetic-overflow", "rounding", "unvalidated-input"]

@@ -2,7 +2,7 @@
 
 # Patterns to lift into tauten: evidence from the workspace
 
-Read-only research; nothing was built or run. I read the main checkouts plus `writfold-tauten` and `gripsack-f2-verus`; the other `gripsack-f2-*` and `writfold-*` worktrees were skipped as near-duplicates. Counts are from grep and are approximate. Paths are relative to `/home/tarek/workspace/`. `kctx`, `griplint-*` and `gripfetch-conformance` are Python and yielded only the conformance-suite pattern.
+Read-only research; nothing was built or run. I read the main checkouts plus `writfold-tauten` and `gripsack-f2-verus`; the other `gripsack-f2-*` and `writfold-*` worktrees were skipped as near-duplicates. Counts are from grep and are approximate. Paths are relative to `~/workspace/`. `kctx`, `griplint-*` and `gripfetch-conformance` are Python and yielded only the conformance-suite pattern.
 
 Two facts change the proposal:
 - **The proof tree is forked six times, not three.** `proofs/{extract.sh,gate.sh,refresh.sh,Dockerfile,mutants.py,Audit.lean}` exist in writfold, gripsack-f2-verus, strop, weft, splicery and tauten, plus the `cargo-tauten` template. All use the same `lean-toolchain`.
@@ -127,8 +127,8 @@ Before: `strop-core/src/buffer/io.rs:198-222` and `writfold-kb/src/write/atomic.
 Inference, not observed: D4's capability work will cost more than estimated, because no project other than gripsack injects fs, clock or env today.
 
 ### Critical Files for Implementation
-- /home/tarek/workspace/gripsack-f2-verus/crates/gripsack-kernel/src/convenience.rs
-- /home/tarek/workspace/strop/proofs/gate.sh
-- /home/tarek/workspace/writfold/proofs/mutants.py
-- /home/tarek/workspace/tauten/crates/tauten-macros/src/lib.rs
-- /home/tarek/workspace/gripsack-f2-verus/crates/gripsack-fs/src/lib.rs
+- ~/workspace/gripsack-f2-verus/crates/gripsack-kernel/src/convenience.rs
+- ~/workspace/strop/proofs/gate.sh
+- ~/workspace/writfold/proofs/mutants.py
+- ~/workspace/tauten/crates/tauten-macros/src/lib.rs
+- ~/workspace/gripsack-f2-verus/crates/gripsack-fs/src/lib.rs

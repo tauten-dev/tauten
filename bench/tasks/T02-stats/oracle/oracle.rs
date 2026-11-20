@@ -32,4 +32,14 @@ mod oracle {
         let (code, _, err) = run_ledger(&["--bogus"], "deposit 1\n");
         assert_eq!((code, err.as_str()), (2, "usage: ledger [--stats] <file>\n"));
     }
+
+    #[test]
+    fn stats_to_a_full_device() {
+        // SPEC G5.
+        case(&["--stats", "input.txt"])
+            .file("input.txt", "deposit 5\nwithdraw 1\n")
+            .stdout_to_dev_full()
+            .run()
+            .fails(1, "error: cannot write output\n");
+    }
 }

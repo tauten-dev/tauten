@@ -2,5 +2,7 @@
 /fixtures/*/target
 *.swp
 /bench/results
+/bench/work
 /proofs/.lake
 /bench/hosts/*/target
+__pycache__/

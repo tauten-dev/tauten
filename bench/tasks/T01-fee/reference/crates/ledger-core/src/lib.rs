@@ -71,6 +71,14 @@ pub struct Report {
     pub entries: usize,
 }
 
+/// An amount: one or more ASCII digits, nothing else (SPEC G2).
+fn parse_amount(text: &str) -> Option<u64> {
+    if text.is_empty() || !text.bytes().all(|b| b.is_ascii_digit()) {
+        return None;
+    }
+    text.parse().ok()
+}
+
 fn parse_line(line: usize, text: &str) -> Result<Option<Entry>, LineError> {
     let text = text.trim();
     if text.is_empty() || text.starts_with('#') {
@@ -81,19 +89,16 @@ fn parse_line(line: usize, text: &str) -> Result<Option<Entry>, LineError> {
     let kind = words.next().unwrap_or_default();
     let amount_text = words.next().unwrap_or_default();
     if kind == "fee" {
-        let percent = amount_text
-            .parse::<u8>()
-            .ok()
+        let percent = parse_amount(amount_text)
             .filter(|p| *p <= 100)
+            .and_then(|p| u8::try_from(p).ok())
             .ok_or_else(|| fail(Reason::BadPercent(amount_text.to_owned())))?;
         if words.next().is_some() {
             return Err(fail(Reason::TrailingInput));
         }
         return Ok(Some(Entry::Fee(percent)));
     }
-    let amount: u64 = amount_text
-        .parse()
-        .map_err(|_e: core::num::ParseIntError| fail(Reason::BadAmount(amount_text.to_owned())))?;
+    let amount = parse_amount(amount_text).ok_or_else(|| fail(Reason::BadAmount(amount_text.to_owned())))?;
     if words.next().is_some() {
         return Err(fail(Reason::TrailingInput));
     }

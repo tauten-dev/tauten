@@ -1,0 +1,7 @@
+id = "H07-include"
+split = "calibration"
+host = "kvconf"
+stratum = "T"
+expected_rules = ["TAU-A001"]
+title = "Include directive"
+defect_classes = ["ambient-authority", "path-confinement", "cycle", "recursion-depth"]

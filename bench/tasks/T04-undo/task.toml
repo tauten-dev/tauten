@@ -1,5 +1,7 @@
 id = "T04-undo"
 split = "dev"
 host = "ledger"
+stratum = "T"
+expected_rules = ["TAU-P001"]
 title = "Undo entries"
 defect_classes = ["empty-collection-panic", "unwrap", "state-bookkeeping"]

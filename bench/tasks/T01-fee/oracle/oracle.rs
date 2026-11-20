@@ -35,4 +35,18 @@ mod oracle {
         expect_ok("deposit 100\nwithdraw 30\n", "balance: 70\n");
         expect_err("deposit 1\nwithdraw 2\n", "error: line 2: insufficient funds\n");
     }
+
+    #[test]
+    fn huge_balance_odd_percent() {
+        // M × 33 / 100 = 6087425544324152032.95, rounded down.
+        expect_ok("deposit 18446744073709551615\nfee 33\n", "balance: 12359318529385399583\n");
+    }
+
+    #[test]
+    fn percent_syntax() {
+        // SPEC G2: leading zeros are allowed.
+        expect_ok("deposit 100\nfee 007\n", "balance: 93\n");
+        // prompt: more words after the percent.
+        expect_err("deposit 100\nfee 5 x\n", "error: line 2: unexpected text after the amount\n");
+    }
 }

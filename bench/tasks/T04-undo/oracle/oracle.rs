@@ -35,4 +35,16 @@ mod oracle {
     fn rejected_entries_are_still_errors() {
         expect_err("deposit 1\nundo\nwithdraw 1\n", "error: line 3: insufficient funds\n");
     }
+
+    #[test]
+    fn undone_entries_are_skipped() {
+        // prompt: undo reverts the most recent entry not already undone.
+        expect_ok("deposit 1\ndeposit 2\nundo\ndeposit 4\nundo\nundo\n", "balance: 0\n");
+    }
+
+    #[test]
+    fn undo_then_overflow() {
+        // SPEC G1: after the undo the balance is the largest amount again.
+        expect_err("deposit 18446744073709551615\nwithdraw 18446744073709551615\nundo\ndeposit 1\n", "error: line 4: balance overflow\n");
+    }
 }

@@ -1,6 +1,7 @@
 # How the benchmark uses this host.
 oracle_dir = "crates/ledger-cli/tests"   # hidden oracle tests are copied here
 oracle_package = "ledger-cli"
+binary = "ledger"                         # CARGO_BIN_EXE_<binary> in the oracle
 
 [tiers]                                    # declared in arm C; measured in every arm
 ledger-kernel = "kernel"

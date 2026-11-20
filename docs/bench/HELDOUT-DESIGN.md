@@ -1,7 +1,7 @@
 # Held-out suite design for the tauten benchmark
 
 Planner's design, 2026-11-18. Nothing here is implemented. Based on reading
-`/home/tarek/workspace/tauten/bench` at `6b8fb8c` (README, PREREGISTRATION,
+`~/workspace/tauten/bench` at `6b8fb8c` (README, PREREGISTRATION,
 `run.py`, `analyze.py`, `admit.py`, host `ledger`, tasks T01–T04, arms, agent
 script), `docs/PLAN.md` §5/§9, `docs/RULES.md`, and the pilot report and rows.
 
@@ -453,7 +453,7 @@ supplies no estimate of between-task spread. It does supply cost: mean
 $0.175 per trial (range $0.147–$0.266), 44 s, 16–18 turns. Power therefore
 rests on stated assumptions, simulated with the analysis the preregistration
 names (bootstrap over tasks, 95% interval excludes 0). Script:
-`/tmp/claude-1000/-home-tarek-workspace-sovel-sovel-handover/fa26b365-cd1b-428b-bad7-464890bc8476/scratchpad/power.py`.
+`<scratch>/power.py`.
 Task baselines are drawn from a wide Beta distribution around the stated mean.
 
 Power to detect the C − A difference (1,500 simulations per cell):
@@ -590,3 +590,7 @@ at step 10 (the freeze is irreversible for this suite).
 - Two-step tasks double the cost of two tasks and add harness surface. If
   change 8 is cut, H11 and H17 have no single-session equivalent and
   TAU-M001 goes untested; say so in the report.
+
+## 9. Calibration record and deviations
+
+See `bench/TASK-STYLE.md` (round results, style knob S1, deviation D1, round-3 go/no-go).

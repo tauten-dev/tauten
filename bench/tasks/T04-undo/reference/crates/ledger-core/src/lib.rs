@@ -80,6 +80,14 @@ enum Line {
     Undo,
 }
 
+/// An amount: one or more ASCII digits, nothing else (SPEC G2).
+fn parse_amount(text: &str) -> Option<u64> {
+    if text.is_empty() || !text.bytes().all(|b| b.is_ascii_digit()) {
+        return None;
+    }
+    text.parse().ok()
+}
+
 fn parse_line(line: usize, text: &str) -> Result<Line, LineError> {
     let text = text.trim();
     if text.is_empty() || text.starts_with('#') {
@@ -92,9 +100,7 @@ fn parse_line(line: usize, text: &str) -> Result<Line, LineError> {
         return if words.next().is_some() { Err(fail(Reason::TrailingInput)) } else { Ok(Line::Undo) };
     }
     let amount_text = words.next().unwrap_or_default();
-    let amount: u64 = amount_text
-        .parse()
-        .map_err(|_e: core::num::ParseIntError| fail(Reason::BadAmount(amount_text.to_owned())))?;
+    let amount = parse_amount(amount_text).ok_or_else(|| fail(Reason::BadAmount(amount_text.to_owned())))?;
     if words.next().is_some() {
         return Err(fail(Reason::TrailingInput));
     }

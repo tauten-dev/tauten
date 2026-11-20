@@ -1,0 +1,9 @@
+# How the benchmark uses this host.
+oracle_dir = "crates/jobq-cli/tests"     # hidden oracle tests are copied here
+oracle_package = "jobq-cli"
+binary = "jobq"                           # CARGO_BIN_EXE_<binary> in the oracle
+
+[tiers]                                    # declared in arm C; measured in every arm
+jobq-kernel = "kernel"
+jobq-core = "core"
+jobq-cli = "edge"

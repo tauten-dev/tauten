@@ -1,0 +1,7 @@
+id = "K03-depends"
+split = "calibration"
+host = "jobq"
+stratum = "N"
+expected_rules = []
+title = "Job dependencies"
+defect_classes = ["sequence-invariant", "cycle", "hang"]

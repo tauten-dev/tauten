@@ -1,0 +1,9 @@
+# How the benchmark uses this host.
+oracle_dir = "crates/kvconf-cli/tests"   # hidden oracle tests are copied here
+oracle_package = "kvconf-cli"
+binary = "kvconf"                         # CARGO_BIN_EXE_<binary> in the oracle
+
+[tiers]                                    # declared in arm C; measured in every arm
+kvconf-kernel = "kernel"
+kvconf-core = "core"
+kvconf-cli = "edge"

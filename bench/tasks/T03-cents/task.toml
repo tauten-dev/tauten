@@ -1,5 +1,7 @@
 id = "T03-cents"
 split = "dev"
 host = "ledger"
+stratum = "T"
+expected_rules = ["TAU-N002", "TAU-X001"]
 title = "Amounts with cents"
 defect_classes = ["floating-point", "lossy-conversion", "unwrap", "arithmetic-overflow"]

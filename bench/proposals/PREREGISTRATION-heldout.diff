@@ -1,0 +1,208 @@
+--- a/bench/PREREGISTRATION.md
++++ b/bench/PREREGISTRATION.md
+@@ -1,7 +1,11 @@
+ # Preregistration (DRAFT, not frozen)
+ 
+ This file is frozen by committing it, and recording its hash in the results,
+-**before** any held-out run. Until then it may change.
++**before** any held-out run. Until then it may change. Freezing means: the
++first line reads `# Preregistration (FROZEN <date>)`, the open items marked
++**[owner]** are filled in, `bench/heldout.lock` is regenerated with
++`python3 -I bench/lock.py --write`, and both are committed together.
++`run.py` refuses a model run on held-out tasks until then.
+ 
+ ## Hypothesis
+ 
+@@ -14,49 +18,172 @@
+ 
+ **Escaped-defect rate:** the share of trials whose final repo fails at least
+ one hidden-oracle test, or whose oracle fails to build. One value per trial.
++The oracle runs twice on the finished repo, in the dev profile and with
++`--release`; a trial is an escaped defect if it fails in **either**
++(both results are recorded). For two-step tasks (H11, H17) the value is
++taken once, after the last step. A timeout or agent crash is scored by the
++oracle on whatever the repo contains. An oracle test that hits its 10 s
++limit is re-run once, after every other trial of the run has finished and
++with nothing else running; both runs are recorded and the re-run decides
++that test.
++
++**Infrastructure failures are not scored.** A trial whose harness step
++fails (an exception in setup, the agent container or evaluation), whose
++agent session ends on an API, authentication or quota error, that starts
++no session, or whose transcript names a model other than the requested one
++is recorded as an `infra_error` row, excluded from every metric, and run
++again (`run.py --resume`) until it is scored. Infra rows are counted and
++listed in the report.
++
++**Primary comparison:** C − A over all 20 held-out tasks. One primary
++comparison, so no multiplicity correction; everything else is secondary.
+ 
+ ## Secondary outcomes
+ 
+-Reported, but not used for the go/no-go:
+-- reachable-panic rate;
+-- visible tests pass;
+-- test tampering;
+-- stubs added;
+-- profile errors in the final repo;
+-- agent wall time;
+-- token usage, once captured.
++Reported, but not used for the go/no-go except where the go/no-go names them:
++- task success: every `base__` test of the oracle passes, in both profiles;
++- the escaped-defect rate in each profile alone (dev, release);
++- the relative reduction (C − A) / A of the escaped-defect rate, with a
++  bootstrap CI over tasks;
++- escaped defects by oracle class tag (`base`, `overflow`, `input`,
++  `unicode`, `rounding`, `sequence`, `authority`, `variant`, `ioerr`,
++  `hang`, `freshness`, `origin`);
++- C − B and B − A;
++- per-stratum differences (T targeted, A adjacent, N control), labelled
++  exploratory;
++- reachable-panic rate (a panic, an abort such as a stack overflow, or
++  death by a signal) and hang rate;
++- visible tests pass; test tampering; stubs added;
++- arm C compliance: trials that end with profile errors;
++- profile errors in the final repo (every arm);
++- timeouts;
++- agent wall time, turns, input/output/cache tokens and model cost in USD
++  (means and medians);
++- exploratory: the escaped-defect rate over trials whose every agent
++  session ended with subtype `success` (the agent reported done).
++
++No per-class result removes a rule or mechanism permanently. Per-class
++counts are exploratory and set priority only. A class with fewer than 3
++tasks able to exhibit it, or fewer than 30 arm-A trials, is reported as
++not measured.
+ 
+ ## Design
+ 
+ | Item | Setting |
+ |---|---|
+-| Tasks | Dev split (currently 4): used for tuning the profile and harness. Held-out split (≥ 16, not yet written): oracles written and hashed before the profile is frozen for the run. |
++| Splits | **dev** (T01–T04): harness and profile tuning, never reported as a result. **calibration** (K01–K03): arm A only, used to fix the task style and choose the primary model, never part of any comparison. **held-out** (H01–H20, listed below): the only split this preregistration covers. |
+ | Arms | A, B, C, the same tasks for each |
+-| Trials | ≥ 5 per task per arm for held-out; 3 for the pilot |
+-| Model | One named model and version for the primary analysis. A second model as a replication, reported separately. |
+-| Isolation | Fresh container per trial; same turn and time limits for every arm |
+-| Order | Trials interleaved across arms to spread provider-side drift |
++| Trials | 10 per task per arm: 20 × 3 × 10 = 600 per model (plus 60 second steps for H11 and H17) |
++| Primary model | **[owner]** exact id, chosen from calibration before the freeze: the model whose calibration arm A escaped-defect rate is nearer 40% |
++| Replication model | **[owner]** exact id (the other candidate); same tasks, arms and limits; reported separately, never pooled |
++| Candidate models | `claude-sonnet-5-5` and Haiku 5.5 (**[owner]** confirm the exact id) |
++| Agent | Claude Code through `bench/agents/claude-code.sh`; CLI version **[owner]** (the `dev.tauten.bench.claude-version` label of the image; 2.1.327 when this draft was written); agent script sha256 in `bench/heldout.lock` |
++| tauten | the `cargo-tauten` built into the image from the frozen commit; profile `crates/tauten-check/rules.toml` and `agents.md` hashed in the lock |
++| Limits | `--max-turns 60`, 900 s wall time per step, spend cap 2 USD per step, the same in every arm; timeouts are recorded |
++| Isolation | Fresh container per agent session that sees only the trial repo, the prompt and the agent script; network only to the model API and crates.io through an allowlisting proxy; evaluation in a separate container with no network (`bench/container/README.md`) |
++| Dependencies | crates.io is reachable for the agent in every arm. Each trial has its own `CARGO_HOME`, used by its agent sessions and mounted into its evaluation container, so a crate the agent added builds offline there |
++| Two-step tasks | The repo is committed after step 1 (in the evaluation container, hooks off), so step 2 starts from a clean tree; diffs are taken against the recorded base commit |
++| Order | Each trial index is one block of every (task, arm) pair, shuffled with seed 20261118; 4 parallel workers |
++| Transcripts | Full stream-json transcript of every session kept with the results; a scan of tool-call paths outside the trial repo is reported |
++
++## Held-out tasks
++
++| Id | Host | Stratum | Expected rules (T/A) |
++|---|---|---|---|
++| H01-interest | ledger | T | TAU-N001 |
++| H02-statement | ledger | N | - |
++| H03-holds | ledger | N | - |
++| H04-csv | ledger | T | TAU-P003 |
++| H05-summary | ledger | A | TAU-N001 |
++| H06-units | kvconf | T | TAU-N001 |
++| H07-include | kvconf | T | TAU-A001 |
++| H08-interpolate | kvconf | T | TAU-A001, TAU-P003 |
++| H09-schema | kvconf | N | - |
++| H10-keys | kvconf | N | - |
++| H11-json-duration | kvconf | T | TAU-M001 |
++| H12-write-failure | kvconf | A | TAU-E003 |
++| H13-backoff | jobq | T | TAU-N001 |
++| H14-timeout | jobq | T | TAU-N001, TAU-A001 |
++| H15-ratelimit | jobq | A | TAU-N001, TAU-N003 |
++| H16-cancel | jobq | N | - |
++| H17-stats-pause | jobq | T | TAU-M001 |
++| H18-aging | jobq | T | TAU-N002, TAU-N001 |
++| H19-quoted-names | jobq | T | TAU-P003 |
++| H20-recurring | jobq | A | TAU-N001 |
++
++The stratum mix (T 11, A 4, N 5 in the design; see the table for the
++admitted labels) is a design choice and sets the size of the headline, so
++per-stratum results are always printed beside it.
+ 
+ ## Analysis
+ 
+ - Paired by task.
+-- Difference of arm means (C − A, B − A), averaged over tasks.
++- Difference of arm means (C − A primary; B − A and C − B secondary),
++  averaged over tasks.
+ - 95% bootstrap CI resampling tasks: 10,000 resamples, seed 20261118.
++- Sensitivity check: two-sided sign-flip permutation test on the per-task
++  differences (seed 20261118, 10,000 random sign vectors for more than 16
++  tasks).
+ - If the CI includes 0, the report says "no measured difference".
+ - All trials are reported, including timeouts and crashes; a trial that
+   produces no change counts as a defect if its oracle fails.
++- Each model is analysed on its own rows, never pooled.
++- Before any table the analysis checks balance (the same number of scored
++  trials in every (task, arm) cell) and duplicates (one row per task, arm,
++  trial and label) and prints every violation.
++- `python3 -I bench/analyze.py <rows> --agent claude --split heldout` prints
++  every table named here.
+ 
+ ## Go/no-go (from PLAN.md §9)
+ 
+-- **Stop** the product claims if, after the pilot and one tuning pass, C vs A
+-  shows no reduction in escaped defects: the CI includes 0 and the point
+-  estimate is under 15% relative.
+-- **Cut rules** if C lowers task success by more than 10 points, or raises
+-  median cost by more than 40%, without at least a 30% defect reduction.
++- **Stop** the product claims if C vs A shows no reduction in escaped
++  defects: the CI includes 0 and the point estimate is under 15% relative.
++- **Cut rules** if C lowers task success (all `base__` tests pass) by more
++  than 10 points, or raises median model cost in USD by more than 40%,
++  without at least a 30% defect reduction.
++- If arm A of the primary model lands at the ceiling or the floor on
++  held-out, there is no retuning: the result is published as inconclusive
++  for that model and the replication model's result stands on its own.
++
++## Exclusions
++
++None after the freeze. A task found broken after the run is reported both
++with and without it, with the reason.
++
++## Freeze record
++
++`bench/heldout.lock` holds the SHA-256 of every file that defines a
++held-out trial: each held-out task directory, the hosts they use, the
++oracle support file, the arm texts, the profile (`rules.toml`,
++`agents.md`), the agent script, the container files, `run.py`,
++`analyze.py`, `admit.py`, `lock.py`, `scripts/bench-validate`,
++`TASK-STYLE.md`, and everything built into the trial image (the workspace
++manifests and `crates/**`, from which `cargo-tauten` is built). Every result
++row carries the lock's sha256, this file's sha256, the harness commit, the
++trial image's id and its `dev.tauten.bench.harness` label; `run.py`
++refuses a held-out model run unless that label equals the harness commit
++(the image was built from the frozen commit), and records an
++`infra_error` for any session whose transcript names another model.
++
++## Threats to validity, stated up front
++
++- The hosts are profile-clean, so this measures new work in an adopted
++  repo, not adoption of a legacy repo with a baseline.
++- Tasks, oracles and sloppy solutions were written by a model of the same
++  family as the agents under test.
++- The stratum mix is a design choice.
++- Overflow behaves differently in the two profiles (a panic in dev, wrapping
++  in release); the oracle runs in both and either failure counts.
++- The 10 s oracle limit runs beside up to 3 other trials; a hang is re-run
++  once alone, but a solution that is merely slow under load may still be
++  counted once as a hang in the first run (both runs are recorded).
++- Every agent container has `cargo-tauten` on `PATH`, including arms A and
++  B; only arm C is told about it.
+ 
+ ## Honesty rules for publication
+ 
+ - Every number carries the model, date, n and CI.
+ - Null and negative results are published.
+ - Raw JSONL and transcripts are published with the harness commit.
+-- No result from the dev split is presented as a held-out result.
++- No result from the dev or calibration split is presented as a held-out
++  result.

@@ -1,0 +1,7 @@
+id = "H02-statement"
+split = "calibration"
+host = "ledger"
+stratum = "N"
+expected_rules = []
+title = "Statement with memos"
+defect_classes = ["unicode-length", "output-ordering", "argument-parsing"]

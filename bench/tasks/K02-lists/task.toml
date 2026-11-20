@@ -1,0 +1,7 @@
+id = "K02-lists"
+split = "calibration"
+host = "kvconf"
+stratum = "T"
+expected_rules = ["TAU-P003"]
+title = "List element selectors in get"
+defect_classes = ["index-panic", "lossy-conversion", "unvalidated-input", "unicode"]

@@ -1,0 +1,12 @@
+[package]
+name = "kvconf-cli"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[[bin]]
+name = "kvconf"
+path = "src/main.rs"
+
+[dependencies]
+kvconf-core = { path = "../kvconf-core" }

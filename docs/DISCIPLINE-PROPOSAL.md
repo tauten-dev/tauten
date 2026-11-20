@@ -344,11 +344,11 @@ Current pages (`~/workspace/tauten-dev.github.io/website/sitegen/pages_home.py`,
 Caveat: docs.rs documents libraries, not binaries. The `cargo-tauten` CLI reference therefore stays on `/start/` as captured `--help` and `explain` output, which the generator already does.
 
 ### Critical Files for Implementation
-- /home/tarek/workspace/tauten/crates/tauten-check/src/proofs.rs
-- /home/tarek/workspace/tauten/crates/cargo-tauten/templates/proofs/gate.py
-- /home/tarek/workspace/writfold-tauten/docs/writfold/tauten-adoption.md
-- /home/tarek/workspace/gripsack-f2-verus/plan/0056-verified-foundation.md
-- /home/tarek/workspace/tauten/docs/MAPPING.md
+- ~/workspace/tauten/crates/tauten-check/src/proofs.rs
+- ~/workspace/tauten/crates/cargo-tauten/templates/proofs/gate.py
+- ~/workspace/writfold-tauten/docs/writfold/tauten-adoption.md
+- ~/workspace/gripsack-f2-verus/plan/0056-verified-foundation.md
+- ~/workspace/tauten/docs/MAPPING.md
 
 ---
 

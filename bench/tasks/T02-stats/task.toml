@@ -1,5 +1,7 @@
 id = "T02-stats"
 split = "dev"
 host = "ledger"
+stratum = "T"
+expected_rules = ["TAU-P001"]
 title = "Largest-withdrawal statistics"
 defect_classes = ["empty-collection-panic", "unwrap", "argument-parsing"]

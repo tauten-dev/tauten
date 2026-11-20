@@ -1,6 +1,8 @@
 id = "T01-fee"
 split = "dev"
 host = "ledger"
+stratum = "T"
+expected_rules = ["TAU-N001"]
 title = "Percentage fee entries"
 # Mistakes the task gives room for (from Sovel's reject catalogue and agent failure modes):
 defect_classes = ["arithmetic-overflow", "wildcard-match", "unvalidated-input"]

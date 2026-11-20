@@ -67,6 +67,14 @@ pub struct Report {
     pub entries: usize,
 }
 
+/// An amount: one or more ASCII digits, nothing else (SPEC G2).
+fn parse_amount(text: &str) -> Option<u64> {
+    if text.is_empty() || !text.bytes().all(|b| b.is_ascii_digit()) {
+        return None;
+    }
+    text.parse().ok()
+}
+
 fn parse_line(line: usize, text: &str) -> Result<Option<Entry>, LineError> {
     let text = text.trim();
     if text.is_empty() || text.starts_with('#') {
@@ -76,9 +84,7 @@ fn parse_line(line: usize, text: &str) -> Result<Option<Entry>, LineError> {
     let mut words = text.split_whitespace();
     let kind = words.next().unwrap_or_default();
     let amount_text = words.next().unwrap_or_default();
-    let amount: u64 = amount_text
-        .parse()
-        .map_err(|_e: core::num::ParseIntError| fail(Reason::BadAmount(amount_text.to_owned())))?;
+    let amount = parse_amount(amount_text).ok_or_else(|| fail(Reason::BadAmount(amount_text.to_owned())))?;
     if words.next().is_some() {
         return Err(fail(Reason::TrailingInput));
     }
@@ -135,6 +141,7 @@ mod tests {
     fn bad_lines_are_errors() {
         assert_eq!(process_text("fly 3").unwrap_err().reason, Reason::UnknownKind("fly".into()));
         assert_eq!(process_text("deposit -3").unwrap_err().reason, Reason::BadAmount("-3".into()));
+        assert_eq!(process_text("deposit +3").unwrap_err().reason, Reason::BadAmount("+3".into()));
         assert_eq!(process_text("deposit 3 now").unwrap_err().reason, Reason::TrailingInput);
     }
 }

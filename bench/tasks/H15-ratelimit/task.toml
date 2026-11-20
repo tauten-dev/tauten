@@ -1,0 +1,7 @@
+id = "H15-ratelimit"
+split = "calibration"
+host = "jobq"
+stratum = "A"
+expected_rules = ["TAU-N001", "TAU-N003"]
+title = "Start rate limit"
+defect_classes = ["rounding", "arithmetic-overflow", "sequence-invariant"]

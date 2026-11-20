@@ -1,0 +1,7 @@
+id = "H19-quoted-names"
+split = "calibration"
+host = "jobq"
+stratum = "T"
+expected_rules = ["TAU-P003"]
+title = "Quoted job names"
+defect_classes = ["index-panic", "string-slice", "unicode-length", "unvalidated-input"]

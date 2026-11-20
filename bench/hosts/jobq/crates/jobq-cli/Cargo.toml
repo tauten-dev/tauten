@@ -1,0 +1,12 @@
+[package]
+name = "jobq-cli"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[[bin]]
+name = "jobq"
+path = "src/main.rs"
+
+[dependencies]
+jobq-core = { path = "../jobq-core" }

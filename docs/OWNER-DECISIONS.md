@@ -1,15 +1,12 @@
 # Decisions and assets needed from the owner
 
-Updated 2026-11-19 (morning). Settled items are kept at the bottom for the record.
+Updated 2026-11-20. Settled items are kept at the bottom for the record.
 
 ## Open
 
 | # | Decision | What it unblocks | Recommendation |
 |---|---|---|---|
-| 1 | **Writfold adoption branch** (`tauten-adoption` in `~/workspace/writfold-tauten`, not pushed). | Merging into writfold | Review `docs/writfold/tauten-adoption.md` there: tiers, the xtask `#[expect]` fix (needs a quality gate run on main), the `#![expect]` style, the proof claims, and the total rewrites of `newer`, `better`, `char_step`, `path_step` (commit `b61532c`; out-of-precondition results are documented there). |
-| 2 | **What to publish from `bench-heldout`.** The held-out run was stopped by its go/no-go rule (calibration: 2 escaped in 200 trials) and E1 found 0/120 findings to be defects. The branch also holds 16 unrun held-out tasks with hidden oracles. | Publishing the calibration rounds and E1, as preregistered | Publish the harness, the 7 calibration tasks, the results and the E1 report; keep the 16 unrun tasks private so they stay usable. |
-| 3 | **Maintenance chains (E2).** Tests whether the bounds E1 relied on survive later edits: 5-8 fresh sessions each adding a feature to one repo, union oracle at the end, arms A vs C. | The only remaining defect-reduction question | Decide whether it is worth a budget; not started. |
-| 4 | **Revoke the one-off crates.io token** used for the kernel crate's first publish (the local copy is deleted). | Hygiene | Revoke it at crates.io → Account settings → API tokens. |
+| 1 | **Maintenance chains (E2).** Tests whether the bounds E1 relied on survive later edits: 5-8 fresh sessions each adding a feature to one repo, union oracle at the end, arms A vs C. | The only remaining defect-reduction question | Decide whether it is worth a budget; not started. |
 
 ## Settled
 
@@ -34,4 +31,6 @@ Updated 2026-11-19 (morning). Settled items are kept at the bottom for the recor
 | `tauten-check-kernel` first publish | 0.0.2 with a one-off token, then trusted publishing and "require trusted publishing" via the crates.io API (2026-11-19); the token is to be revoked |
 | Writfold proof claims | Accept the added mutants; rewrite `newer`, `better`, `char_step`, `path_step` to be total; accept a full claims re-run after kernel edits for now (2026-11-19) |
 | Sovel repo | Leave as is for now; may be made private later (2026-11-18) |
-| Writfold adoption | In a separate worktree; the owner merges (2026-11-18) |
+| Writfold adoption | Developed in a separate worktree (2026-11-18); merged to writfold main on the owner's word (2026-11-20) |
+| Benchmark publication | Publish the harness, hosts, dev and calibration tasks, results and E1; withhold the 16 unrun held-out tasks (2026-11-20; `bench/WITHHELD.md`) |
+| One-off crates.io token | Kept for now for first publishes of new crates; the owner revokes it later (2026-11-20). The local copy was deleted on 2026-11-19, so a new first publish needs the owner to supply a token |

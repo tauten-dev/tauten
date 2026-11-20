@@ -1,17 +1,31 @@
 #!/usr/bin/env bash
 # Validate every benchmark task with the built-in agents (no model budget)
 # and enforce the admission criteria in bench/admit.py.
+#   BENCH_WORKERS  parallel trials (default 4)
+#   BENCH_TASKS    comma-separated task ids (default: every task)
+#   BENCH_KEEP     copy the validation rows to this path
 set -euo pipefail
 cd "$(dirname "$0")/.."
 target="$(realpath "${CARGO_TARGET_DIR:-target}")"
 cargo build --locked --release --quiet -p cargo-tauten
 work="$(mktemp -d)"
-trap 'rm -rf "$work"' EXIT
+trap '[[ -n "${BENCH_KEEP:-}" ]] && cp "$out" "$BENCH_KEEP"; rm -rf "$work"' EXIT
 out="$work/validate.jsonl"
-for agent in reference null; do
-  python3 -I bench/run.py --agent "$agent" --tasks all --arms A,C --work "$work/w" \
-    --out "$out" --tauten "$target/release/cargo-tauten" --label validation
-done
-python3 -I bench/run.py --agent sloppy --tasks all --arms A --work "$work/w" \
-  --out "$out" --tauten "$target/release/cargo-tauten" --label validation
+tasks="${BENCH_TASKS:-all}"
+run() {
+  python3 -I bench/run.py --work "$work/w" --out "$out" --tauten "$target/release/cargo-tauten" \
+    --workers "${BENCH_WORKERS:-4}" --label validation "$@" >/dev/null
+}
+run --agent reference --tasks "$tasks" --arms A,C
+run --agent null --tasks "$tasks" --arms A
+run --agent sloppy --tasks "$tasks" --arms A
+evasive="$(for d in bench/tasks/*/evasive; do
+  id="$(basename "$(dirname "$d")")"
+  if [[ -d "$d" ]] && { [[ "$tasks" == all ]] || [[ ",$tasks," == *",$id,"* ]]; }; then
+    echo "$id"
+  fi
+done | paste -sd, -)"
+if [[ -n "$evasive" ]]; then
+  run --agent evasive --tasks "$evasive" --arms A
+fi
 python3 -I bench/admit.py "$out"

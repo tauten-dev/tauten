@@ -4,10 +4,12 @@ Run `cargo test` before you report the task as done.
 
 ## Coding rules
 
-- `ledger-kernel` is pure: no IO, no floats, no panics; dependencies point
-  inward (cli → core → kernel).
-- `ledger-core` does no direct IO (no files, environment, clock, printing);
+- {kernel} is pure: no IO, no floats, no panics; dependencies point
+  inward (edge → core → kernel).
+- {core} does no direct IO (no files, environment, clock, printing);
   it receives what it needs as parameters.
+- Only {edge} touches the world: files, environment, clock, process
+  arguments and console output.
 - Never use `unwrap`, `expect`, `panic!`, `todo!`, `unimplemented!` or
   indexing that can panic (`v[i]`, `&s[a..b]`) outside tests. Propagate
   errors with `?` and typed error enums.

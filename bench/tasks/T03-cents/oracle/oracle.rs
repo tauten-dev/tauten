@@ -42,4 +42,10 @@ mod oracle {
     fn largest_representable_balance_prints_exactly() {
         expect_ok("deposit 184467440737095516.15\n", "balance: 184467440737095516.15\n");
     }
+
+    #[test]
+    fn overflow_is_the_balance_overflow_error() {
+        // SPEC Errors table: `balance overflow`.
+        expect_err("deposit 184467440737095516.15\ndeposit 0.01\n", "error: line 2: balance overflow\n");
+    }
 }

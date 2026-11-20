@@ -1,6 +1,7 @@
 //! The `ledger` command.
 
 use std::fs::File;
+use std::io::Write;
 use std::process::ExitCode;
 
 fn main() -> ExitCode {
@@ -14,7 +15,11 @@ fn main() -> ExitCode {
         .and_then(|mut file| ledger_core::process(&mut file));
     match result {
         Ok(report) => {
-            println!("balance: {}", report.balance);
+            let mut out = std::io::stdout().lock();
+            if writeln!(out, "balance: {}", report.balance).and_then(|()| out.flush()).is_err() {
+                eprintln!("error: cannot write output");
+                return ExitCode::FAILURE;
+            }
             ExitCode::SUCCESS
         }
         Err(error) => {

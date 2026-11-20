@@ -1,0 +1,4 @@
+^api\.anthropic\.com$
+^crates\.io$
+^index\.crates\.io$
+^static\.crates\.io$

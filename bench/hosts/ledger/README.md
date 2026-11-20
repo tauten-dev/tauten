@@ -25,4 +25,7 @@ Crates:
 - `ledger-core`: parsing and the report (no direct IO; reads from any `Read`);
 - `ledger-cli`: the `ledger` binary.
 
+The full behaviour, including the ground rules every feature follows, is in
+[SPEC.md](SPEC.md).
+
 Run the tests with `cargo test`.
