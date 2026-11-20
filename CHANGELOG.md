@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- `cargo tauten proofs try --theorems T… | --mutants M…`: the developer
+  loop. Runs extract, drift, build and audit, then only the mutants of the
+  claims stating those theorems (or the named mutants), in parallel; prints
+  each affected claim as `PARTIAL`, never writes `proofs/claims.json`, and
+  says it is not a gate result. Needs `[gate] try` (the template writes it).
+  On tauten itself, one theorem's two mutants take 78 s against about 25
+  minutes for the full gate.
+
 - `cargo tauten proofs` gates a snapshot of the committed `HEAD` (`git
   archive` into a private directory) instead of the live working tree, so
   the checkout may be edited while a long gate runs; uncommitted changes in

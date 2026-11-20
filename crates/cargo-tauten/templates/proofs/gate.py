@@ -26,6 +26,8 @@ never read as a pass.
     python3 proofs/gate.py                 # the gate
     python3 proofs/gate.py --extract-only [--crate DIR]
                                            # tools and extract stages only
+    python3 proofs/gate.py --only-mutants A,B
+                                           # every stage, only these mutants (partial)
     python3 proofs/gate.py --extract-tar   # a fresh extraction as a tar on stdout
 """
 from pathlib import Path
@@ -267,7 +269,7 @@ def mutant(spec: dict, crates: list[str], theorems: set[str]) -> dict:
         return {"status": "killed" if broken else "survived", "broken": broken}
 
 
-def gate() -> int:
+def gate(only: set[str] | None = None) -> int:
     config = claims()
     crates = config.get("gate", {}).get("crates", [])
     missing = [tool for tool in TOOLS if shutil.which(tool) is None]
@@ -322,10 +324,25 @@ def gate() -> int:
     emit(stage="audit", status="ok")
 
     named = {t for claim in config.get("claim", []) for t in claim.get("theorems", [])}
+    specs = [m for m in config.get("mutant", []) if only is None or m["name"] in only]
+    if only is not None and len(specs) != len(only):
+        unknown = sorted(only - {m["name"] for m in specs})
+        emit(stage="mutants", status="fail", detail=f"unknown mutant(s): {', '.join(unknown)}")
+        return 1
     survivors = 0
-    for spec in config.get("mutant", []):
+
+    def one(spec: dict) -> dict:
         log(f"mutant {spec['name']}")
-        result = mutant(spec, crates, named)
+        return mutant(spec, crates, named)
+
+    if only is None:
+        results = [one(spec) for spec in specs]
+    else:
+        # `--only-mutants` (cargo tauten proofs try): in parallel.
+        from concurrent.futures import ThreadPoolExecutor
+        with ThreadPoolExecutor(max_workers=max(1, min(len(specs), (os.cpu_count() or 2) // 2))) as pool:
+            results = list(pool.map(one, specs))
+    for spec, result in zip(specs, results):
         if result["status"] != "killed":
             survivors += 1
         emit(mutant=spec["name"], **result)
@@ -355,6 +372,11 @@ def main(args: list[str]) -> int:
             print("usage: gate.py --extract-only [--crate DIR]", file=sys.stderr)
             return 2
         return extract_only(rest[1] if rest else None)
+    if args[:1] == ["--only-mutants"]:
+        if len(args) != 2:
+            print("usage: gate.py --only-mutants NAME[,NAME...]", file=sys.stderr)
+            return 2
+        return gate({n for n in args[1].split(",") if n})
     return gate()
 
 

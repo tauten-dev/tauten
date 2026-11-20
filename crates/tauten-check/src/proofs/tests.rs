@@ -877,3 +877,22 @@ fn extraction_is_admitted_crate_by_crate() {
     assert!(!extraction(&crates, &never).0);
     assert!(!extraction(&[], &report(&[])).0);
 }
+
+/// #44: `proofs try` selects mutants by theorem or name and narrows each
+/// affected claim to them.
+#[test]
+fn try_selects_mutants_by_theorem_and_name() {
+    let two = format!(
+        "{CLAIMS}\n[[claim]]\ncrate = \"k\"\nfile = \"crates/k/src/lib.rs\"\nfunction = \"sub\"\nlean = \"k.sub\"\ntheorems = [\"K.sub_spec\"]\nmutants = [\"sub-wraps\", \"sub-flips\"]\n"
+    );
+    let file = ClaimsFile::parse(&two).expect("valid");
+    let (sel, affected) = try_selection(&file, &["K.sub_spec".to_owned()], &[]);
+    assert_eq!(sel, ["sub-wraps", "sub-flips"]);
+    assert_eq!(affected.len(), 1);
+    assert_eq!(affected[0].function, "sub");
+    let (sel, affected) = try_selection(&file, &[], &["sub-flips".to_owned()]);
+    assert_eq!(sel, ["sub-flips"]);
+    assert_eq!(affected[0].mutants, ["sub-flips"]);
+    let (sel, affected) = try_selection(&file, &["K.nothing".to_owned()], &[]);
+    assert!(sel.is_empty() && affected.is_empty());
+}

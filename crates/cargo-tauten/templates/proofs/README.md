@@ -38,6 +38,14 @@ trusted rather than proved.
    Docker or the image every claim is `tool-missing`; nothing passes
    without the gate.
 
+## Iterating on one proof
+
+`cargo tauten proofs try --theorems <Lean name>…` (or `--mutants <name>…`)
+runs every stage but only the mutants of the claims that state those
+theorems, in parallel, and prints a `PARTIAL` line per affected claim. It
+never writes `claims.json` and is not a gate result; run the full
+`cargo tauten proofs` before you record.
+
 ## Assumptions about the outside world
 
 A theorem about code that talks to the outside world (a filesystem, a

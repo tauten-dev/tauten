@@ -335,7 +335,11 @@ mod proofs {
                 .current_dir(&root)
                 .output()
                 .expect("git");
-            assert!(out.status.success(), "git {args:?}: {}", String::from_utf8_lossy(&out.stderr));
+            assert!(
+                out.status.success(),
+                "git {args:?}: {}",
+                String::from_utf8_lossy(&out.stderr)
+            );
         };
         let lib = root.join("sub-kernel/src/lib.rs");
         // A stand-in gate that reports every claim proved, then edits the
@@ -382,7 +386,11 @@ open({lib:?}, "a").write("// edited during the run\n")
         // On the live tree, the same edit during the run is drift.
         git(&["checkout", "--", "."]);
         let live = tauten(&["proofs", "--no-write", "--live"], &root);
-        assert!(outcomes_all(&live, "drift"), "{:?}", super::proofs::outcomes_of(&live));
+        assert!(
+            outcomes_all(&live, "drift"),
+            "{:?}",
+            super::proofs::outcomes_of(&live)
+        );
         git(&["checkout", "--", "."]);
         // The record names the commit it was about.
         tauten(&["proofs"], &root);
@@ -398,5 +406,32 @@ open({lib:?}, "a").write("// edited during the run\n")
     pub(super) fn outcomes_of(output: &Output) -> Vec<String> {
         outcomes(output)
     }
-
+    /// #44: `proofs try` reports a partial result and never records it.
+    #[test]
+    fn try_is_partial_and_never_recorded() {
+        let root = scratch("try");
+        let claims = root.join("proofs/claims.toml");
+        let before_record = fs::read_to_string(root.join("proofs/claims.json")).expect("record");
+        let none = tauten(&["proofs", "try", "--mutants", "guard-dropped"], &root);
+        assert_eq!(none.status.code(), Some(2), "no [gate] try configured");
+        let text = fs::read_to_string(&claims).expect("read").replacen(
+            "[gate]\n",
+            "[gate]\ntry = [\"sh\", \"-c\", \"for s in tools extract drift build audit; do echo \\\"TAUTEN-PROOFS {\\\\\\\"stage\\\\\\\":\\\\\\\"$s\\\\\\\",\\\\\\\"status\\\\\\\":\\\\\\\"ok\\\\\\\"}\\\"; done\", \"x\"]\n",
+            1,
+        );
+        fs::write(&claims, text).expect("write");
+        let out = tauten(&["proofs", "try", "--mutants", "guard-dropped"], &root);
+        let stdout = String::from_utf8_lossy(&out.stdout);
+        assert!(stdout.starts_with("PARTIAL add_capped:"), "{stdout}");
+        assert!(String::from_utf8_lossy(&out.stderr).contains("not recorded"));
+        assert_eq!(
+            out.status.code(),
+            Some(1),
+            "theorems unreported here: not proved"
+        );
+        assert_eq!(
+            fs::read_to_string(root.join("proofs/claims.json")).expect("record"),
+            before_record
+        );
+    }
 }

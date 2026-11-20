@@ -327,6 +327,53 @@ pub fn extract(ws: &Loaded, only: Option<&str>) -> Result<ExitCode> {
     })
 }
 
+/// `cargo tauten proofs try`: a partial gate over the selected mutants.
+/// Prints each affected claim's outcome on this run, marked partial; never
+/// writes `proofs/claims.json`. Exit 0 iff each of them is proved here.
+pub fn try_run(ws: &Loaded, theorems: &[String], mutants: &[String]) -> Result<ExitCode> {
+    let root = ws.root();
+    let path = root.join(CLAIMS_TOML);
+    let text = fs::read_to_string(&path).with_context(|| format!("reading {}", path.display()))?;
+    let file = ClaimsFile::parse(&text)?;
+    let Some(mut command) = file.gate.try_.clone() else {
+        anyhow::bail!(
+            "{CLAIMS_TOML} has no `[gate] try` command; the template's is \
+             [\"sh\", \"proofs/run.sh\", \"python3\", \"proofs/gate.py\", \"--only-mutants\"]"
+        );
+    };
+    let (selected, affected) = proofs::try_selection(&file, theorems, mutants);
+    if selected.is_empty() {
+        anyhow::bail!(
+            "no mutant selected: name theorems that claims state (--theorems) or mutants (--mutants)"
+        );
+    }
+    command.push(selected.join(","));
+    let started = std::time::Instant::now();
+    let report = run_gate(root, &command)?;
+    let mut all = true;
+    for claim in &affected {
+        let (outcome, detail) = proofs::outcome(claim, &report);
+        all = all && outcome == Outcome::Proved;
+        println!(
+            "PARTIAL {}: {} on mutants {}{}",
+            claim.function,
+            outcome.name(),
+            claim.mutants.join(", "),
+            detail.map(|d| format!(" ({d})")).unwrap_or_default()
+        );
+    }
+    eprintln!(
+        "tauten: PARTIAL run of {} mutant(s) in {}s; not recorded, and not a gate result: run `cargo tauten proofs` for that",
+        selected.len(),
+        started.elapsed().as_secs()
+    );
+    Ok(if all {
+        ExitCode::SUCCESS
+    } else {
+        ExitCode::FAILURE
+    })
+}
+
 /// The result of an extract-only run.
 struct ExtractRun {
     admitted: bool,

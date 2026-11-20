@@ -56,8 +56,16 @@ stage=""
 python3 proofs/report.py lake /tmp/gate-lake.log "$status"
 
 stage=mutants
-stamp "mutant calibration"
-python3 proofs/mutants.py
+if [ "${1:-}" = "--only-mutants" ]; then
+    # `cargo tauten proofs try`: only the named mutants, in parallel. A
+    # partial run: the caller never records it.
+    stamp "mutant calibration (partial: ${2:-})"
+    TAUTEN_MUTANT_JOBS="${TAUTEN_MUTANT_JOBS:-$(( $(nproc) / 2 > 0 ? $(nproc) / 2 : 1 ))}" \
+        python3 proofs/mutants.py $(printf '%s' "${2:-}" | tr ',' ' ')
+else
+    stamp "mutant calibration"
+    python3 proofs/mutants.py
+fi
 report mutants ok
 
 stamp "proofs gate: OK"

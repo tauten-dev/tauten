@@ -100,6 +100,10 @@ pub struct GateConfig {
     /// translate one crate.
     #[serde(default)]
     pub extract: Option<Vec<String>>,
+    /// The command for `cargo tauten proofs try`: every stage, but only the
+    /// mutants named in the argument appended to it (comma-separated).
+    #[serde(default, rename = "try")]
+    pub try_: Option<Vec<String>>,
 }
 
 /// One `[[claim]]`: a Rust function and what is proved about it.
@@ -700,6 +704,44 @@ pub fn extraction(crates: &[String], report: &Report) -> (bool, Vec<(String, Ext
     }
     let admitted = report.not_started.is_none() && kernel_control::admit(&controls, &observed);
     (admitted, crates.iter().cloned().zip(seen).collect())
+}
+
+/// For `cargo tauten proofs try`: the mutants to run and the claims they
+/// bear on. Selected by theorem (every mutant of a claim that states one of
+/// `theorems`) and by name (`mutants`). Each affected claim is returned
+/// with its mutants narrowed to the selected ones, so its outcome on a
+/// partial run says only what that run showed.
+#[must_use]
+pub fn try_selection(
+    file: &ClaimsFile,
+    theorems: &[String],
+    mutants: &[String],
+) -> (Vec<String>, Vec<Claim>) {
+    let mut selected: Vec<String> = Vec::new();
+    for claim in &file.claim {
+        let by_theorem = claim.theorems.iter().any(|t| theorems.contains(t));
+        for m in &claim.mutants {
+            if (by_theorem || mutants.contains(m)) && !selected.contains(m) {
+                selected.push(m.clone());
+            }
+        }
+    }
+    for m in mutants {
+        if !selected.contains(m) {
+            selected.push(m.clone());
+        }
+    }
+    let affected = file
+        .claim
+        .iter()
+        .filter(|c| c.mutants.iter().any(|m| selected.contains(m)))
+        .map(|c| {
+            let mut narrowed = c.clone();
+            narrowed.mutants.retain(|m| selected.contains(m));
+            narrowed
+        })
+        .collect();
+    (selected, affected)
 }
 
 /// The claim's theorems, then its witness and necessity theorems, without

@@ -768,23 +768,34 @@ def main() -> None:
     if selected and len(mutants) != len(selected):
         raise SystemExit(f"unknown mutant(s): {sorted(selected - {m.name for m in mutants})}")
     # Every mutant runs even after a failure, so one gate run reports them all.
-    failed: list[str] = []
-    for mutant in mutants:
+    # TAUTEN_MUTANT_JOBS > 1 calibrates that many at once (each in its own
+    # scratch directory); results are reported as they finish.
+    def one(mutant: Mutant) -> str | None:
         with tempfile.TemporaryDirectory(prefix=f"mutant-{mutant.name}-") as directory:
             # Status: `survived` only when the proofs still build against the
             # mutant; `timeout` when a build ran out of time; `other` when
             # it failed for a reason other than the named theorems.
             try:
                 calibrate(mutant, Path(directory))
+                return None
             except subprocess.TimeoutExpired:
                 print(f"FAIL {mutant.name}: timed out", flush=True)
                 emit(mutant=mutant.name, status="timeout", broken=[])
-                failed.append(mutant.name)
+                return mutant.name
             except SystemExit as error:
                 print(error, flush=True)
                 status = "survived" if "still build" in str(error) else "other"
                 emit(mutant=mutant.name, status=status, broken=[])
-                failed.append(mutant.name)
+                return mutant.name
+
+    jobs = max(1, int(os.environ.get("TAUTEN_MUTANT_JOBS", "1") or "1"))
+    if jobs == 1:
+        results = [one(m) for m in mutants]
+    else:
+        from concurrent.futures import ThreadPoolExecutor
+        with ThreadPoolExecutor(max_workers=jobs) as pool:
+            results = list(pool.map(one, mutants))
+    failed: list[str] = [r for r in results if r is not None]
     if failed:
         raise SystemExit(f"FAIL: {len(failed)} mutant(s) not calibrated: {failed}")
     print(f"PROOF_CALIBRATIONS={len(mutants)}", flush=True)

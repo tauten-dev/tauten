@@ -166,6 +166,18 @@ enum ProofsAction {
         #[arg(long = "crate")]
         krate: Option<String>,
     },
+    /// The developer loop: extract, drift check, build and audit, then only
+    /// the mutants of the claims stating the given theorems (and any named
+    /// mutants), in parallel. A partial run: its result is never recorded
+    /// and is no substitute for `cargo tauten proofs`. Needs `[gate] try`.
+    Try {
+        /// Run the mutants of every claim that states one of these theorems.
+        #[arg(long, num_args = 1..)]
+        theorems: Vec<String>,
+        /// Run these mutants.
+        #[arg(long, num_args = 1..)]
+        mutants: Vec<String>,
+    },
 }
 
 fn run(cli: Cli) -> Result<ExitCode> {
@@ -265,6 +277,9 @@ fn run(cli: Cli) -> Result<ExitCode> {
             let ws = workspace::load(manifest_path.as_deref(), &[])?;
             match action {
                 Some(ProofsAction::Extract { krate }) => proofs::extract(&ws, krate.as_deref()),
+                Some(ProofsAction::Try { theorems, mutants }) => {
+                    proofs::try_run(&ws, &theorems, &mutants)
+                }
                 None => proofs::run(&ws, !no_write, live),
             }
         }
