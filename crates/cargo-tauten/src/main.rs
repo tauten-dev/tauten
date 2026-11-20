@@ -103,6 +103,10 @@ enum Command {
         /// Print the outcomes without updating `proofs/claims.json`.
         #[arg(long)]
         no_write: bool,
+        /// Gate the working tree instead of a snapshot of `HEAD` (then any
+        /// edit during the run is reported as drift).
+        #[arg(long)]
+        live: bool,
         /// Only translate (`extract`): tools and extract stages, the first
         /// located translation error per crate.
         #[command(subcommand)]
@@ -255,12 +259,13 @@ fn run(cli: Cli) -> Result<ExitCode> {
         Command::Proofs {
             manifest_path,
             no_write,
+            live,
             action,
         } => {
             let ws = workspace::load(manifest_path.as_deref(), &[])?;
             match action {
                 Some(ProofsAction::Extract { krate }) => proofs::extract(&ws, krate.as_deref()),
-                None => proofs::run(&ws, !no_write),
+                None => proofs::run(&ws, !no_write, live),
             }
         }
         Command::Explain { id, markdown } => {

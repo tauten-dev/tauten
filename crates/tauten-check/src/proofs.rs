@@ -937,6 +937,10 @@ pub struct Record {
     pub generated_by: String,
     /// One record per claim of `proofs/claims.toml`, in its order.
     pub claims: Vec<ClaimRecord>,
+    /// The commit whose snapshot the gate checked, when it ran on one
+    /// (the default in a Git checkout); absent for a run on the live tree.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub commit: Option<String>,
 }
 
 /// A change-detection fingerprint of a set of files (path, contents):

@@ -26,7 +26,140 @@ pub const ASSUMPTIONS_TOML: &str = "proofs/assumptions.toml";
 pub const CLAIMS_JSON: &str = "proofs/claims.json";
 
 /// Run the gate and record the outcomes. Exit 0 iff every claim is proved.
-pub fn run(ws: &Loaded, write: bool) -> Result<ExitCode> {
+///
+/// In a Git checkout the gate runs on a snapshot of the committed `HEAD`
+/// (`git archive` into a private directory), so the live tree may change
+/// while it runs and the record is about exactly the snapshot's bytes; a
+/// tree with uncommitted changes is refused. `live` runs it on the working
+/// tree instead (and outside Git there is no choice), where any edit during
+/// the run is reported as drift.
+pub fn run(ws: &Loaded, write: bool, live: bool) -> Result<ExitCode> {
+    let live_root = ws.root().to_path_buf();
+    let snapshot = if live {
+        None
+    } else {
+        Snapshot::take(&live_root)?
+    };
+    let snapshot_ws;
+    let ws = match &snapshot {
+        Some(snap) => {
+            eprintln!("tauten: gating a snapshot of commit {}", snap.commit);
+            snapshot_ws = crate::workspace::load(Some(&snap.workspace.join("Cargo.toml")), &[])?;
+            &snapshot_ws
+        }
+        None => {
+            if !live {
+                eprintln!("tauten: not a Git checkout; gating the live tree");
+            }
+            ws
+        }
+    };
+    let outcome = run_in(
+        ws,
+        &live_root,
+        write,
+        snapshot.as_ref().map(|s| s.commit.clone()),
+    );
+    drop(snapshot);
+    outcome
+}
+
+/// A snapshot of `HEAD` in a private directory, removed on drop.
+struct Snapshot {
+    /// The snapshot of the whole repository.
+    dir: PathBuf,
+    /// The workspace root inside it.
+    workspace: PathBuf,
+    commit: String,
+}
+
+impl Snapshot {
+    /// `None` outside a Git checkout. Refuses uncommitted changes.
+    fn take(root: &Path) -> Result<Option<Self>> {
+        let git = |args: &[&str]| Command::new("git").args(args).current_dir(root).output();
+        // Only a workspace whose manifest Git tracks is snapshotted (not, for
+        // example, a scratch copy inside an ignored directory).
+        let Ok(tracked) = git(&["ls-files", "--error-unmatch", "Cargo.toml"]) else {
+            return Ok(None);
+        };
+        if !tracked.status.success() {
+            return Ok(None);
+        }
+        let top = git(&["rev-parse", "--show-toplevel"]).context("running git rev-parse")?;
+        let top = PathBuf::from(String::from_utf8_lossy(&top.stdout).trim());
+        let relative = root
+            .canonicalize()
+            .ok()
+            .and_then(|r| {
+                top.canonicalize()
+                    .ok()
+                    .and_then(|t| r.strip_prefix(t).ok().map(Path::to_path_buf))
+            })
+            .context("locating the workspace inside its Git checkout")?;
+        let status = git(&[
+            "status",
+            "--porcelain",
+            "--untracked-files=normal",
+            "--",
+            ".",
+        ])
+        .context("running git status")?;
+        let dirty = String::from_utf8_lossy(&status.stdout).into_owned();
+        if !dirty.trim().is_empty() {
+            anyhow::bail!(
+                "the checkout has uncommitted changes; the gate checks a snapshot of a commit, so commit them first, or pass --live to gate the working tree:\n{}",
+                dirty.trim_end()
+            );
+        }
+        let head = git(&["rev-parse", "HEAD"]).context("running git rev-parse")?;
+        if !head.status.success() {
+            anyhow::bail!("no commit to snapshot (git rev-parse HEAD failed)");
+        }
+        let commit = String::from_utf8_lossy(&head.stdout).trim().to_owned();
+        let dir = std::env::temp_dir().join(format!(
+            "tauten-gate-{}-{}",
+            commit.get(..12).unwrap_or(&commit),
+            std::process::id()
+        ));
+        if dir.exists() {
+            fs::remove_dir_all(&dir).with_context(|| format!("clearing {}", dir.display()))?;
+        }
+        fs::create_dir_all(&dir).with_context(|| format!("creating {}", dir.display()))?;
+        let snap = Self {
+            workspace: dir.join(&relative),
+            dir,
+            commit,
+        };
+        let mut archive = Command::new("git")
+            .args(["archive", "--format=tar", "HEAD"])
+            .current_dir(&top)
+            .stdout(Stdio::piped())
+            .spawn()
+            .context("running git archive")?;
+        let tar = Command::new("tar")
+            .args(["-x", "-C"])
+            .arg(&snap.dir)
+            .stdin(archive.stdout.take().context("git archive output")?)
+            .status()
+            .context("running tar")?;
+        let archived = archive.wait().context("waiting for git archive")?;
+        if !archived.success() || !tar.success() {
+            anyhow::bail!("could not snapshot commit {}", snap.commit);
+        }
+        Ok(Some(snap))
+    }
+}
+
+impl Drop for Snapshot {
+    fn drop(&mut self) {
+        // Best effort: a leftover snapshot only costs temporary space.
+        if fs::remove_dir_all(&self.dir).is_err() {
+            eprintln!("tauten: could not remove {}", self.dir.display());
+        }
+    }
+}
+
+fn run_in(ws: &Loaded, live_root: &Path, write: bool, commit: Option<String>) -> Result<ExitCode> {
     let root = ws.root();
     let path = root.join(CLAIMS_TOML);
     let text = fs::read_to_string(&path).with_context(|| {
@@ -70,7 +203,7 @@ pub fn run(ws: &Loaded, write: bool) -> Result<ExitCode> {
     if records.is_empty() {
         eprintln!("tauten: {CLAIMS_TOML} lists no claim");
     }
-    if write && let Some(committed) = committed_record(root)? {
+    if write && let Some(committed) = committed_record(live_root)? {
         let found = proofs::conservation(&file, &committed);
         if !found.weakened.is_empty() {
             for (_, f, function, kind, name) in &found.weakened {
@@ -92,10 +225,11 @@ pub fn run(ws: &Loaded, write: bool) -> Result<ExitCode> {
             version: 1,
             generated_by: "cargo tauten proofs".to_owned(),
             claims: records.clone(),
+            commit,
         };
         let mut json = serde_json::to_string_pretty(&record)?;
         json.push('\n');
-        let target = root.join(CLAIMS_JSON);
+        let target = live_root.join(CLAIMS_JSON);
         fs::write(&target, json).with_context(|| format!("writing {}", target.display()))?;
     }
     let proved = records

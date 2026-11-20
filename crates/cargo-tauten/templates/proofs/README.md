@@ -28,7 +28,10 @@ trusted rather than proved.
 4. Add a `[[claim]]` per function and a `[[mutant]]` per claim to
    `claims.toml`. A mutant is a textual change to the Rust source (it must
    match exactly once) that breaks at least one of the claim's theorems.
-5. `cargo tauten proofs`. It prints one JSON line per claim:
+5. Commit, then `cargo tauten proofs`. It gates a snapshot of `HEAD` (so
+   you can keep editing while it runs; uncommitted changes are refused,
+   `--live` gates the working tree instead) and prints one JSON line per
+   claim:
    `{"crate": …, "function": …, "theorems": […], "mutants": […], "outcome": …}`
    with `outcome` one of `proved`, `drift`, `build-failed`, `audit-failed`,
    `mutant-survived`, `tool-missing`, and writes `claims.json`. Without

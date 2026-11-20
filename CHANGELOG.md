@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- `cargo tauten proofs` gates a snapshot of the committed `HEAD` (`git
+  archive` into a private directory) instead of the live working tree, so
+  the checkout may be edited while a long gate runs; uncommitted changes in
+  the workspace are refused, and `proofs/claims.json` records the `commit`
+  it is about. `--live` keeps the old behaviour (any edit during the run is
+  drift). Outside Git, the live tree is gated as before.
+
 - `tauten::machine`: a protocol as a pure step function (`Machine`), with
   `run` and `replay` (compare a recorded tape of events and commands). The
   Lean library `Tauten.Machine` (shipped in the proofs template as

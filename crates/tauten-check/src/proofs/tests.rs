@@ -398,6 +398,7 @@ fn records_round_trip_as_json() {
         version: 1,
         generated_by: "cargo tauten proofs".to_owned(),
         claims: vec![record(Outcome::Proved), record(Outcome::MutantSurvived)],
+        commit: Some("0123abc".to_owned()),
     };
     let text = serde_json::to_string_pretty(&record).expect("json");
     assert!(text.contains("\"outcome\": \"mutant-survived\""));
@@ -719,6 +720,7 @@ fn committed(claims: &ClaimsFile) -> Record {
     Record {
         version: 1,
         generated_by: "cargo tauten proofs".to_owned(),
+        commit: None,
         claims: claims
             .claim
             .iter()

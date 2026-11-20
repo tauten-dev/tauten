@@ -322,4 +322,81 @@ mod proofs {
         .expect("template");
         assert_eq!(own, shipped);
     }
+    /// #41: in a Git checkout the gate runs on a snapshot of HEAD, so an
+    /// edit to the live tree during the run changes nothing; with --live
+    /// the same edit is drift; uncommitted changes are refused.
+    #[test]
+    fn the_gate_checks_a_snapshot_of_the_commit() {
+        let root = scratch("snapshot");
+        let git = |args: &[&str]| {
+            let out = Command::new("git")
+                .args(["-c", "user.name=t", "-c", "user.email=t@example.invalid"])
+                .args(args)
+                .current_dir(&root)
+                .output()
+                .expect("git");
+            assert!(out.status.success(), "git {args:?}: {}", String::from_utf8_lossy(&out.stderr));
+        };
+        let lib = root.join("sub-kernel/src/lib.rs");
+        // A stand-in gate that reports every claim proved, then edits the
+        // live tree (as a developer would during a long run).
+        let fake = format!(
+            r#"import json, tomllib
+c = tomllib.load(open("proofs/claims.toml", "rb"))
+def e(**f): print("TAUTEN-PROOFS " + json.dumps(f))
+for s in ("tools", "extract", "drift", "build"): e(stage=s, status="ok")
+for k in c["claim"]:
+    for t in k["theorems"] + ([k["witness"]] if "witness" in k else []):
+        e(theorem=t, status="ok")
+        e(theorem=t, premises=k.get("assumes", []))
+    if "witness" in k: e(theorem=k["witness"], establishes=k["assumes"])
+    if "total" in k: e(total=k["total"], function=k["lean"])
+e(stage="audit", status="ok")
+for k in c["claim"]:
+    for m in k["mutants"]: e(mutant=m, status="killed", broken=[k["theorems"][0]])
+e(stage="mutants", status="ok")
+open({lib:?}, "a").write("// edited during the run\n")
+"#,
+            lib = lib.display().to_string()
+        );
+        fs::write(root.join("fake_gate.py"), fake).expect("write");
+        let gate = "python3 fake_gate.py".to_owned();
+        let claims = root.join("proofs/claims.toml");
+        let text = fs::read_to_string(&claims).expect("read").replace(
+            r#"command = ["sh", "proofs/run.sh"]"#,
+            &format!("command = [\"sh\", \"-c\", {gate:?}]"),
+        );
+        fs::write(&claims, text).expect("write");
+        git(&["init", "-q"]);
+        git(&["add", "-A"]);
+        git(&["commit", "-q", "-m", "fixture"]);
+
+        let snap = tauten(&["proofs", "--no-write"], &root);
+        assert!(String::from_utf8_lossy(&snap.stderr).contains("gating a snapshot of commit"));
+        let outcomes = outcomes(&snap);
+        assert!(outcomes.iter().all(|o| o == "proved"), "{outcomes:?}");
+        // The gate edited the live file, so the tree is now dirty: refused.
+        let dirty = tauten(&["proofs", "--no-write"], &root);
+        assert_eq!(dirty.status.code(), Some(2));
+        assert!(String::from_utf8_lossy(&dirty.stderr).contains("uncommitted changes"));
+        // On the live tree, the same edit during the run is drift.
+        git(&["checkout", "--", "."]);
+        let live = tauten(&["proofs", "--no-write", "--live"], &root);
+        assert!(outcomes_all(&live, "drift"), "{:?}", super::proofs::outcomes_of(&live));
+        git(&["checkout", "--", "."]);
+        // The record names the commit it was about.
+        tauten(&["proofs"], &root);
+        let record = fs::read_to_string(root.join("proofs/claims.json")).expect("record");
+        assert!(record.contains("\"commit\""), "{record}");
+    }
+
+    fn outcomes_all(output: &Output, want: &str) -> bool {
+        let o = outcomes(output);
+        !o.is_empty() && o.iter().all(|x| x == want)
+    }
+
+    pub(super) fn outcomes_of(output: &Output) -> Vec<String> {
+        outcomes(output)
+    }
+
 }

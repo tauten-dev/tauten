@@ -35,8 +35,10 @@ kernel or the compiler, or labelled honestly as weaker. Read `README.md`,
   mutant is never "proved".
 - Release proofs use no axioms beyond `propext`, `Classical.choice` and
   `Quot.sound`; no `sorry`, `native_decide`, `bv_decide` or `ofReduceBool`.
-- Run the full gate (`cargo tauten proofs`) on a quiet tree: edits during
-  the run are reported as drift. Use a separate worktree for parallel work.
+- Commit, then run the full gate (`cargo tauten proofs`): it checks a
+  snapshot of `HEAD`, refuses uncommitted changes, records the commit in
+  `proofs/claims.json`, and leaves the checkout free to edit while it runs.
+  (`--live` gates the working tree, where any edit is reported as drift.)
 - Assumptions about the outside world (filesystem, hashes, tools) are named
   conditions on the claims that use them, never Lean axioms; such claims are
   "proved under assumptions", never "proved".
