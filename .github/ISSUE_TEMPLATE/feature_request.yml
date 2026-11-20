@@ -1,0 +1,30 @@
+name: Feature or design proposal
+description: A new capability or a change to intended behaviour.
+labels: ["enhancement", "needs-triage"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What you were trying to do, and where tauten fell short. Concrete sessions beat abstractions.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: What you would like to see. Rules, diagnostics, kernel functions, files.
+  - type: textarea
+    id: decision
+    attributes:
+      label: Decision logic touched
+      description: Does this change what counts as proved, fresh, admitted, blocking, allowed or refused? If so it needs a Lean proof first and probably an RFC.
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: textarea
+    id: general
+    attributes:
+      label: Generality
+      description: Which projects besides yours would use it? tauten accepts general primitives decided by the proved kernel or the compiler, not checks for one codebase.

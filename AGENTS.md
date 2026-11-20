@@ -4,8 +4,8 @@ tauten is a strict Rust discipline plus proofs: lints, a checker and a
 proved kernel, so that an agent told "use tauten" writes code inside a known
 architecture and every verdict tauten gives is either decided by the Lean-proved
 kernel or the compiler, or labelled honestly as weaker. Read `README.md`,
-`docs/ROADMAP.md`, `docs/rfcs/README.md` and `proofs/TRUST.md` before changing
-the project.
+`GOVERNANCE.md`, `docs/ROADMAP.md`, `docs/rfcs/README.md` and
+`proofs/TRUST.md` before changing the project.
 
 ## Work, issues and RFCs
 
