@@ -26,6 +26,21 @@ struct Counts {
     open: u64,
 }
 
+impl Counts {
+    /// Counts saturate: a workspace cannot hold `u64::MAX` findings.
+    const fn total(&self) -> u64 {
+        self.proved
+            .saturating_add(self.baselined)
+            .saturating_add(self.open)
+    }
+
+    const fn add(&mut self, other: &Self) {
+        self.proved = self.proved.saturating_add(other.proved);
+        self.baselined = self.baselined.saturating_add(other.baselined);
+        self.open = self.open.saturating_add(other.open);
+    }
+}
+
 /// Print the obligations of every kernel crate. Fails when an obligation
 /// is open and not baselined, exactly as `check` does for it.
 pub fn run(profile: &Profile, root: &Path, diags: Vec<Diagnostic>, list: bool) -> Result<ExitCode> {
@@ -38,7 +53,8 @@ pub fn run(profile: &Profile, root: &Path, diags: Vec<Diagnostic>, list: bool) -
         .into_iter()
         .partition(|d| d.subsumed_by.is_some());
     for d in &proved {
-        counts.entry(d.krate.clone()).or_default().proved += 1;
+        let c = counts.entry(d.krate.clone()).or_default();
+        c.proved = c.proved.saturating_add(1);
     }
     let path = root.join(baseline_file::DEFAULT_NAME);
     let open: Vec<Diagnostic> = if path.is_file() {
@@ -55,7 +71,8 @@ pub fn run(profile: &Profile, root: &Path, diags: Vec<Diagnostic>, list: bool) -
             if let Some(i) = remaining.iter().position(|r| r == d) {
                 remaining.swap_remove(i);
             } else {
-                counts.entry(d.krate.clone()).or_default().baselined += 1;
+                let c = counts.entry(d.krate.clone()).or_default();
+                c.baselined = c.baselined.saturating_add(1);
                 if list {
                     print_one(d, "open, baselined");
                 }
@@ -66,7 +83,8 @@ pub fn run(profile: &Profile, root: &Path, diags: Vec<Diagnostic>, list: bool) -
         unproved
     };
     for d in &open {
-        counts.entry(d.krate.clone()).or_default().open += 1;
+        let c = counts.entry(d.krate.clone()).or_default();
+        c.open = c.open.saturating_add(1);
     }
     if list {
         for d in &proved {
@@ -81,18 +99,16 @@ pub fn run(profile: &Profile, root: &Path, diags: Vec<Diagnostic>, list: bool) -
     for (krate, c) in &counts {
         println!(
             "{krate}: {} obligation(s): {} proved, {} open and baselined, {} open",
-            c.proved + c.baselined + c.open,
+            c.total(),
             c.proved,
             c.baselined,
             c.open
         );
-        total.proved += c.proved;
-        total.baselined += c.baselined;
-        total.open += c.open;
+        total.add(c);
     }
     println!(
         "tauten: {} obligation(s) in kernel crates: {} proved, {} open and baselined, {} open",
-        total.proved + total.baselined + total.open,
+        total.total(),
         total.proved,
         total.baselined,
         total.open
