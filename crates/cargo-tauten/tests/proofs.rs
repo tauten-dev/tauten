@@ -256,5 +256,4 @@ mod proofs {
         let out = tauten(&["check", "--format", "json"], &edited);
         assert!(findings(&out).iter().all(|f| f.1 != "TAU-R002"));
     }
-
 }

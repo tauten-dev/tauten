@@ -670,7 +670,11 @@ fn recorded_claims_may_not_be_weakened() {
     assert_eq!(found.weakened[0].4, "add-wraps");
     let profile = crate::profile::Profile::embedded().expect("profile");
     let diags = conservation_diagnostics(&profile, &claims(), &found);
-    assert!(diags.iter().all(|d| d.id == "TAU-R002" && d.severity == Severity::Error));
+    assert!(
+        diags
+            .iter()
+            .all(|d| d.id == "TAU-R002" && d.severity == Severity::Error)
+    );
 
     // ... unless an amendment names it.
     let amended = ClaimsFile::parse(&format!("{swapped}{AMEND_MUTANT}")).expect("valid");
@@ -691,7 +695,10 @@ fn recorded_claims_may_not_be_weakened() {
     assert_eq!(found.unneeded, vec![0]);
 
     // An amendment needs a reason.
-    let silent = format!("{swapped}{}", AMEND_MUTANT.replace("replaced by a stronger mutant", " "));
+    let silent = format!(
+        "{swapped}{}",
+        AMEND_MUTANT.replace("replaced by a stronger mutant", " ")
+    );
     assert!(ClaimsFile::parse(&silent).is_err());
 }
 
@@ -709,7 +716,11 @@ fn assumptions_may_not_grow() {
     assert_eq!(found.weakened.len(), 1);
     assert_eq!(found.weakened[0].3, AmendKind::Assumption);
     // Removing an assumption is a strengthening.
-    assert!(conservation(&base, &committed(&assumed)).weakened.is_empty());
+    assert!(
+        conservation(&base, &committed(&assumed))
+            .weakened
+            .is_empty()
+    );
     let amend = r#"
 [[amend]]
 file = "crates/k/src/lib.rs"

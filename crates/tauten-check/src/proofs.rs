@@ -1059,7 +1059,14 @@ pub fn conservation<'a>(file: &'a ClaimsFile, record: &'a Record) -> Conservatio
     let amend_keys: Vec<RegistryKey<'a>> = file
         .amend
         .iter()
-        .map(|a| (a.file.as_str(), a.function.as_str(), a.kind, a.name.as_str()))
+        .map(|a| {
+            (
+                a.file.as_str(),
+                a.function.as_str(),
+                a.kind,
+                a.name.as_str(),
+            )
+        })
         .collect();
 
     let old = entries(recorded_keys.clone(), &mut intern);
@@ -1164,8 +1171,11 @@ pub fn conservation_diagnostics(
             "{what}; a recorded claim may not be weakened without an `[[amend]]` entry with a reason"
         );
         out.push(
-            Diagnostic::for_rule(rule, Severity::Error, krate, None, message)
-                .at(Some(f.clone()), None, None),
+            Diagnostic::for_rule(rule, Severity::Error, krate, None, message).at(
+                Some(f.clone()),
+                None,
+                None,
+            ),
         );
     }
     for i in &found.unneeded {
@@ -1179,8 +1189,11 @@ pub fn conservation_diagnostics(
             a.function
         );
         out.push(
-            Diagnostic::for_rule(rule, Severity::Warning, "", None, message)
-                .at(Some(a.file.clone()), None, None),
+            Diagnostic::for_rule(rule, Severity::Warning, "", None, message).at(
+                Some(a.file.clone()),
+                None,
+                None,
+            ),
         );
     }
     out
