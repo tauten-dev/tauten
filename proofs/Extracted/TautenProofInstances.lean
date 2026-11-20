@@ -93,7 +93,7 @@ def tauten.error.ContractViolation.ensures
   ok (tauten.error.ContractViolation.Ensures function condition)
 
 /-- Trait declaration: [tauten::origin::Proposition]
-    Source: 'crates/tauten/src/origin.rs', lines 56:0-56:21
+    Source: 'crates/tauten/src/origin.rs', lines 75:0-75:21
     Name pattern: [tauten::origin::Proposition]
     Visibility: public -/
 @[rust_trait "tauten::origin::Proposition"]
@@ -101,7 +101,7 @@ structure tauten.origin.Proposition (Self : Type _) (Self_Subject : Type _)
   where
 
 /-- [tauten::origin::Evidence]
-    Source: 'crates/tauten/src/origin.rs', lines 64:0-64:39
+    Source: 'crates/tauten/src/origin.rs', lines 83:0-83:39
     Name pattern: [tauten::origin::Evidence]
     Visibility: public -/
 @[rust_type "tauten::origin::Evidence"]
@@ -110,7 +110,7 @@ structure tauten.origin.Evidence (P : Type _) (Clause0_Subject : Type _) where
   fact : P
 
 /-- [tauten::origin::{tauten::origin::Evidence<'s, P, Clause0_Subject>}::__mint]:
-    Source: 'crates/tauten/src/origin.rs', lines 73:4-73:65
+    Source: 'crates/tauten/src/origin.rs', lines 92:4-92:65
     Name pattern: [tauten::origin::{tauten::origin::Evidence<'s, @P, @Clause0_Subject>}::__mint]
     Visibility: public -/
 @[rust_fun
@@ -124,7 +124,7 @@ def tauten.origin.Evidence.__mint
   ok { subject, fact }
 
 /-- [tauten::origin::{tauten::origin::Evidence<'s, P, Clause0_Subject>}::redeem]:
-    Source: 'crates/tauten/src/origin.rs', lines 92:4-92:28
+    Source: 'crates/tauten/src/origin.rs', lines 111:4-111:28
     Name pattern: [tauten::origin::{tauten::origin::Evidence<'s, @P, @Clause0_Subject>}::redeem]
     Visibility: public -/
 @[rust_fun
@@ -138,7 +138,7 @@ def tauten.origin.Evidence.redeem
   ok self.fact
 
 /-- Trait declaration: [tauten::origin::Versioned]
-    Source: 'crates/tauten/src/origin.rs', lines 177:0-177:19
+    Source: 'crates/tauten/src/origin.rs', lines 196:0-196:19
     Name pattern: [tauten::origin::Versioned]
     Visibility: public -/
 @[rust_trait "tauten::origin::Versioned"]
@@ -146,14 +146,14 @@ structure tauten.origin.Versioned (Self : Type _) where
   version : Self → Result Std.U64
 
 /-- [tauten::origin::Stale]
-    Source: 'crates/tauten/src/origin.rs', lines 185:0-185:16
+    Source: 'crates/tauten/src/origin.rs', lines 204:0-204:16
     Name pattern: [tauten::origin::Stale]
     Visibility: public -/
 @[reducible, rust_type "tauten::origin::Stale"]
 def tauten.origin.Stale := Unit
 
 /-- [tauten::origin::Stamped]
-    Source: 'crates/tauten/src/origin.rs', lines 203:0-203:34
+    Source: 'crates/tauten/src/origin.rs', lines 222:0-222:34
     Name pattern: [tauten::origin::Stamped]
     Visibility: public -/
 @[rust_type "tauten::origin::Stamped"]
@@ -162,7 +162,7 @@ structure tauten.origin.Stamped (P : Type _) (Clause0_Subject : Type _) where
   version : Std.U64
 
 /-- [tauten::origin::{tauten::origin::Stamped<P, Clause0_Subject>}::verify]:
-    Source: 'crates/tauten/src/origin.rs', lines 233:4-233:79
+    Source: 'crates/tauten/src/origin.rs', lines 252:4-252:79
     Name pattern: [tauten::origin::{tauten::origin::Stamped<@P, @Clause0_Subject>}::verify]
     Visibility: public -/
 @[rust_fun
