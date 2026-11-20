@@ -42,6 +42,7 @@
 | [TAU-T003](#tau-t003) | Kernel dependencies are allowlisted | deny | - | - | yes | never | Tauten |
 | [TAU-D001](#tau-d001) | Documented public API | warn | warn | - | no | `#[expect]` + reason | Rustc |
 | [TAU-R001](#tau-r001) | Baseline must be tight | deny | deny | deny | yes | never | Tauten |
+| [TAU-R002](#tau-r002) | Recorded proof claims are not weakened | deny | deny | deny | yes | never | Tauten |
 
 In `kernel` crates no profile rule admits exceptions (TAU-X004). "Tests: no" means the rule is not applied to test targets.
 
@@ -420,3 +421,11 @@ Lints: `missing_docs`, `clippy::missing_errors_doc`, `clippy::missing_panics_doc
 The baseline records existing violations so a project can adopt the profile gradually. It may only shrink: once a violation is fixed, its slot must be removed, or a new violation could silently take it.
 
 **Fix:** Run `cargo tauten baseline` and commit the smaller baseline file.
+
+## TAU-R002
+
+**Recorded proof claims are not weakened**
+
+A proof claim is only as strong as its theorems and the mutants that show they bite, and as the assumptions it rests on. Deleting a mutant, dropping a theorem or adding an assumption makes a claim weaker while its badge still says proved. The committed proofs/claims.json is the record; proofs/claims.toml may not drop a recorded theorem or mutant, or add an assumption, unless an `[[amend]]` entry names the change and gives a reason. The decision is proved (tauten_check_kernel::registry::conserves); it is relative to the committed record, and reviewing that record's diff is trusted.
+
+**Fix:** Restore the theorem, mutant or assumption, or add `[[amend]]` with `file`, `function`, `kind` (theorem, mutant or assumption), `name` and `reason` to proofs/claims.toml. After `cargo tauten proofs` re-records proofs/claims.json, remove the amendment.

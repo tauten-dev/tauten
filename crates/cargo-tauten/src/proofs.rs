@@ -70,6 +70,19 @@ pub fn run(ws: &Loaded, write: bool) -> Result<ExitCode> {
     if records.is_empty() {
         eprintln!("tauten: {CLAIMS_TOML} lists no claim");
     }
+    if write && let Some(committed) = committed_record(root)? {
+        let found = proofs::conservation(&file, &committed);
+        if !found.weakened.is_empty() {
+            for (_, f, function, kind, name) in &found.weakened {
+                eprintln!(
+                    "tauten: TAU-R002: {f}: claim `{function}` would lose {} `{name}` (or gain it, for an assumption) without an `[[amend]]` entry",
+                    kind.name()
+                );
+            }
+            eprintln!("tauten: not recording {CLAIMS_JSON}: a recorded claim would be weakened");
+            return Ok(ExitCode::FAILURE);
+        }
+    }
     if write {
         let record = Record {
             version: 1,
@@ -267,6 +280,36 @@ fn current_fingerprints(ws: &Loaded, crates: &[&str]) -> Result<BTreeMap<String,
         out.insert(krate.to_owned(), proofs::fingerprint(&files));
     }
     Ok(out)
+}
+
+/// The committed `proofs/claims.json`, if present.
+fn committed_record(root: &Path) -> Result<Option<Record>> {
+    let path = root.join(CLAIMS_JSON);
+    if !path.is_file() {
+        return Ok(None);
+    }
+    let text = fs::read_to_string(&path).with_context(|| format!("reading {}", path.display()))?;
+    let record =
+        serde_json::from_str(&text).with_context(|| format!("parsing {}", path.display()))?;
+    Ok(Some(record))
+}
+
+/// TAU-R002: `proofs/claims.toml` against the committed
+/// `proofs/claims.json`, when both exist.
+/// Applied after the lint baseline, so a baseline can never absorb it.
+pub fn conservation(root: &Path, profile: &tauten_check::Profile) -> Result<Vec<Diagnostic>> {
+    let toml_path = root.join(CLAIMS_TOML);
+    if !toml_path.is_file() {
+        return Ok(Vec::new());
+    }
+    let Some(record) = committed_record(root)? else {
+        return Ok(Vec::new());
+    };
+    let text = fs::read_to_string(&toml_path)
+        .with_context(|| format!("reading {}", toml_path.display()))?;
+    let file = ClaimsFile::parse(&text)?;
+    let found = proofs::conservation(&file, &record);
+    Ok(proofs::conservation_diagnostics(profile, &file, &found))
 }
 
 /// The recorded claims and whether each is fresh, if `proofs/claims.json`

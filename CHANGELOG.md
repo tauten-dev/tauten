@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- TAU-R002: a recorded proof claim may not be weakened. `proofs/claims.toml`
+  may not drop a theorem or mutant recorded in the committed
+  `proofs/claims.json`, nor add an assumption, unless an `[[amend]]` entry
+  (`file`, `function`, `kind`, `name`, `reason`) names the change;
+  `cargo tauten proofs` refuses to re-record otherwise. Decided by the proved
+  `tauten_check_kernel::registry::conserves`.
+
 ## 0.0.3 (2026-11-19)
 
 - `cargo tauten proofs`: runs a project's proof gate (`proofs/claims.toml`)

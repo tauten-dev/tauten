@@ -333,6 +333,25 @@ BINDING_MUTANTS = (
            (T + "fresh_iff", T + "missing_key_never_fresh", T + "extra_key_never_fresh", T + "changed_never_fresh")),
 )
 
+REGISTRY = (T + "kept_spec", T + "conserves_spec", T + "conserves_iff", T + "conserves_refl", T + "amendment_is_explicit")
+REGISTRY_MUTANTS = (
+    # registry: an entry missing from the new list counts as kept
+    Mutant("removal-accepted", "registry.rs",
+           "    let mut found = false;\n    let mut i: usize = 0;\n    while i < list.len() {\n        if let Some(e) = list.get(i) {\n            found = found || (e.id == id",
+           "    let mut found = true;\n    let mut i: usize = 0;\n    while i < list.len() {\n        if let Some(e) = list.get(i) {\n            found = found || (e.id == id",
+           REGISTRY),
+    # registry: a weaker entry counts as kept
+    Mutant("lowering-accepted", "registry.rs",
+           "found = found || (e.id == id && strength <= e.strength);",
+           "found = found || e.id == id;",
+           REGISTRY),
+    # registry: any amendment excuses every entry, named or not
+    Mutant("amendment-not-required", "registry.rs",
+           "ok = ok && (member(amended, o.id) || kept(new, o.id, o.strength));",
+           "ok = ok && (!amended.is_empty() || kept(new, o.id, o.strength));",
+           REGISTRY[1:]),
+)
+
 BADGE_MUTANTS = (
     # badge: a claim with assumptions shows as proved outright
     Mutant("assumptions-ignored", "badge.rs",
@@ -407,7 +426,7 @@ MUTANTS = (
            "    if crate_wide && blocking {",
            "    if crate_wide || blocking {",
            (T + "exception_spec",)),
-) + RATCHET_MUTANTS + TABLE_MUTANTS + SUBSUME_MUTANTS + EFFECTS_MUTANTS + OUTCOME_MUTANTS + SPAN_MUTANTS + CONTROL_MUTANTS + BINDING_MUTANTS + BADGE_MUTANTS
+) + RATCHET_MUTANTS + TABLE_MUTANTS + SUBSUME_MUTANTS + EFFECTS_MUTANTS + OUTCOME_MUTANTS + SPAN_MUTANTS + CONTROL_MUTANTS + BINDING_MUTANTS + BADGE_MUTANTS + REGISTRY_MUTANTS
 
 I = "Tauten.Instances."
 REFINED_TYPES = ("percent", "port", "offset", "count")

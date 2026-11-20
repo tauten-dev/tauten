@@ -45,6 +45,14 @@ production calls. Everything below is trusted, not proved.
   a claim whose recorded outcome is `proved`, whose `total` theorem the
   audit confirmed has the shape `∀ args, f args ⦃ _ ⦄` with no hypotheses,
   which lists the rule under `subsumes`, and whose fingerprint matches.
+- TAU-R002, claim conservation: `cargo tauten check` and `cargo tauten
+  proofs` compare `proofs/claims.toml` with the committed
+  `proofs/claims.json`, intern each (file, function, kind, name) entry and
+  call the proved `registry::conserves`: theorems and mutants may not
+  shrink, assumptions may not grow, except where an `[[amend]]` entry with a
+  reason names the change. Conservation is relative to the committed
+  record: whoever reviews a commit that rewrites `claims.json` (or deletes
+  it) is trusted to see a weakening in its diff, as for a baseline.
 
 ## What tauten's own proofs additionally trust
 

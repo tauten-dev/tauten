@@ -23,6 +23,7 @@ pub mod effects;
 pub mod exception;
 pub mod outcome;
 pub mod ratchet;
+pub mod registry;
 pub mod severity;
 pub mod span;
 pub mod subsume;

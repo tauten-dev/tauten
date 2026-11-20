@@ -282,3 +282,19 @@ function = "badge"
 lean = "tauten_check_kernel.badge.badge"
 theorems = ["Tauten.Kernel.badge_spec", "Tauten.Kernel.badge_proved_iff", "Tauten.Kernel.badge_proved_under_iff", "Tauten.Kernel.non_lean_never_proved", "Tauten.Kernel.model_only_never_proved", "Tauten.Kernel.stale_never_established", "Tauten.Kernel.badge_monotone"]
 mutants = ["assumptions-ignored", "stale-shows-proved", "bounded-shows-proved", "model-shows-proved"]
+
+[[claim]]
+crate = "tauten-check-kernel"
+file = "crates/tauten-check-kernel/src/registry.rs"
+function = "conserves"
+lean = "tauten_check_kernel.registry.conserves"
+theorems = ["Tauten.Kernel.conserves_iff", "Tauten.Kernel.conserves_refl", "Tauten.Kernel.amendment_is_explicit"]
+mutants = ["removal-accepted", "lowering-accepted", "amendment-not-required"]
+
+[[claim]]
+crate = "tauten-check-kernel"
+file = "crates/tauten-check-kernel/src/registry.rs"
+function = "kept"
+lean = "tauten_check_kernel.registry.kept"
+theorems = ["Tauten.Kernel.kept_spec"]
+mutants = ["removal-accepted", "lowering-accepted"]

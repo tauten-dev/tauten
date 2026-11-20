@@ -230,4 +230,31 @@ mod proofs {
         let unknown = tauten(&["init", "--proofs", "no-such-crate"], &root);
         assert!(!unknown.status.success());
     }
+    #[test]
+    fn deleting_a_mutant_fails_check_unless_amended() {
+        let edited = scratch("mutant-deleted");
+        let claims = edited.join("proofs/claims.toml");
+        let text = fs::read_to_string(&claims).expect("read");
+        let swapped = text.replacen(
+            r#"mutants = ["guard-dropped"]"#,
+            r#"mutants = ["guard-weakened"]"#,
+            1,
+        );
+        assert_ne!(swapped, text);
+        fs::write(&claims, &swapped).expect("write");
+        let out = tauten(&["check", "--format", "json"], &edited);
+        let r002: Vec<_> = findings(&out)
+            .into_iter()
+            .filter(|f| f.1 == "TAU-R002")
+            .collect();
+        assert_eq!(r002.len(), 1, "{}", String::from_utf8_lossy(&out.stdout));
+        assert_eq!(r002[0].2, "error");
+        assert!(!out.status.success());
+
+        let amend = "\n[[amend]]\nfile = \"sub-kernel/src/lib.rs\"\nfunction = \"add_capped\"\nkind = \"mutant\"\nname = \"guard-dropped\"\nreason = \"replaced by guard-weakened\"\n";
+        fs::write(&claims, format!("{swapped}{amend}")).expect("write");
+        let out = tauten(&["check", "--format", "json"], &edited);
+        assert!(findings(&out).iter().all(|f| f.1 != "TAU-R002"));
+    }
+
 }

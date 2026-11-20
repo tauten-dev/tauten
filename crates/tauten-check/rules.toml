@@ -406,6 +406,15 @@ enforced_by = "tauten"
 why = "The baseline records existing violations so a project can adopt the profile gradually. It may only shrink: once a violation is fixed, its slot must be removed, or a new violation could silently take it."
 fix = "Run `cargo tauten baseline` and commit the smaller baseline file."
 
+[[rule]]
+id = "TAU-R002"
+title = "Recorded proof claims are not weakened"
+lints = []
+levels = { kernel = "deny", core = "deny", edge = "deny" }
+enforced_by = "tauten"
+why = "A proof claim is only as strong as its theorems and the mutants that show they bite, and as the assumptions it rests on. Deleting a mutant, dropping a theorem or adding an assumption makes a claim weaker while its badge still says proved. The committed proofs/claims.json is the record; proofs/claims.toml may not drop a recorded theorem or mutant, or add an assumption, unless an `[[amend]]` entry names the change and gives a reason. The decision is proved (tauten_check_kernel::registry::conserves); it is relative to the committed record, and reviewing that record's diff is trusted."
+fix = "Restore the theorem, mutant or assumption, or add `[[amend]]` with `file`, `function`, `kind` (theorem, mutant or assumption), `name` and `reason` to proofs/claims.toml. After `cargo tauten proofs` re-records proofs/claims.json, remove the amendment."
+
 # ---------------------------------------------------------- banned APIs ---
 # Each entry becomes a `disallowed-*` entry in the generated clippy.toml of the
 # listed tiers, with reason "<rule id>: <note>". Unresolvable paths (crates the

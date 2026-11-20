@@ -52,6 +52,38 @@ pub struct ClaimsFile {
     /// template's `proofs/gate.py`).
     #[serde(default)]
     pub mutant: Vec<Mutant>,
+    /// Accepted weakenings of the recorded claims ([`conservation`]).
+    #[serde(default)]
+    pub amend: Vec<Amend>,
+}
+
+/// What an `[[amend]]` entry changes.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum AmendKind {
+    /// A theorem removed from a claim (or the claim removed).
+    Theorem,
+    /// A mutant removed from a claim (or the claim removed).
+    Mutant,
+    /// An assumption added to a claim.
+    Assumption,
+}
+
+/// One `[[amend]]`: a change to the recorded claims that would otherwise be
+/// refused as a weakening, with the reason it is accepted.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Amend {
+    /// The claim's source file.
+    pub file: String,
+    /// The claim's function.
+    pub function: String,
+    /// What is removed or added.
+    pub kind: AmendKind,
+    /// The theorem, mutant or assumption.
+    pub name: String,
+    /// Why the weakening is accepted.
+    pub reason: String,
 }
 
 /// The `[gate]` table.
@@ -233,6 +265,12 @@ impl ClaimsFile {
             if !claim.assumes.is_empty() && file.version < 2 {
                 return Err(problem("`assumes` needs `version = 2`"));
             }
+        }
+        if let Some(a) = file.amend.iter().find(|a| a.reason.trim().is_empty()) {
+            return Err(ClaimsError::Claim {
+                function: a.function.clone(),
+                problem: format!("`[[amend]]` of {} gives no reason", a.name),
+            });
         }
         Ok(file)
     }
@@ -941,6 +979,211 @@ pub fn subsume(
         }
     }
     diags
+}
+
+/// One entry of the claims registry: (file, function, kind, name).
+type RegistryKey<'a> = (&'a str, &'a str, AmendKind, &'a str);
+
+fn claim_entries(claim: &Claim) -> impl Iterator<Item = RegistryKey<'_>> {
+    let f = (claim.file.as_str(), claim.function.as_str());
+    claim
+        .theorems
+        .iter()
+        .map(move |t| (f.0, f.1, AmendKind::Theorem, t.as_str()))
+        .chain(
+            claim
+                .mutants
+                .iter()
+                .map(move |m| (f.0, f.1, AmendKind::Mutant, m.as_str())),
+        )
+}
+
+fn assumption_entries(claim: &Claim) -> impl Iterator<Item = RegistryKey<'_>> {
+    claim.assumes.iter().map(move |a| {
+        (
+            claim.file.as_str(),
+            claim.function.as_str(),
+            AmendKind::Assumption,
+            a.as_str(),
+        )
+    })
+}
+
+/// What [`conservation`] found.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct Conservation {
+    /// Recorded theorems and mutants missing from `claims.toml`, and
+    /// assumptions it adds, that no `[[amend]]` names:
+    /// (crate, file, function, kind, name).
+    pub weakened: Vec<(String, String, String, AmendKind, String)>,
+    /// `[[amend]]` entries that excuse nothing (indexes into `amend`).
+    pub unneeded: Vec<usize>,
+}
+
+/// Whether `claims.toml` keeps every theorem and mutant of the committed
+/// record (`claims.json`) and adds no assumption, except where an
+/// `[[amend]]` entry names the change.
+///
+/// Theorems and mutants form a may-not-shrink registry and assumptions a
+/// may-not-grow one; the proved kernel
+/// ([`tauten_check_kernel::registry::conserves`]) decides each entry. This
+/// function only interns the entries.
+#[must_use]
+pub fn conservation<'a>(file: &'a ClaimsFile, record: &'a Record) -> Conservation {
+    use tauten_check_kernel::registry::{self, Entry};
+    let mut ids: BTreeMap<RegistryKey<'a>, usize> = BTreeMap::new();
+    let mut intern = |k: RegistryKey<'a>| -> usize {
+        let next = ids.len();
+        *ids.entry(k).or_insert(next)
+    };
+    let entries = |keys: Vec<RegistryKey<'a>>, intern: &mut dyn FnMut(RegistryKey<'a>) -> usize| {
+        keys.into_iter()
+            .map(|k| Entry {
+                id: intern(k),
+                strength: 0,
+            })
+            .collect::<Vec<_>>()
+    };
+    let recorded_keys: Vec<_> = record
+        .claims
+        .iter()
+        .flat_map(|c| claim_entries(&c.claim))
+        .collect();
+    let current_keys: Vec<_> = file.claim.iter().flat_map(claim_entries).collect();
+    let recorded_assumes: Vec<_> = record
+        .claims
+        .iter()
+        .flat_map(|c| assumption_entries(&c.claim))
+        .collect();
+    let current_assumes: Vec<_> = file.claim.iter().flat_map(assumption_entries).collect();
+    let amend_keys: Vec<RegistryKey<'a>> = file
+        .amend
+        .iter()
+        .map(|a| (a.file.as_str(), a.function.as_str(), a.kind, a.name.as_str()))
+        .collect();
+
+    let old = entries(recorded_keys.clone(), &mut intern);
+    let new = entries(current_keys, &mut intern);
+    let old_a = entries(recorded_assumes, &mut intern);
+    let new_a = entries(current_assumes.clone(), &mut intern);
+    let amended: Vec<usize> = amend_keys.iter().map(|k| intern(*k)).collect();
+
+    let krate_of = |file_name: &str, function: &str| -> String {
+        record
+            .claims
+            .iter()
+            .map(|c| &c.claim)
+            .chain(file.claim.iter())
+            .find(|c| c.file == file_name && c.function == function)
+            .map(|c| c.krate.clone())
+            .unwrap_or_default()
+    };
+    let mut out = Conservation::default();
+    // May not shrink: each recorded theorem or mutant, decided alone so
+    // the message can name it.
+    for (key, entry) in recorded_keys.iter().zip(&old) {
+        if !registry::conserves(core::slice::from_ref(entry), &new, &amended) {
+            out.weakened.push((
+                krate_of(key.0, key.1),
+                key.0.to_owned(),
+                key.1.to_owned(),
+                key.2,
+                key.3.to_owned(),
+            ));
+        }
+    }
+    // May not grow: the arguments swap.
+    for (key, entry) in current_assumes.iter().zip(&new_a) {
+        if !registry::conserves(core::slice::from_ref(entry), &old_a, &amended) {
+            out.weakened.push((
+                krate_of(key.0, key.1),
+                key.0.to_owned(),
+                key.1.to_owned(),
+                key.2,
+                key.3.to_owned(),
+            ));
+        }
+    }
+    // An amendment is needed only for an entry that would be refused
+    // without it.
+    for (i, (key, id)) in amend_keys.iter().zip(&amended).enumerate() {
+        let probe = [Entry {
+            id: *id,
+            strength: 0,
+        }];
+        let needed = match key.2 {
+            AmendKind::Theorem | AmendKind::Mutant => {
+                registry::kept(&old, *id, 0) && !registry::conserves(&probe, &new, &[])
+            }
+            AmendKind::Assumption => {
+                registry::kept(&new_a, *id, 0) && !registry::conserves(&probe, &old_a, &[])
+            }
+        };
+        if !needed {
+            out.unneeded.push(i);
+        }
+    }
+    out
+}
+
+impl AmendKind {
+    /// The kind as written in `[[amend]]`.
+    #[must_use]
+    pub const fn name(self) -> &'static str {
+        match self {
+            Self::Theorem => "theorem",
+            Self::Mutant => "mutant",
+            Self::Assumption => "assumption",
+        }
+    }
+}
+
+/// TAU-R002 diagnostics for [`conservation`]: an error per unexcused
+/// weakening, a warning per unneeded amendment.
+#[must_use]
+pub fn conservation_diagnostics(
+    profile: &crate::profile::Profile,
+    file: &ClaimsFile,
+    found: &Conservation,
+) -> Vec<Diagnostic> {
+    let Some(rule) = profile.rule("TAU-R002") else {
+        return Vec::new();
+    };
+    let mut out = Vec::new();
+    for (krate, f, function, kind, name) in &found.weakened {
+        let what = match kind {
+            AmendKind::Theorem | AmendKind::Mutant => format!(
+                "proofs/claims.toml drops {} `{name}` from the recorded claim `{function}`",
+                kind.name()
+            ),
+            AmendKind::Assumption => format!(
+                "proofs/claims.toml adds assumption `{name}` to the recorded claim `{function}`"
+            ),
+        };
+        let message = format!(
+            "{what}; a recorded claim may not be weakened without an `[[amend]]` entry with a reason"
+        );
+        out.push(
+            Diagnostic::for_rule(rule, Severity::Error, krate, None, message)
+                .at(Some(f.clone()), None, None),
+        );
+    }
+    for i in &found.unneeded {
+        let Some(a) = file.amend.get(*i) else {
+            continue;
+        };
+        let message = format!(
+            "`[[amend]]` of {} `{}` in `{}` excuses nothing against proofs/claims.json; remove it",
+            a.kind.name(),
+            a.name,
+            a.function
+        );
+        out.push(
+            Diagnostic::for_rule(rule, Severity::Warning, "", None, message)
+                .at(Some(a.file.clone()), None, None),
+        );
+    }
+    out
 }
 
 #[cfg(test)]

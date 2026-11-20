@@ -165,6 +165,8 @@ fn run(cli: Cli) -> Result<ExitCode> {
                 }
                 (applied.diagnostics, applied.baselined)
             };
+            let mut diags = diags;
+            diags.extend(proofs::conservation(&root, &profile)?);
             let options = output::Options {
                 json: matches!(format, Format::Json),
                 all_warnings: warnings,

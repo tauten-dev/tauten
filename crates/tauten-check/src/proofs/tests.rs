@@ -619,3 +619,112 @@ fn assumptions_lower_the_badge() {
     assert_eq!(d.severity, Severity::Error);
     assert!(d.subsumed_by.is_none());
 }
+
+fn committed(claims: &ClaimsFile) -> Record {
+    Record {
+        version: 1,
+        generated_by: "cargo tauten proofs".to_owned(),
+        claims: claims
+            .claim
+            .iter()
+            .map(|c| ClaimRecord {
+                claim: c.clone(),
+                outcome: Outcome::Proved,
+                badge: Badge::Proved,
+                detail: None,
+                fingerprint: String::new(),
+            })
+            .collect(),
+    }
+}
+
+const AMEND_MUTANT: &str = r#"
+[[amend]]
+file = "crates/k/src/lib.rs"
+function = "add"
+kind = "mutant"
+name = "add-wraps"
+reason = "replaced by a stronger mutant"
+"#;
+
+#[test]
+fn recorded_claims_may_not_be_weakened() {
+    let record = committed(&claims());
+    // Unchanged, or strengthened: conserved.
+    assert_eq!(conservation(&claims(), &record), Conservation::default());
+    let stronger = ClaimsFile::parse(&CLAIMS.replace(
+        r#"mutants = ["add-wraps"]"#,
+        r#"mutants = ["add-wraps", "add-saturates"]"#,
+    ))
+    .expect("valid");
+    assert!(conservation(&stronger, &record).weakened.is_empty());
+
+    // Deleting the mutant (replaced by another) is refused...
+    let swapped = CLAIMS.replace(
+        r#"mutants = ["add-wraps"]"#,
+        r#"mutants = ["add-saturates"]"#,
+    );
+    let found = conservation(&ClaimsFile::parse(&swapped).expect("valid"), &record);
+    assert_eq!(found.weakened.len(), 1);
+    assert_eq!(found.weakened[0].3, AmendKind::Mutant);
+    assert_eq!(found.weakened[0].4, "add-wraps");
+    let profile = crate::profile::Profile::embedded().expect("profile");
+    let diags = conservation_diagnostics(&profile, &claims(), &found);
+    assert!(diags.iter().all(|d| d.id == "TAU-R002" && d.severity == Severity::Error));
+
+    // ... unless an amendment names it.
+    let amended = ClaimsFile::parse(&format!("{swapped}{AMEND_MUTANT}")).expect("valid");
+    assert_eq!(conservation(&amended, &record), Conservation::default());
+
+    // A theorem dropped, or the whole claim, is refused too.
+    let dropped = CLAIMS.replace(r#", "K.add_spec""#, "");
+    let found = conservation(&ClaimsFile::parse(&dropped).expect("valid"), &record);
+    assert_eq!(found.weakened.len(), 1);
+    let mut gone = claims();
+    gone.claim.clear();
+    assert_eq!(conservation(&gone, &record).weakened.len(), 3);
+
+    // Once re-recorded, the amendment excuses nothing and is reported.
+    let rerecorded = committed(&ClaimsFile::parse(&swapped).expect("valid"));
+    let found = conservation(&amended, &rerecorded);
+    assert!(found.weakened.is_empty());
+    assert_eq!(found.unneeded, vec![0]);
+
+    // An amendment needs a reason.
+    let silent = format!("{swapped}{}", AMEND_MUTANT.replace("replaced by a stronger mutant", " "));
+    assert!(ClaimsFile::parse(&silent).is_err());
+}
+
+#[test]
+fn assumptions_may_not_grow() {
+    let v2 = CLAIMS.replace("version = 1", "version = 2");
+    let base = ClaimsFile::parse(&v2).expect("valid");
+    let record = committed(&base);
+    let assumed = ClaimsFile::parse(&v2.replace(
+        r#"mutants = ["add-wraps"]"#,
+        "mutants = [\"add-wraps\"]\nassumes = [\"FS.rename-atomic\"]",
+    ))
+    .expect("valid");
+    let found = conservation(&assumed, &record);
+    assert_eq!(found.weakened.len(), 1);
+    assert_eq!(found.weakened[0].3, AmendKind::Assumption);
+    // Removing an assumption is a strengthening.
+    assert!(conservation(&base, &committed(&assumed)).weakened.is_empty());
+    let amend = r#"
+[[amend]]
+file = "crates/k/src/lib.rs"
+function = "add"
+kind = "assumption"
+name = "FS.rename-atomic"
+reason = "the claim now covers the durable path"
+"#;
+    let amended = ClaimsFile::parse(&format!(
+        "{}{amend}",
+        v2.replace(
+            r#"mutants = ["add-wraps"]"#,
+            "mutants = [\"add-wraps\"]\nassumes = [\"FS.rename-atomic\"]",
+        )
+    ))
+    .expect("valid");
+    assert_eq!(conservation(&amended, &record), Conservation::default());
+}
