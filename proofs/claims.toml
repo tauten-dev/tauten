@@ -339,3 +339,14 @@ function = "fixtures_ok"
 lean = "tauten_check_kernel.rule.fixtures_ok"
 theorems = ["Tauten.Kernel.fixtures_ok_iff"]
 mutants = ["fixtureless-rule-valid"]
+
+# The machine library's worked instance (A6): the extracted publish step
+# equals its model, and against a world where any command may fail and the
+# temporary file may vanish, no reachable terminal phase leaves one behind.
+[[claim]]
+crate = "tauten-proof-instances"
+file = "crates/tauten-proof-instances/src/machines.rs"
+function = "publish_step"
+lean = "tauten_proof_instances.machines.publish_step"
+theorems = ["Tauten.Instances.publish_step_model", "Tauten.Instances.publish_inv", "Tauten.Instances.publish_discharged"]
+mutants = ["cleanup-skipped", "rename-before-sync"]

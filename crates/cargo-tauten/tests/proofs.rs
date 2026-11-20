@@ -310,4 +310,16 @@ mod proofs {
         assert_eq!(plain.status.code(), Some(1));
         assert!(String::from_utf8_lossy(&plain.stdout).contains("tool-missing"));
     }
+    /// The machine library ships identically in the template and in
+    /// tauten's own proofs (where the gate builds and audits it).
+    #[test]
+    fn the_machine_library_is_one_file() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let own = fs::read_to_string(root.join("proofs/Tauten/Machine.lean")).expect("own");
+        let shipped = fs::read_to_string(
+            root.join("crates/cargo-tauten/templates/proofs/Proofs/TautenMachine.lean"),
+        )
+        .expect("template");
+        assert_eq!(own, shipped);
+    }
 }

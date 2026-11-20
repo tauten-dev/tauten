@@ -57,7 +57,8 @@ class Mutant:
     after: str
     fails: tuple[str, ...]
     # "kernel": `file` is in crates/tauten-check-kernel/src; "macros": in
-    # crates/tauten-macros/src, and the instance crate is re-translated.
+    # crates/tauten-macros/src; "runtime": in crates/tauten/src. For the
+    # last two the instance crate is re-translated.
     crate: str = "kernel"
     # Expected text of an Audit.lean error, for a mutant only the audit catches.
     audit: str | None = None
@@ -559,7 +560,21 @@ MACRO_MUTANTS = (
            "                    ::tauten::ContractViolation::requires(#function, #text),",
            DEPOSIT + WITHDRAW + SCALE + EXAMPLES, crate="macros"),
 )
-MUTANTS = MUTANTS + MACRO_MUTANTS
+PUBLISH = (I + "publish_step_model", I + "publish_reachable_model")
+RUNTIME_MUTANTS = (
+    # publish: a failure abandons the temporary file instead of removing it
+    Mutant("cleanup-skipped", "publish.rs",
+           "        (Phase::Writing | Phase::Written | Phase::Synced | Phase::Cleaning, Event::Err) => {\n            (Phase::Cleaning, Command::RemoveTemp)\n        }",
+           "        (Phase::Writing | Phase::Written | Phase::Synced | Phase::Cleaning, Event::Err) => {\n            (Phase::Failed, Command::Nothing)\n        }",
+           PUBLISH, crate="runtime"),
+    # publish: the rename is issued before the temporary file is synced
+    Mutant("rename-before-sync", "publish.rs",
+           "        (Phase::Writing, Event::Ok) => (Phase::Written, Command::SyncTemp),",
+           "        (Phase::Writing, Event::Ok) => (Phase::Written, Command::Rename),",
+           PUBLISH, crate="runtime"),
+)
+
+MUTANTS = MUTANTS + MACRO_MUTANTS + RUNTIME_MUTANTS
 
 # lake reports `error: <path>.lean:<line>:<col>: <message>`
 SORRY_DEPENDENT = re.compile(r"SORRY_DEPENDENT (?P<name>\S+)")
@@ -646,7 +661,7 @@ def translate(mutant: Mutant, scratch: Path) -> Path:
                    "--", "-abort-on-error"]
         extraction = run(command, ROOT, {"EXTRACT_AS": str(KERNEL.relative_to(ROOT))})
         produced = scratch / "fresh" / "TautenCheckKernel.lean"
-    elif mutant.crate == "macros":
+    elif mutant.crate in ("macros", "runtime"):
         # A scratch copy of the crates the instance crate reaches, at their
         # repository paths, with proofs/extract.sh, so the translation of the
         # unchanged instance sources is placed exactly as the gate places it.
@@ -658,7 +673,8 @@ def translate(mutant: Mutant, scratch: Path) -> Path:
         for name in INSTANCE_TREE:
             shutil.copytree(ROOT / "crates" / name, tree / "crates" / name,
                             ignore=shutil.ignore_patterns("target"))
-        mutate(tree / "crates" / "tauten-macros" / "src" / mutant.file, mutant)
+        source = "tauten-macros" if mutant.crate == "macros" else "tauten"
+        mutate(tree / "crates" / source / "src" / mutant.file, mutant)
         command = ["sh", str(tree / "proofs" / "extract.sh"),
                    str(tree / "crates" / "tauten-proof-instances"), str(scratch / "fresh"),
                    "--", "-abort-on-error"]

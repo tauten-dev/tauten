@@ -35,7 +35,9 @@ extern crate std;
 pub mod cap;
 pub mod contract;
 mod error;
+pub mod machine;
 pub mod origin;
+pub mod publish;
 pub mod refine;
 
 pub use error::{ContractViolation, RefineError};

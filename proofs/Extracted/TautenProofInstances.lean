@@ -92,6 +92,139 @@ def tauten.error.ContractViolation.ensures
   := do
   ok (tauten.error.ContractViolation.Ensures function condition)
 
+/-- [tauten::publish::Phase]
+    Source: 'crates/tauten/src/publish.rs', lines 17:0-17:14
+    Name pattern: [tauten::publish::Phase]
+    Visibility: public -/
+@[discriminant isize, rust_type "tauten::publish::Phase"]
+inductive tauten.publish.Phase where
+| Idle : tauten.publish.Phase
+| Writing : tauten.publish.Phase
+| Written : tauten.publish.Phase
+| Synced : tauten.publish.Phase
+| Renamed : tauten.publish.Phase
+| Cleaning : tauten.publish.Phase
+| Done : tauten.publish.Phase
+| Failed : tauten.publish.Phase
+
+/-- [tauten::publish::Event]
+    Source: 'crates/tauten/src/publish.rs', lines 38:0-38:14
+    Name pattern: [tauten::publish::Event]
+    Visibility: public -/
+@[discriminant isize, rust_type "tauten::publish::Event"]
+inductive tauten.publish.Event where
+| Start : tauten.publish.Event
+| Ok : tauten.publish.Event
+| Err : tauten.publish.Event
+
+/-- [tauten::publish::Command]
+    Source: 'crates/tauten/src/publish.rs', lines 49:0-49:16
+    Name pattern: [tauten::publish::Command]
+    Visibility: public -/
+@[discriminant isize, rust_type "tauten::publish::Command"]
+inductive tauten.publish.Command where
+| Nothing : tauten.publish.Command
+| WriteTemp : tauten.publish.Command
+| SyncTemp : tauten.publish.Command
+| Rename : tauten.publish.Command
+| SyncDir : tauten.publish.Command
+| RemoveTemp : tauten.publish.Command
+
+/-- [tauten::publish::step]:
+    Source: 'crates/tauten/src/publish.rs', lines 66:0-66:65
+    Name pattern: [tauten::publish::step]
+    Visibility: public -/
+@[rust_fun "tauten::publish::step"]
+def tauten.publish.step
+  (phase : tauten.publish.Phase) (event : tauten.publish.Event) :
+  Result (tauten.publish.Phase × tauten.publish.Command)
+  := do
+  match phase with
+  | tauten.publish.Phase.Idle =>
+    match event with
+    | tauten.publish.Event.Start =>
+      ok (tauten.publish.Phase.Writing, tauten.publish.Command.WriteTemp)
+    | tauten.publish.Event.Ok => ok (phase, tauten.publish.Command.Nothing)
+    | tauten.publish.Event.Err => ok (phase, tauten.publish.Command.Nothing)
+  | tauten.publish.Phase.Writing =>
+    match event with
+    | tauten.publish.Event.Start => ok (phase, tauten.publish.Command.Nothing)
+    | tauten.publish.Event.Ok =>
+      ok (tauten.publish.Phase.Written, tauten.publish.Command.SyncTemp)
+    | tauten.publish.Event.Err =>
+      ok (tauten.publish.Phase.Cleaning, tauten.publish.Command.RemoveTemp)
+  | tauten.publish.Phase.Written =>
+    match event with
+    | tauten.publish.Event.Start => ok (phase, tauten.publish.Command.Nothing)
+    | tauten.publish.Event.Ok =>
+      ok (tauten.publish.Phase.Synced, tauten.publish.Command.Rename)
+    | tauten.publish.Event.Err =>
+      ok (tauten.publish.Phase.Cleaning, tauten.publish.Command.RemoveTemp)
+  | tauten.publish.Phase.Synced =>
+    match event with
+    | tauten.publish.Event.Start => ok (phase, tauten.publish.Command.Nothing)
+    | tauten.publish.Event.Ok =>
+      ok (tauten.publish.Phase.Renamed, tauten.publish.Command.SyncDir)
+    | tauten.publish.Event.Err =>
+      ok (tauten.publish.Phase.Cleaning, tauten.publish.Command.RemoveTemp)
+  | tauten.publish.Phase.Renamed =>
+    match event with
+    | tauten.publish.Event.Start => ok (phase, tauten.publish.Command.Nothing)
+    | tauten.publish.Event.Ok =>
+      ok (tauten.publish.Phase.Done, tauten.publish.Command.Nothing)
+    | tauten.publish.Event.Err =>
+      ok (tauten.publish.Phase.Failed, tauten.publish.Command.Nothing)
+  | tauten.publish.Phase.Cleaning =>
+    match event with
+    | tauten.publish.Event.Start => ok (phase, tauten.publish.Command.Nothing)
+    | tauten.publish.Event.Ok =>
+      ok (tauten.publish.Phase.Failed, tauten.publish.Command.Nothing)
+    | tauten.publish.Event.Err =>
+      ok (tauten.publish.Phase.Cleaning, tauten.publish.Command.RemoveTemp)
+  | tauten.publish.Phase.Done =>
+    match event with
+    | tauten.publish.Event.Start => ok (phase, tauten.publish.Command.Nothing)
+    | tauten.publish.Event.Ok => ok (phase, tauten.publish.Command.Nothing)
+    | tauten.publish.Event.Err => ok (phase, tauten.publish.Command.Nothing)
+  | tauten.publish.Phase.Failed =>
+    match event with
+    | tauten.publish.Event.Start => ok (phase, tauten.publish.Command.Nothing)
+    | tauten.publish.Event.Ok => ok (phase, tauten.publish.Command.Nothing)
+    | tauten.publish.Event.Err => ok (phase, tauten.publish.Command.Nothing)
+
+/-- [tauten::publish::holds_temp]:
+    Source: 'crates/tauten/src/publish.rs', lines 96:0-96:45
+    Name pattern: [tauten::publish::holds_temp]
+    Visibility: public -/
+@[rust_fun "tauten::publish::holds_temp"]
+def tauten.publish.holds_temp
+  (phase : tauten.publish.Phase) : Result Bool := do
+  match phase with
+  | tauten.publish.Phase.Idle => ok false
+  | tauten.publish.Phase.Writing => ok true
+  | tauten.publish.Phase.Written => ok true
+  | tauten.publish.Phase.Synced => ok true
+  | tauten.publish.Phase.Renamed => ok false
+  | tauten.publish.Phase.Cleaning => ok true
+  | tauten.publish.Phase.Done => ok false
+  | tauten.publish.Phase.Failed => ok false
+
+/-- [tauten::publish::terminal]:
+    Source: 'crates/tauten/src/publish.rs', lines 105:0-105:43
+    Name pattern: [tauten::publish::terminal]
+    Visibility: public -/
+@[rust_fun "tauten::publish::terminal"]
+def tauten.publish.terminal (phase : tauten.publish.Phase) : Result Bool := do
+  match phase with
+  | tauten.publish.Phase.Idle => ok false
+  | tauten.publish.Phase.Writing => ok false
+  | tauten.publish.Phase.Written => ok false
+  | tauten.publish.Phase.Synced => ok false
+  | tauten.publish.Phase.Renamed => ok false
+  | tauten.publish.Phase.Cleaning => ok false
+  | tauten.publish.Phase.Done => ok true
+  | tauten.publish.Phase.Failed => ok true
+
 /-- Trait declaration: [tauten::refine::sealed::Sealed]
     Source: 'crates/tauten/src/refine.rs', lines 18:4-18:20
     Name pattern: [tauten::refine::sealed::Sealed]
@@ -472,6 +605,29 @@ def contracts.share
         "divisor != 0")
     let oe ← contracts.OpError.Insts.CoreConvertFromContractViolation.from cv
     ok (core.result.Result.Err oe)
+
+/-- [tauten_proof_instances::machines::publish_step]:
+    Source: 'crates/tauten-proof-instances/src/machines.rs', lines 8:0-10:1
+    Visibility: public -/
+def machines.publish_step
+  (phase : tauten.publish.Phase) (event : tauten.publish.Event) :
+  Result (tauten.publish.Phase × tauten.publish.Command)
+  := do
+  tauten.publish.step phase event
+
+/-- [tauten_proof_instances::machines::publish_holds_temp]:
+    Source: 'crates/tauten-proof-instances/src/machines.rs', lines 14:0-16:1
+    Visibility: public -/
+def machines.publish_holds_temp
+  (phase : tauten.publish.Phase) : Result Bool := do
+  tauten.publish.holds_temp phase
+
+/-- [tauten_proof_instances::machines::publish_terminal]:
+    Source: 'crates/tauten-proof-instances/src/machines.rs', lines 20:0-22:1
+    Visibility: public -/
+def machines.publish_terminal
+  (phase : tauten.publish.Phase) : Result Bool := do
+  tauten.publish.terminal phase
 
 /-- [tauten_proof_instances::refined::__tauten_percent::Percent]
     Source: 'crates/tauten-proof-instances/src/refined.rs', lines 4:0-4:33

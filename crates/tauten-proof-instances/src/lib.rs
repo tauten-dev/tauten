@@ -13,4 +13,5 @@
 #![no_std]
 
 pub mod contracts;
+pub mod machines;
 pub mod refined;

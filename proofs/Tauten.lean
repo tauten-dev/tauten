@@ -18,3 +18,5 @@ import Tauten.Registry
 import Tauten.Assumption
 import Tauten.Manifest
 import Tauten.Rule
+import Tauten.Machine
+import Tauten.Publish

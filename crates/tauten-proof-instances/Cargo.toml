@@ -27,8 +27,9 @@ tauten = { path = "../tauten" }
 start_from = [
     "tauten_proof_instances::refined",
     "tauten_proof_instances::contracts",
+    "tauten_proof_instances::machines",
 ]
-include = ["tauten::contract", "tauten::error"]
+include = ["tauten::contract", "tauten::error", "tauten::publish"]
 
 # Stated locally, not inherited: the proofs gate translates this crate in a
 # shadow workspace that carries no `workspace.lints`.

@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- `tauten::machine`: a protocol as a pure step function (`Machine`), with
+  `run` and `replay` (compare a recorded tape of events and commands). The
+  Lean library `Tauten.Machine` (shipped in the proofs template as
+  `Proofs/TautenMachine.lean`) proves the induction once: `inv_of_step`,
+  `inv_run`, `rinv_of_step` for extracted steps that return a `Result`,
+  `sys_inv_of_step` against a world that interprets commands and takes
+  adversary steps, and `discharged_of_inv`. Worked instance:
+  `tauten::publish` (write, sync, rename, sync the directory; remove the
+  temporary file on failure), proved over its translation to leave no
+  temporary file behind in any reachable terminal phase, with no
+  filesystem assumption.
+
 - Every rule states its `family` (safety, obligation, style), exactly what it
   decides (`invariant`), what it reads (`sees`), what it does not see
   (`dominion`), whether it is `complete`, and its reject `fixtures`
