@@ -332,9 +332,9 @@ Reject fixtures: `rej-placeholder`
 
 Family: obligation. Sees: resolved. Complete: yes.
 
-**Does not see:** Code expanded from macros defined in other crates (clippy skips it); code disabled by `cfg`; build scripts.
+**Does not see:** Code expanded from macros defined in other crates (clippy skips it). Inner attributes and `allow` inside `cfg_attr` are read by tauten itself, in `src/`, `tests/`, `benches/`, `examples/` and the build script.
 
-Reject fixtures: `rej-allow`, `rej-file-allow`
+Reject fixtures: `rej-allow`, `rej-file-allow`, `rej-cfg-attr-allow`
 
 Lints: `clippy::allow_attributes`, `clippy::allow_attributes_without_reason`, `unfulfilled_lint_expectations`
 
@@ -350,7 +350,7 @@ A crate-level `#![expect(...)]` or `#![allow(...)]` of a profile lint switches t
 
 Family: obligation. Sees: source. Complete: yes.
 
-**Does not see:** Attributes and items produced by macros; files outside a member's `src/`.
+**Does not see:** Attributes and items produced by macros. Read in `src/`, `tests/`, `benches/`, `examples/` and the build script, including inside `cfg_attr`; a lint group counts as every profile rule it may contain (an over-approximation).
 
 Reject fixtures: `rej-crate-wide`
 
@@ -376,13 +376,13 @@ Some rules admit no exceptions: stub macros anywhere, and any profile lint in a 
 
 **Fix:** Remove the `#[expect]`/`#[allow]` and fix the code it excused.
 
-**Decides:** No exception of a rule that admits none (any rule, in kernel crates).
+**Decides:** No exception of a rule that admits none (any rule, in kernel crates), and no conditional (`cfg_attr`) exception in kernel crates.
 
 Family: obligation. Sees: source. Complete: yes.
 
-**Does not see:** Attributes and items produced by macros; files outside a member's `src/`.
+**Does not see:** Attributes and items produced by macros. Read in `src/`, `tests/`, `benches/`, `examples/` and the build script, including inside `cfg_attr`; a lint group counts as every profile rule it may contain (an over-approximation).
 
-Reject fixtures: `rej-kernel-exception`, `rej-stub-excused`
+Reject fixtures: `rej-kernel-exception`, `rej-stub-excused`, `rej-group-allow`, `rej-test-exception`
 
 ## TAU-U001
 

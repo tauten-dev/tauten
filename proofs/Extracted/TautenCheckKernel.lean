@@ -1256,6 +1256,180 @@ def exception.excuse
     else ok exception.Excuse.Allowed
   else ok exception.Excuse.Forbidden
 
+/-- [tauten_check_kernel::exception::rank]:
+    Source: 'crates/tauten-check-kernel/src/exception.rs', lines 62:0-68:1
+    Visibility: public -/
+def exception.rank (e : exception.Excuse) : Result Std.U8 := do
+  match e with
+  | exception.Excuse.Allowed => ok 0#u8
+  | exception.Excuse.CrateWide => ok 1#u8
+  | exception.Excuse.Forbidden => ok 2#u8
+
+/-- [tauten_check_kernel::exception::worse]:
+    Source: 'crates/tauten-check-kernel/src/exception.rs', lines 72:0-74:1
+    Visibility: public -/
+def exception.worse
+  (a : exception.Excuse) (b : exception.Excuse) : Result exception.Excuse := do
+  let i ← exception.rank b
+  let i1 ← exception.rank a
+  if i > i1
+  then ok b
+  else ok a
+
+/-- [tauten_check_kernel::exception::Covered]
+    Source: 'crates/tauten-check-kernel/src/exception.rs', lines 79:0-84:1
+    Visibility: public -/
+structure exception.Covered where
+  allows : Bool
+  level : Option severity.Level
+
+/-- [tauten_check_kernel::exception::Form]
+    Source: 'crates/tauten-check-kernel/src/exception.rs', lines 88:0-93:1
+    Visibility: public -/
+structure exception.Form where
+  crate_wide : Bool
+  conditional : Bool
+
+/-- [tauten_check_kernel::exception::worst]: loop body 0:
+    Source: 'crates/tauten-check-kernel/src/exception.rs', lines 122:4-127:5
+    Visibility: public -/
+@[rust_loop_body]
+def exception.worst_loop.body
+  (covered : Slice exception.Covered) (tier : tiers.Tier) (crate_wide : Bool)
+  (acc : exception.Excuse) (i : Std.Usize) :
+  Result (ControlFlow (exception.Excuse × Std.Usize) exception.Excuse)
+  := do
+  let i1 := Slice.len covered
+  if i < i1
+  then
+    let o ←
+      core.slice.Slice.get (core.slice.index.SliceIndexUsizeSlice
+        exception.Covered) covered i
+    let acc1 ←
+      match o with
+      | none => ok acc
+      | some c =>
+        do
+        let e ← exception.excuse c.allows tier c.level crate_wide
+        exception.worse acc e
+    let i2 ← lift (core.num.Usize.saturating_add i 1#usize)
+    ok (cont (acc1, i2))
+  else ok (done acc)
+
+/-- [tauten_check_kernel::exception::worst]: loop 0:
+    Source: 'crates/tauten-check-kernel/src/exception.rs', lines 122:4-127:5
+    Visibility: public -/
+@[rust_loop]
+def exception.worst_loop
+  (covered : Slice exception.Covered) (tier : tiers.Tier) (crate_wide : Bool)
+  (acc : exception.Excuse) (i : Std.Usize) :
+  Result exception.Excuse
+  := do
+  loop
+    (fun (acc1, i1) => exception.worst_loop.body covered tier crate_wide acc1
+      i1)
+    (acc, i)
+
+/-- [tauten_check_kernel::exception::worst]:
+    Source: 'crates/tauten-check-kernel/src/exception.rs', lines 119:0-129:1
+    Visibility: public -/
+@[reducible]
+def exception.worst
+  (covered : Slice exception.Covered) (tier : tiers.Tier) (crate_wide : Bool) :
+  Result exception.Excuse
+  := do
+  exception.worst_loop covered tier crate_wide exception.Excuse.Allowed 0#usize
+
+/-- [tauten_check_kernel::exception::decide]:
+    Source: 'crates/tauten-check-kernel/src/exception.rs', lines 105:0-115:1
+    Visibility: public -/
+def exception.decide
+  (form : exception.Form) (covered : Slice exception.Covered)
+  (tier : tiers.Tier) :
+  Result exception.Excuse
+  := do
+  let kernel ←
+    match tier with
+    | tiers.Tier.Kernel => ok true
+    | tiers.Tier.Core => ok false
+    | tiers.Tier.Edge => ok false
+  if form.conditional
+  then
+    if kernel
+    then ok exception.Excuse.Forbidden
+    else exception.worst covered tier form.crate_wide
+  else exception.worst covered tier form.crate_wide
+
+/-- [tauten_check_kernel::exception::Setting]
+    Source: 'crates/tauten-check-kernel/src/exception.rs', lines 133:0-144:1
+    Visibility: public -/
+@[discriminant isize]
+inductive exception.Setting where
+| Allow : exception.Setting
+| Warn : exception.Setting
+| Expect : exception.Setting
+| Deny : exception.Setting
+| Forbid : exception.Setting
+
+/-- [tauten_check_kernel::exception::weakens]:
+    Source: 'crates/tauten-check-kernel/src/exception.rs', lines 148:0-153:1
+    Visibility: public -/
+def exception.weakens (setting : exception.Setting) : Result Bool := do
+  match setting with
+  | exception.Setting.Allow => ok true
+  | exception.Setting.Warn => ok true
+  | exception.Setting.Expect => ok true
+  | exception.Setting.Deny => ok false
+  | exception.Setting.Forbid => ok false
+
+/-- [tauten_check_kernel::exception::loosens]: loop body 0:
+    Source: 'crates/tauten-check-kernel/src/exception.rs', lines 166:4-171:5
+    Visibility: public -/
+@[rust_loop_body]
+def exception.loosens_loop.body
+  (levels : Slice severity.Level) (found : Bool) (i : Std.Usize) :
+  Result (ControlFlow (Bool × Std.Usize) Bool)
+  := do
+  let i1 := Slice.len levels
+  if i < i1
+  then
+    let o ←
+      core.slice.Slice.get (core.slice.index.SliceIndexUsizeSlice
+        severity.Level) levels i
+    let found1 ←
+      match o with
+      | none => ok found
+      | some l => if found
+                  then ok true
+                  else severity.is_blocking l
+    let i2 ← lift (core.num.Usize.saturating_add i 1#usize)
+    ok (cont (found1, i2))
+  else ok (done found)
+
+/-- [tauten_check_kernel::exception::loosens]: loop 0:
+    Source: 'crates/tauten-check-kernel/src/exception.rs', lines 166:4-171:5
+    Visibility: public -/
+@[rust_loop]
+def exception.loosens_loop
+  (levels : Slice severity.Level) (found : Bool) (i : Std.Usize) :
+  Result Bool
+  := do
+  loop
+    (fun (found1, i1) => exception.loosens_loop.body levels found1 i1)
+    (found, i)
+
+/-- [tauten_check_kernel::exception::loosens]:
+    Source: 'crates/tauten-check-kernel/src/exception.rs', lines 160:0-173:1
+    Visibility: public -/
+def exception.loosens
+  (setting : exception.Setting) (levels : Slice severity.Level) :
+  Result Bool
+  := do
+  let b ← exception.weakens setting
+  if b
+  then exception.loosens_loop levels false 0#usize
+  else ok false
+
 /-- [tauten_check_kernel::manifest::Fact]
     Source: 'crates/tauten-check-kernel/src/manifest.rs', lines 13:0-20:1
     Visibility: public -/

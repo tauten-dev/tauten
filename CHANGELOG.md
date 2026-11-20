@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+- Lint exceptions are decided by the proved kernel in more places (T4,
+  #31). `exception::decide` takes how the attribute is written and every
+  rule it may cover: an exception inside `cfg_attr` is never accepted in a
+  kernel crate (`conditional_never_allowed_in_kernel`), and an exception for
+  a lint group (`warnings`, `clippy::all`, `unused`, …) is decided as the
+  worst over every profile rule the group may contain
+  (`group_never_weaker`). TAU-X003 is `exception::loosens` (`x003_iff`) and
+  now also sees groups in `[lints]`. The scanner reads exceptions inside
+  `cfg_attr` (reported under TAU-X001 when they `allow`) and in `tests/`,
+  `benches/`, `examples/` and the build script; in test targets a rule that
+  does not apply to tests covers nothing. New reject fixtures:
+  `rej-cfg-attr-allow`, `rej-group-allow`, `rej-test-exception`.
+
 ## 0.0.4 (2026-11-20)
 
 - `cargo tauten proofs try --theorems T… | --mutants M…`: the developer

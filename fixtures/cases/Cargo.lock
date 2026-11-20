@@ -182,6 +182,10 @@ name = "rej-await-lock"
 version = "0.0.0"
 
 [[package]]
+name = "rej-cfg-attr-allow"
+version = "0.0.0"
+
+[[package]]
 name = "rej-contract-overflow"
 version = "0.0.0"
 
@@ -225,6 +229,10 @@ version = "0.0.0"
 
 [[package]]
 name = "rej-global-state"
+version = "0.0.0"
+
+[[package]]
+name = "rej-group-allow"
 version = "0.0.0"
 
 [[package]]
@@ -303,6 +311,10 @@ version = "0.0.0"
 
 [[package]]
 name = "rej-stub-excused"
+version = "0.0.0"
+
+[[package]]
+name = "rej-test-exception"
 version = "0.0.0"
 
 [[package]]

@@ -136,6 +136,15 @@ def claims : List Name := [
   ``Tauten.Kernel.clean_spec,
   ``Tauten.Kernel.fixtures_ok_spec,
   ``Tauten.Kernel.fixtures_ok_iff,
+  -- exception groups, conditions and manifest tables (T4)
+  ``Tauten.Kernel.worst_spec,
+  ``Tauten.Kernel.decide_spec,
+  ``Tauten.Kernel.conditional_never_allowed_in_kernel,
+  ``Tauten.Kernel.group_never_weaker,
+  ``Tauten.Kernel.decide_single,
+  ``Tauten.Kernel.weakens_spec,
+  ``Tauten.Kernel.loosens_spec,
+  ``Tauten.Kernel.x003_iff,
   -- the machine library (A6) and its worked instance
   ``Tauten.Machine.inv_of_step,
   ``Tauten.Machine.inv_run,

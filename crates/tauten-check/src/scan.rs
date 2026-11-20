@@ -51,6 +51,9 @@ pub struct LintException {
     pub crate_level: bool,
     /// Whether it is `allow` (rather than `expect`).
     pub allow: bool,
+    /// Whether it is written inside `cfg_attr(..)`, so in force only under
+    /// some configuration.
+    pub conditional: bool,
 }
 
 /// Every lint exception written in the file. Returns `None` if the file
@@ -75,19 +78,51 @@ struct ExceptionVisitor {
 
 impl ExceptionVisitor {
     fn record(&mut self, attr: &syn::Attribute, crate_level: bool) {
+        let at = hit(attr.pound_token.span);
         let path = attr.path();
-        if !(path.is_ident("allow") || path.is_ident("expect")) {
+        if path.is_ident("cfg_attr") {
+            if let syn::Meta::List(list) = &attr.meta {
+                self.conditional(list, at, crate_level);
+            }
             return;
         }
-        for lint in attr_lints(attr) {
-            {
-                self.found.push(LintException {
-                    lint,
-                    at: hit(attr.pound_token.span),
-                    crate_level,
-                    allow: path.is_ident("allow"),
-                });
+        if let syn::Meta::List(list) = &attr.meta {
+            self.level(list, at, crate_level, false);
+        }
+    }
+
+    /// `cfg_attr(predicate, attr, ...)`: every `allow`/`expect` among the
+    /// attributes, at any depth of nested `cfg_attr`, is conditional.
+    fn conditional(&mut self, list: &syn::MetaList, at: Hit, crate_level: bool) {
+        let Ok(metas) = list.parse_args_with(
+            syn::punctuated::Punctuated::<syn::Meta, syn::Token![,]>::parse_terminated,
+        ) else {
+            return;
+        };
+        for meta in metas.iter().skip(1) {
+            if let syn::Meta::List(inner) = meta {
+                if inner.path.is_ident("cfg_attr") {
+                    self.conditional(inner, at, crate_level);
+                } else {
+                    self.level(inner, at, crate_level, true);
+                }
             }
+        }
+    }
+
+    fn level(&mut self, list: &syn::MetaList, at: Hit, crate_level: bool, conditional: bool) {
+        let allow = list.path.is_ident("allow");
+        if !(allow || list.path.is_ident("expect")) {
+            return;
+        }
+        for lint in list_lints(list) {
+            self.found.push(LintException {
+                lint,
+                at,
+                crate_level,
+                allow,
+                conditional,
+            });
         }
     }
 }
@@ -108,8 +143,8 @@ fn attr_tokens(attr: &syn::Attribute) -> String {
 /// Lint paths named in `allow(..)`/`expect(..)`, skipping `reason = ".."`.
 /// Parsed as attribute syntax, so commas inside the reason string are not
 /// separators.
-fn attr_lints(attr: &syn::Attribute) -> Vec<String> {
-    let Ok(metas) = attr.parse_args_with(
+fn list_lints(list: &syn::MetaList) -> Vec<String> {
+    let Ok(metas) = list.parse_args_with(
         syn::punctuated::Punctuated::<syn::Meta, syn::Token![,]>::parse_terminated,
     ) else {
         return Vec::new();

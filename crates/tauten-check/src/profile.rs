@@ -71,6 +71,46 @@ pub fn agent_profile() -> String {
     out
 }
 
+/// Which lints a lint group may contain.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum GroupFamily {
+    /// Every lint (`warnings`).
+    Any,
+    /// Every clippy lint.
+    Clippy,
+    /// Every rustc lint.
+    Rustc,
+}
+
+/// Lint groups and the lints each may contain. An over-approximation: a
+/// clippy group is taken to contain every clippy lint of the profile, a
+/// rustc group every rustc lint, so an exception for a group is decided as
+/// if it named each of them.
+pub const LINT_GROUPS: &[(&str, GroupFamily)] = &[
+    ("warnings", GroupFamily::Any),
+    ("clippy::all", GroupFamily::Clippy),
+    ("clippy::correctness", GroupFamily::Clippy),
+    ("clippy::suspicious", GroupFamily::Clippy),
+    ("clippy::style", GroupFamily::Clippy),
+    ("clippy::complexity", GroupFamily::Clippy),
+    ("clippy::perf", GroupFamily::Clippy),
+    ("clippy::pedantic", GroupFamily::Clippy),
+    ("clippy::restriction", GroupFamily::Clippy),
+    ("clippy::nursery", GroupFamily::Clippy),
+    ("clippy::cargo", GroupFamily::Clippy),
+    ("unused", GroupFamily::Rustc),
+    ("nonstandard_style", GroupFamily::Rustc),
+    ("future_incompatible", GroupFamily::Rustc),
+    ("let_underscore", GroupFamily::Rustc),
+    ("rust_2018_idioms", GroupFamily::Rustc),
+    ("rust_2018_compatibility", GroupFamily::Rustc),
+    ("rust_2021_compatibility", GroupFamily::Rustc),
+    ("rust_2024_compatibility", GroupFamily::Rustc),
+    ("keyword_idents", GroupFamily::Rustc),
+    ("refining_impl_trait", GroupFamily::Rustc),
+    ("deprecated_safe", GroupFamily::Rustc),
+];
+
 /// One rule of the profile.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -385,6 +425,28 @@ impl Profile {
         self.lint_owner
             .get(lint)
             .and_then(|&index| self.rules.get(index))
+    }
+
+    /// Every rule an exception or manifest entry for `lint` may cover: the
+    /// owning rule for a profile lint; for a lint group, every rule that may
+    /// own one of its members ([`LINT_GROUPS`]); nothing otherwise.
+    #[must_use]
+    pub fn covered_by(&self, lint: &str) -> Vec<&Rule> {
+        if let Some(rule) = self.rule_for_lint(lint) {
+            return vec![rule];
+        }
+        let Some(&(_, family)) = LINT_GROUPS.iter().find(|(name, _)| *name == lint) else {
+            return Vec::new();
+        };
+        let member = |l: &String| match family {
+            GroupFamily::Any => true,
+            GroupFamily::Clippy => l.starts_with("clippy::"),
+            GroupFamily::Rustc => !l.starts_with("clippy::"),
+        };
+        self.rules
+            .iter()
+            .filter(|rule| rule.lints.iter().any(member))
+            .collect()
     }
 
     /// The level the profile assigns to `lint` in `tier`, if any.

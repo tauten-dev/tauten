@@ -280,9 +280,9 @@ fix = "Replace `#[allow(x)]` with `#[expect(x, reason = \"why this is safe here\
 family = "obligation"
 invariant = "Every lint exception is `#[expect]` with a reason."
 sees = "resolved"
-dominion = "Code expanded from macros defined in other crates (clippy skips it); code disabled by `cfg`; build scripts."
+dominion = "Code expanded from macros defined in other crates (clippy skips it). Inner attributes and `allow` inside `cfg_attr` are read by tauten itself, in `src/`, `tests/`, `benches/`, `examples/` and the build script."
 complete = true
-fixtures = ["rej-allow", "rej-file-allow"]
+fixtures = ["rej-allow", "rej-file-allow", "rej-cfg-attr-allow"]
 
 [[rule]]
 id = "TAU-X002"
@@ -295,7 +295,7 @@ fix = "Move the exception to the single item that needs it, with a reason."
 family = "obligation"
 invariant = "No crate-level `#![allow]`/`#![expect]` of a profile lint."
 sees = "source"
-dominion = "Attributes and items produced by macros; files outside a member's `src/`."
+dominion = "Attributes and items produced by macros. Read in `src/`, `tests/`, `benches/`, `examples/` and the build script, including inside `cfg_attr`; a lint group counts as every profile rule it may contain (an over-approximation)."
 complete = true
 fixtures = ["rej-crate-wide"]
 
@@ -323,11 +323,11 @@ enforced_by = "tauten"
 why = "Some rules admit no exceptions: stub macros anywhere, and any profile lint in a kernel crate, whose code must stay extractable and provable."
 fix = "Remove the `#[expect]`/`#[allow]` and fix the code it excused."
 family = "obligation"
-invariant = "No exception of a rule that admits none (any rule, in kernel crates)."
+invariant = "No exception of a rule that admits none (any rule, in kernel crates), and no conditional (`cfg_attr`) exception in kernel crates."
 sees = "source"
-dominion = "Attributes and items produced by macros; files outside a member's `src/`."
+dominion = "Attributes and items produced by macros. Read in `src/`, `tests/`, `benches/`, `examples/` and the build script, including inside `cfg_attr`; a lint group counts as every profile rule it may contain (an over-approximation)."
 complete = true
-fixtures = ["rej-kernel-exception", "rej-stub-excused"]
+fixtures = ["rej-kernel-exception", "rej-stub-excused", "rej-group-allow", "rej-test-exception"]
 
 # --------------------------------------------------------------- unsafe ---
 

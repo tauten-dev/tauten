@@ -4,10 +4,11 @@ use std::collections::BTreeMap;
 
 use tauten_check_kernel::effects::{self as kernel_effects, Verdict};
 use tauten_check_kernel::exception::{self, Excuse};
+use tauten_check_kernel::severity::Level as KernelLevel;
 
 use crate::diag::{Diagnostic, Severity};
 use crate::effects;
-use crate::profile::Profile;
+use crate::profile::{Profile, Rule};
 use crate::scan;
 use crate::tier::{Level, Tier};
 
@@ -20,6 +21,29 @@ pub struct SourceFile {
     pub text: String,
     /// Whether this is a crate root (`lib.rs`, `main.rs`, `bin/*.rs`).
     pub is_crate_root: bool,
+    /// Which part of the package the file belongs to.
+    pub kind: SourceKind,
+}
+
+/// Which part of a package a source file belongs to.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SourceKind {
+    /// Under `src/`: the library and binaries.
+    Src,
+    /// Under `tests/` or `benches/`: compiled only as test targets.
+    Test,
+    /// Under `examples/`.
+    Example,
+    /// The build script.
+    Build,
+}
+
+impl SourceKind {
+    /// Whether the file is compiled only as a test target.
+    #[must_use]
+    pub const fn is_test(self) -> bool {
+        matches!(self, Self::Test)
+    }
 }
 
 /// A lint level set in a Cargo manifest `[lints]` table.
@@ -220,11 +244,25 @@ impl Ctx<'_> {
         }
     }
 
+    /// TAU-X003, decided by the proved [`exception::loosens`] over every
+    /// rule the entry may cover.
     fn manifest_lints(&mut self, tier: Tier) {
         for lint in &self.member.manifest_lints {
-            let weakens = matches!(lint.level.as_str(), "allow" | "warn" | "expect");
-            let profile_level = self.profile.lint_level(&lint.name, tier);
-            if weakens && profile_level.is_some_and(Level::is_blocking) {
+            let setting = match lint.level.as_str() {
+                "allow" => exception::Setting::Allow,
+                "warn" => exception::Setting::Warn,
+                "expect" => exception::Setting::Expect,
+                "deny" => exception::Setting::Deny,
+                "forbid" => exception::Setting::Forbid,
+                _ => continue,
+            };
+            let levels: Vec<KernelLevel> = self
+                .profile
+                .covered_by(&lint.name)
+                .iter()
+                .filter_map(|rule| rule.level(tier).map(Level::kernel))
+                .collect();
+            if exception::loosens(setting, &levels) {
                 self.emit(
                     "TAU-X003",
                     Some(tier),
@@ -247,8 +285,11 @@ impl Ctx<'_> {
         if syn::parse_file(&file.text).is_ok() || clean(Input::Unparsed, false) {
             return;
         }
-        let mut rules = vec!["TAU-X002", "TAU-X004", "TAU-F001"];
-        if tier != Tier::Edge {
+        let mut rules = vec!["TAU-X002", "TAU-X004"];
+        if file.kind == SourceKind::Src {
+            rules.push("TAU-F001");
+        }
+        if tier != Tier::Edge && file.kind == SourceKind::Src {
             rules.push("TAU-A002");
         }
         if tier == Tier::Kernel && file.is_crate_root {
@@ -270,6 +311,12 @@ impl Ctx<'_> {
     fn sources(&mut self, tier: Tier) {
         for file in &self.member.sources {
             self.unparsed(tier, file);
+            if file.kind != SourceKind::Src {
+                // Outside `src/` (tests, benches, examples, the build
+                // script) only lint exceptions are read.
+                self.exceptions(tier, file);
+                continue;
+            }
             if file.is_crate_root {
                 self.crate_root(tier, file);
             }
@@ -319,12 +366,14 @@ impl Ctx<'_> {
     /// TAU-F001: facts from [`effects::facts`], decided by the proved
     /// [`kernel_effects::verdict`].
     fn effects(&mut self, tier: Tier) {
-        let texts: Vec<&str> = self
+        // Only the library and binaries: effects are a property of the API.
+        let src: Vec<&SourceFile> = self
             .member
             .sources
             .iter()
-            .map(|f| f.text.as_str())
+            .filter(|f| f.kind == SourceKind::Src)
             .collect();
+        let texts: Vec<&str> = src.iter().map(|f| f.text.as_str()).collect();
         for fact in effects::facts(&texts) {
             let derived = kernel_effects::derive(&fact.sources, fact.fallible, fact.asynchronous);
             let resolved = fact.unresolved.is_empty();
@@ -367,7 +416,7 @@ impl Ctx<'_> {
             let Some(rule) = self.profile.rule("TAU-F001") else {
                 return;
             };
-            let file = self.member.sources.get(fact.file).map(|f| f.path.clone());
+            let file = src.get(fact.file).map(|f| f.path.clone());
             let diag = Diagnostic::for_rule(rule, severity, &self.member.name, Some(tier), message)
                 .at(file, Some(fact.at.line), Some(fact.at.column));
             self.out.push(diag);
@@ -375,42 +424,82 @@ impl Ctx<'_> {
     }
 
     /// Lint exceptions, decided by the proved kernel
-    /// ([`exception::excuse`]). A lint has exactly one owning rule (the
-    /// profile rejects shared ownership), so the lint is blocking in `tier`
-    /// exactly when that rule's level there is blocking.
+    /// ([`exception::decide`]). An exception covers the rule owning its lint
+    /// (a lint has exactly one owning rule) or, for a lint group, every rule
+    /// that may own a member ([`Profile::covered_by`]). In test targets a
+    /// rule that does not apply to tests covers nothing.
     fn exceptions(&mut self, tier: Tier, file: &SourceFile) {
+        let test = file.kind.is_test();
         for exception in scan::lint_exceptions(&file.text).unwrap_or_default() {
             let lint = exception.lint.as_str();
-            // Clippy's `allow_attributes` skips inner attributes, so a
-            // file-level `#![allow]` would otherwise escape TAU-X001.
-            if exception.crate_level && exception.allow {
+            let at = Some((file.path.as_str(), exception.at));
+            // Clippy's `allow_attributes` skips inner attributes and cannot
+            // see an attribute whose `cfg_attr` is off, so tauten reports
+            // those `allow`s itself.
+            if exception.allow && (exception.crate_level || exception.conditional) {
+                let written = if exception.conditional {
+                    format!("`cfg_attr(.., allow({lint}))`")
+                } else {
+                    format!("file-level `#![allow({lint})]`")
+                };
                 self.emit(
                     "TAU-X001",
                     Some(tier),
                     format!(
-                        "file-level `#![allow({lint})]`: use `#![expect({lint}, reason = \"...\")]`, \
+                        "{written}: use `expect({lint}, reason = \"...\")`, \
                          or narrow it to the item that needs it"
                     ),
-                    Some((file.path.as_str(), exception.at)),
+                    at,
                 );
             }
-            let Some(rule) = self.profile.rule_for_lint(lint) else {
+            let rules: Vec<&Rule> = self
+                .profile
+                .covered_by(lint)
+                .into_iter()
+                .filter(|rule| rule.in_tests || !test)
+                .collect();
+            if rules.is_empty() {
                 continue;
+            }
+            let covered: Vec<exception::Covered> = rules
+                .iter()
+                .map(|rule| exception::Covered {
+                    allows: rule.exceptions,
+                    level: rule.level(tier).map(Level::kernel),
+                })
+                .collect();
+            let form = exception::Form {
+                crate_wide: exception.crate_level,
+                conditional: exception.conditional,
             };
-            let at = Some((file.path.as_str(), exception.at));
-            let level = rule.level(tier).map(Level::kernel);
-            match exception::excuse(rule.exceptions, tier.kernel(), level, exception.crate_level) {
+            let group = rules.len() > 1 || self.profile.rule_for_lint(lint).is_none();
+            let what = if group {
+                format!(
+                    "`{lint}` (a lint group that may cover {} profile rules)",
+                    rules.len()
+                )
+            } else {
+                format!("`{lint}` ({})", rules.first().map_or("", |r| r.id.as_str()))
+            };
+            match exception::decide(form, &covered, tier.kernel()) {
                 Excuse::Forbidden => {
-                    let message = format!(
-                        "exception for `{lint}` ({}) is not permitted in {tier} crates",
-                        rule.id
+                    let why = if exception.conditional && tier == Tier::Kernel {
+                        "a conditional (`cfg_attr`) exception is not permitted in kernel crates"
+                            .to_owned()
+                    } else {
+                        format!("is not permitted in {tier} crates")
+                    };
+                    self.emit(
+                        "TAU-X004",
+                        Some(tier),
+                        format!("exception for {what} {why}"),
+                        at,
                     );
-                    self.emit("TAU-X004", Some(tier), message, at);
                 }
                 Excuse::CrateWide => self.emit(
                     "TAU-X002",
                     Some(tier),
-                    format!("crate-wide exception for `{lint}`"),
+                    format!("crate-wide exception for {what}"),
                     at,
                 ),
                 Excuse::Allowed => {}
@@ -519,6 +608,7 @@ mod tests {
             path: "k/src/lib.rs".into(),
             text: "#![no_std]\n".into(),
             is_crate_root: true,
+            kind: SourceKind::Src,
         });
         let mut c = member("c", "core");
         c.workspace_deps.push("k".into());
@@ -528,6 +618,7 @@ mod tests {
             path: "e/src/main.rs".into(),
             text: "fn main() { let _a = Authority::acquire(); }".into(),
             is_crate_root: true,
+            kind: SourceKind::Src,
         });
         assert!(run(vec![k, c, e]).is_empty());
     }
@@ -548,6 +639,7 @@ mod tests {
             path: "k/src/lib.rs".into(),
             text: "#![no_std]".into(),
             is_crate_root: true,
+            kind: SourceKind::Src,
         });
         let mut c = member("c", "core");
         c.workspace_deps.push("e".into());
@@ -565,6 +657,7 @@ mod tests {
             path: "k/src/lib.rs".into(),
             text: "pub fn f() {}".into(),
             is_crate_root: true,
+            kind: SourceKind::Src,
         });
         assert_eq!(ids(&run(vec![k])), vec!["TAU-T003", "TAU-K003"]);
     }
@@ -576,12 +669,14 @@ mod tests {
             path: "k/src/lib.rs".into(),
             text: "#![no_std]\n#[expect(clippy::indexing_slicing, reason = \"x\")]\nfn f() {}\n#[expect(dead_code, reason = \"y\")]\nfn g() {}\n".into(),
             is_crate_root: true,
+            kind: SourceKind::Src,
         });
         let mut e = member("e", "edge");
         e.sources.push(SourceFile {
             path: "e/src/main.rs".into(),
             text: "#[expect(clippy::todo, reason = \"later\")]\nfn f() {}\n#[expect(clippy::unwrap_used, reason = \"ok\")]\nfn g() {}\n".into(),
             is_crate_root: true,
+            kind: SourceKind::Src,
         });
         let found = run(vec![k, e]);
         let lines: Vec<(&str, Option<u32>)> =
@@ -598,6 +693,7 @@ mod tests {
             path: "k/src/lib.rs".into(),
             text: "#![no_std]".into(),
             is_crate_root: true,
+            kind: SourceKind::Src,
         });
         let found = run(vec![k]);
         assert_eq!(found.len(), 1);
@@ -623,11 +719,13 @@ mod tests {
             path: "c/src/lib.rs".into(),
             text: "#![expect(clippy::indexing_slicing, reason = \"x\")]\npub fn f() { let _a = Authority::acquire(); } // for now\n".into(),
             is_crate_root: true,
+            kind: SourceKind::Src,
         });
         let found = run(vec![c]);
         assert_eq!(
             ids(&found),
-            vec!["TAU-X003", "TAU-X002", "TAU-A002", "TAU-S002"]
+            // `clippy::style` is a group that may cover blocking rules.
+            vec!["TAU-X003", "TAU-X003", "TAU-X002", "TAU-A002", "TAU-S002"]
         );
         assert!(found.iter().all(|d| d.krate == "c"));
         let s002 = found.last().expect("present");
@@ -698,6 +796,7 @@ mod unparsed_tests {
                 path: "k/src/lib.rs".to_owned(),
                 text: "#![no_std]\npub fn broken( {".to_owned(),
                 is_crate_root: true,
+                kind: SourceKind::Src,
             }],
             effects_required: false,
         };

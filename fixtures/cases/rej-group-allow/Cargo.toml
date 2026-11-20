@@ -1,0 +1,12 @@
+[package]
+name = "rej-group-allow"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[package.metadata.tauten]
+tier = "core"
+
+# T4: a lint group was not decided as the rules it may cover.
+[package.metadata.fixture]
+expect = ["TAU-X004"]

@@ -477,6 +477,26 @@ MUTANTS = (
            "    if crate_wide && blocking {",
            "    if crate_wide || blocking {",
            (T + "exception_spec",)),
+    # exception groups: a conditional exception accepted in a kernel crate
+    Mutant("conditional-allowed", "exception.rs",
+           "    if form.conditional && kernel {",
+           "    if form.conditional && kernel && false {",
+           (T + "decide_spec", T + "conditional_never_allowed_in_kernel", T + "group_never_weaker", T + "decide_single")),
+    # exception groups: an exception covering more than one rule (a group) is allowed
+    Mutant("group-allowed", "exception.rs",
+           "    while i < covered.len() {\n        if let Some(c) = covered.get(i) {\n            acc = worse(",
+           "    while i < covered.len() && covered.len() == 1 {\n        if let Some(c) = covered.get(i) {\n            acc = worse(",
+           (T + "worst_spec", T + "decide_spec", T + "group_never_weaker", T + "decide_single")),
+    # TAU-X003: the tier's levels ignored, any weakening entry reported
+    Mutant("loosens-ignores-level", "exception.rs",
+           "            found = found || is_blocking(*l);",
+           "            found = true;",
+           (T + "loosens_spec", T + "x003_iff")),
+    # TAU-X003: `expect` in a manifest not counted as weakening
+    Mutant("expect-not-weakening", "exception.rs",
+           "        Setting::Allow | Setting::Warn | Setting::Expect => true,\n        Setting::Deny | Setting::Forbid => false,",
+           "        Setting::Allow | Setting::Warn => true,\n        Setting::Expect | Setting::Deny | Setting::Forbid => false,",
+           (T + "weakens_spec", T + "loosens_spec", T + "x003_iff")),
 ) + RATCHET_MUTANTS + TABLE_MUTANTS + SUBSUME_MUTANTS + EFFECTS_MUTANTS + OUTCOME_MUTANTS + SPAN_MUTANTS + CONTROL_MUTANTS + BINDING_MUTANTS + BADGE_MUTANTS + REGISTRY_MUTANTS + ASSUMPTION_MUTANTS + HARDENING_MUTANTS + RULE_MUTANTS
 
 I = "Tauten.Instances."

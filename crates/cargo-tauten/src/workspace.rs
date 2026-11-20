@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
 use cargo_metadata::{DependencyKind, Metadata, MetadataCommand, Package, PackageId};
-use tauten_check::structure::{ManifestLint, Member, SourceFile, Workspace};
+use tauten_check::structure::{ManifestLint, Member, SourceFile, SourceKind, Workspace};
 
 /// A loaded workspace: cargo metadata plus the check model.
 pub struct Loaded {
@@ -106,7 +106,35 @@ fn member(
         .collect();
     let package_dir = manifest_path.parent().unwrap_or(root);
     let mut sources = Vec::new();
-    collect_sources(root, &package_dir.join("src"), &crate_roots, &mut sources)?;
+    for (dir, kind) in [
+        ("src", SourceKind::Src),
+        ("tests", SourceKind::Test),
+        ("benches", SourceKind::Test),
+        ("examples", SourceKind::Example),
+    ] {
+        collect_sources(
+            root,
+            &package_dir.join(dir),
+            &crate_roots,
+            kind,
+            &mut sources,
+        )?;
+    }
+    let build = package
+        .targets
+        .iter()
+        .find(|t| t.is_custom_build())
+        .map(|t| t.src_path.as_std_path().to_path_buf());
+    if let Some(path) = build.filter(|p| p.is_file()) {
+        let text =
+            fs::read_to_string(&path).with_context(|| format!("reading {}", path.display()))?;
+        sources.push(SourceFile {
+            path: relative(root, &path),
+            is_crate_root: false,
+            kind: SourceKind::Build,
+            text,
+        });
+    }
     Ok(Member {
         name: package.name.to_string(),
         tier_raw,
@@ -124,6 +152,7 @@ fn collect_sources(
     root: &Path,
     dir: &Path,
     crate_roots: &[PathBuf],
+    kind: SourceKind,
     out: &mut Vec<SourceFile>,
 ) -> Result<()> {
     if !dir.is_dir() {
@@ -136,13 +165,14 @@ fn collect_sources(
     entries.sort();
     for path in entries {
         if path.is_dir() {
-            collect_sources(root, &path, crate_roots, out)?;
+            collect_sources(root, &path, crate_roots, kind, out)?;
         } else if path.extension().is_some_and(|e| e == "rs") {
             let text =
                 fs::read_to_string(&path).with_context(|| format!("reading {}", path.display()))?;
             out.push(SourceFile {
                 path: relative(root, &path),
                 is_crate_root: crate_roots.contains(&path),
+                kind,
                 text,
             });
         }

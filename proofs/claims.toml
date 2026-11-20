@@ -63,6 +63,30 @@ mutants = ["warn-blocks", "kernel-excuses", "rule-flag-ignored", "crate-wide-any
 
 [[claim]]
 crate = "tauten-check-kernel"
+file = "crates/tauten-check-kernel/src/exception.rs"
+function = "worst"
+lean = "tauten_check_kernel.exception.worst"
+theorems = ["Tauten.Kernel.worst_spec"]
+mutants = ["group-allowed"]
+
+[[claim]]
+crate = "tauten-check-kernel"
+file = "crates/tauten-check-kernel/src/exception.rs"
+function = "decide"
+lean = "tauten_check_kernel.exception.decide"
+theorems = ["Tauten.Kernel.decide_spec", "Tauten.Kernel.conditional_never_allowed_in_kernel", "Tauten.Kernel.group_never_weaker", "Tauten.Kernel.decide_single"]
+mutants = ["conditional-allowed", "group-allowed"]
+
+[[claim]]
+crate = "tauten-check-kernel"
+file = "crates/tauten-check-kernel/src/exception.rs"
+function = "loosens"
+lean = "tauten_check_kernel.exception.loosens"
+theorems = ["Tauten.Kernel.weakens_spec", "Tauten.Kernel.loosens_spec", "Tauten.Kernel.x003_iff"]
+mutants = ["loosens-ignores-level", "expect-not-weakening"]
+
+[[claim]]
+crate = "tauten-check-kernel"
 file = "crates/tauten-check-kernel/src/ratchet.rs"
 function = "apply"
 lean = "tauten_check_kernel.ratchet.apply"

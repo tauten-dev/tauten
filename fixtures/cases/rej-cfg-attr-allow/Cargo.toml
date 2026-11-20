@@ -1,0 +1,12 @@
+[package]
+name = "rej-cfg-attr-allow"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[package.metadata.tauten]
+tier = "core"
+
+# T4: an exception inside `cfg_attr` was not read at all.
+[package.metadata.fixture]
+expect = ["TAU-X001"]

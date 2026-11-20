@@ -1,0 +1,12 @@
+[package]
+name = "rej-test-exception"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[package.metadata.tauten]
+tier = "core"
+
+# T4: files under `tests/` were not read.
+[package.metadata.fixture]
+expect = ["TAU-X004"]

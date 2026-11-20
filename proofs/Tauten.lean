@@ -20,3 +20,4 @@ import Tauten.Manifest
 import Tauten.Rule
 import Tauten.Machine
 import Tauten.Publish
+import Tauten.ExceptionGroup
