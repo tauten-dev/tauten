@@ -19,6 +19,7 @@ Updated 2026-11-19 (morning). Settled items are kept at the bottom for the recor
 | Discipline plan | `docs/DISCIPLINE-PROPOSAL.md` approved: D0, then X1-X3, then D1-D8 (2026-11-19) |
 | Verus / TLAPS | No adapters for now; claims format reserves the tool names (2026-11-19) |
 | Proofs image | Public on ghcr once the shared gate runs writfold and gripsack unchanged (2026-11-19) |
+| Roadmap | Accept only general, proved (or compiler-enforced) items that fit the vision; filed as issues #1-#38, ordered in `docs/ROADMAP.md`; K004 dropped for an extract-only stage (2026-11-19) |
 | Product shape | Fast checks on stable; deep checks in the pinned image at ship/nightly/release; "effects visible in signatures" (2026-11-19) |
 | Name | tauten (2026-11-18) |
 | License | MIT (2026-11-18) |
