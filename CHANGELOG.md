@@ -18,7 +18,10 @@
   the A5 permit), and a thin edge binary calling `run(caps, args)`. It
   passes `cargo tauten check` with no findings (tested); after
   `sh proofs/refresh.sh`, `cargo tauten proofs` records the claim `proved`
-  with both mutants killed (run once locally, 102 s).
+  with both mutants killed (run once locally, 102 s). Acceptance trial: 3
+  of 3 fresh Claude Sonnet 5.5 sessions given only the profile added a
+  feature to the template and passed `check` and the proof gate
+  (`docs/dry-runs/a12-profile-2026-11-20.md`; one request, $0.39).
 
 - `cargo tauten obligations [--list]` (D3, #37): in kernel crates,
   arithmetic and indexing findings (TAU-N001, TAU-N002, TAU-P003) are
