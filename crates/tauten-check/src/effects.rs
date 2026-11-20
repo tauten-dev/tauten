@@ -336,22 +336,16 @@ struct Env<'a> {
 }
 
 impl Env<'_> {
+    /// The capabilities a value bounded by `bounds` can carry. An
+    /// unbounded generic carries none.
     fn bounds(&self, name: &str, bounds: &[String]) -> Class {
         let mut class = Class::default();
-        let mut any = false;
         for bound in bounds {
             match bound.as_str() {
-                "Clock" => {
-                    class.join(Class::one(Source::Clock));
-                    any = true;
-                }
+                "Clock" => class.join(Class::one(Source::Clock)),
                 b if PLAIN_TRAITS.contains(&b) || SINK_TRAITS.contains(&b) => {}
                 b => class.join(Class::unknown(format!("{name}: {b}"))),
             }
-        }
-        if !any && bounds.is_empty() {
-            // An unbounded generic carries no capability it could use.
-            return Class::default();
         }
         class
     }
@@ -365,7 +359,6 @@ impl Env<'_> {
             syn::Type::Reference(r) => self.classify(&r.elem),
             syn::Type::Ptr(p) => self.classify(&p.elem),
             syn::Type::Paren(p) => self.classify(&p.elem),
-            syn::Type::Group(g) => self.classify(&g.elem),
             syn::Type::Slice(s) => self.classify(&s.elem),
             syn::Type::Array(a) => self.classify(&a.elem),
             syn::Type::Tuple(t) => {
@@ -385,9 +378,7 @@ impl Env<'_> {
                 self.bounds("dyn", &names)
             }
             syn::Type::Path(p) if p.qself.is_none() => self.path(&p.path),
-            syn::Type::Path(_) | syn::Type::Infer(_) | syn::Type::Macro(_) => {
-                Class::unknown(quote_type(ty))
-            }
+            // A qualified path, `_`, a macro, or a future kind.
             _ => Class::unknown(quote_type(ty)),
         }
     }
@@ -421,7 +412,7 @@ impl Env<'_> {
             "Dir" => return Class::one(Source::Dir),
             "ReadDir" => return Class::one(Source::ReadDir),
             "Net" => return Class::one(Source::Net),
-            "Self" if path.segments.len() == 1 => {
+            "Self" => {
                 return match self.self_ty {
                     Some(ty) => {
                         let ty = ty.clone();
@@ -497,7 +488,6 @@ fn declared(attrs: &[syn::Attribute]) -> Option<Option<Row>> {
     })?;
     let labels: Vec<String> = match &attr.meta {
         syn::Meta::Path(_) => Vec::new(),
-        syn::Meta::List(list) if list.tokens.is_empty() => Vec::new(),
         syn::Meta::List(_) => match attr.parse_args_with(
             syn::punctuated::Punctuated::<syn::Ident, syn::Token![,]>::parse_terminated,
         ) {
@@ -691,6 +681,112 @@ mod tests {
         assert_eq!(all.len(), 1);
         assert_eq!(decide(&all[0], true), Verdict::Error);
         assert_eq!(decide(&all[0], false), Verdict::Silent);
+    }
+
+    /// The capabilities and unresolved types of `x: <ty>` in a function
+    /// whose surrounding source is `extra`.
+    fn param(ty: &str, extra: &str) -> (Vec<Source>, bool) {
+        let all = facts(&[&format!("{extra}\npub fn f(x: {ty}) {{}}")]);
+        let f = all.iter().find(|f| f.name == "f").expect("f");
+        let mut sources = f.sources.clone();
+        sources.sort_by_key(|s| *s as u8);
+        sources.dedup();
+        (sources, !f.unresolved.is_empty())
+    }
+
+    #[test]
+    fn every_type_form_is_classified() {
+        use Source::{Clock, Dir, Env, Net, ReadDir};
+        let cases: &[(&str, &[Source], bool)] = &[
+            ("Env", &[Env], false),
+            ("Dir", &[Dir], false),
+            ("ReadDir", &[ReadDir], false),
+            ("Net", &[Net], false),
+            ("SystemClock", &[Clock], false),
+            ("&Env", &[Env], false),
+            ("*const Dir", &[Dir], false),
+            ("(Net)", &[Net], false),
+            ("&[ReadDir]", &[ReadDir], false),
+            ("[Dir; 2]", &[Dir], false),
+            ("(SystemClock, Net)", &[Clock, Net], false),
+            ("fn() -> u8", &[], false),
+            ("impl Clock", &[Clock], false),
+            ("&dyn Clock", &[Clock], false),
+            ("impl Iterator<Item = u8>", &[], false),
+            ("impl std::io::Write", &[], false),
+            ("impl Frobnicate", &[], true),
+            ("<u8 as Add>::Output", &[], true),
+            ("u64", &[], false),
+        ];
+        for (ty, sources, unresolved) in cases {
+            assert_eq!(param(ty, ""), (sources.to_vec(), *unresolved), "x: {ty}");
+        }
+    }
+
+    #[test]
+    fn crate_types_are_expanded() {
+        use Source::{Dir, Env};
+        let extra = "pub enum Mode { Plain, Scoped(Env) }\n\
+                     pub type Root = Dir;\n\
+                     pub mod inner { pub struct Wrapped { pub e: Env } }";
+        assert_eq!(param("Mode", extra), (vec![Env], false));
+        assert_eq!(param("Root", extra), (vec![Dir], false));
+        assert_eq!(param("Wrapped", extra), (vec![Env], false));
+        assert_eq!(param("<u8 as Tr>::Env", ""), (vec![], true));
+    }
+
+    #[test]
+    fn where_clauses_bound_the_named_parameter() {
+        let all = facts(&["pub fn f<T, U>(x: T) where T: Clock {}"]);
+        assert_eq!(all[0].sources, vec![Source::Clock]);
+        assert!(all[0].unresolved.is_empty());
+    }
+
+    #[test]
+    fn modules_and_impls_are_walked() {
+        let all = facts(&["#[cfg(unix)] mod m { pub fn g(e: &Env) {} }\n\
+             pub trait Tr { fn t(&self, e: &Env); }\n\
+             pub struct S;\n\
+             impl Tr for S { #[effects(env)] fn t(&self, e: &Env) {} }\n\
+             impl S { pub fn own(&self) {} #[effects(env)] fn private(&self, e: &Env) {} }"]);
+        let g = all
+            .iter()
+            .find(|f| f.name == "g")
+            .expect("g in a cfg(unix) module");
+        assert!(g.public);
+        let t = all
+            .iter()
+            .find(|f| f.name.ends_with("t"))
+            .expect("trait method");
+        assert!(
+            !t.public,
+            "trait methods are checked only when they declare effects"
+        );
+        let own = all
+            .iter()
+            .find(|f| f.name.ends_with("own"))
+            .expect("inherent method");
+        assert!(own.public);
+        let private = all
+            .iter()
+            .find(|f| f.name.ends_with("private"))
+            .expect("private method");
+        assert!(!private.public);
+    }
+
+    #[test]
+    fn generic_parameters_and_self_resolve_only_by_their_own_name() {
+        use Source::Clock;
+        let all = facts(&["pub fn f<T: Clock>(x: T, y: other::T) {}"]);
+        assert_eq!(all[0].sources, vec![Clock]);
+        assert!(
+            !all[0].unresolved.is_empty(),
+            "other::T is not the parameter T"
+        );
+        let all =
+            facts(&["pub struct Holder { c: SystemClock }\nimpl Holder { pub fn f(h: Self) {} }"]);
+        let f = all.iter().find(|f| f.name.ends_with("f")).expect("f");
+        assert_eq!(f.sources, vec![Clock], "{f:?}");
     }
 
     #[test]

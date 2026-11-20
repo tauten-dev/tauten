@@ -53,12 +53,16 @@ production calls. Everything below is trusted, not proved.
   reason names the change. Conservation is relative to the committed
   record: whoever reviews a commit that rewrites `claims.json` (or deletes
   it) is trusted to see a weakening in its diff, as for a baseline.
-- Named assumptions (A8): in projects using the proofs template, the
-  template's `Audit.lean` derives each theorem's tagged premises and a
-  witness's established assumptions (audit code, not proved; see the
-  template's `TRUST.md`); `cargo tauten proofs` decides with the proved
-  `assumption::assumptions_ok`. tauten's own claims rest on no assumption,
-  and its own `Audit.lean` does not run the derivation.
+- Named assumptions (A8): `Audit.lean` (tauten's own, and the template's)
+  derives each theorem's tagged premises and a witness's established
+  assumptions (audit code, not proved); `cargo tauten proofs` decides with
+  the proved `assumption::assumptions_ok`. tauten's publish claims (A7)
+  rest on the filesystem assumptions in `proofs/assumptions.toml`
+  (`FS.rename-atomic`, `FS.sync-file`, `FS.sync-dir`,
+  `FS.exclusive-create`): that a real filesystem behaves like a `Profile`
+  with those flags set is exactly what is assumed, and the model of
+  `proofs/Tauten/Durable.lean` (two names, durable and pending entries,
+  crashes keeping either) is trusted to describe one.
 
 ## What each scanner does not see (A2)
 
@@ -69,7 +73,7 @@ per rule. In short:
 | Reads | Rules | Does not see |
 |---|---|---|
 | `resolved` (rustc and clippy) | the lint rules (P, N, E, M, S001, X001, U, C002, O001, L001, K002, D001) and the ban-list rules (A000, A001, A002, G001, C001, K001, P005) | code expanded from macros defined in other crates (clippy skips it); `cfg`-disabled code; build scripts; for ban lists, APIs not on the list and dependency functions that wrap a banned one |
-| `source` (`syn`) | X002, X004, K003, F001, S002 | attributes and items produced by macros; files outside a member's `src/`. A file `syn` cannot parse is reported under each of these rules, never treated as clean |
+| `source` (`syn`) | X001 (inner and `cfg_attr` allows), X002, X004, K003, F001, S002 | attributes and items produced by macros. Exceptions are read in `src/`, `tests/`, `benches/`, `examples/` and the build script, including inside `cfg_attr`; a lint group counts as every profile rule it may contain. F001, A002 and S002 read `src/` only. A file `syn` cannot parse is reported under each rule that reads it, never treated as clean |
 | `manifest` | T001, T002, T003, X003, H001 | dev- and build-dependencies (T002, T003); settings from the environment or Cargo configs outside the workspace (H001) |
 | `record` | R001, R002 | the committed record itself; its diff is reviewed |
 | `translation` | K004 | kernel crates not listed in `[gate] crates` |
@@ -78,6 +82,22 @@ The two laws over these labels are proved (`tauten_check_kernel::rule`): a
 rule marked incomplete (today only S002, a text heuristic) never blocks, and
 an input a rule could not read is never clean. The labels themselves are
 reviewed text, not derived.
+
+## Which decisions are proved
+
+The decision every rule ends in is a proved kernel function; the facts it
+is given are not. Proved (`proofs/claims.toml`): tier order and dependency
+direction (T002), severity and finding severity, lint exceptions with
+groups and conditions (X002, X004, `exception::decide`), manifest lint
+tables (X003, `exception::loosens`), declared tier (T001), kernel
+dependency allowlist (T003), `no_std` (K003), overflow checks (H001),
+which compiler messages are findings, rule applicability to test targets
+and the exit verdict (`compiler::kept`, `applies`, `passes`), the baseline
+ratchet (R001), claim conservation (R002), proof subsumption, outcomes,
+badges and admission of a set of checks. Compiler-enforced: the
+capability, evidence, permit and refinement types (compile-fail tests in
+`crates/tauten/tests/ui`). Tested, not proved: every scanner that turns
+source or manifests into those facts, and the rendering.
 
 ## What tauten's own proofs additionally trust
 
@@ -93,8 +113,17 @@ reviewed text, not derived.
 
 ## Not covered at all
 
-Scanning (`syn` visitors), diagnostic mapping (clippy's message text),
-rendering, workspace loading, async contracts, and A002 (authority) are
-tested, not proved. No theorem is about a threat model: a proof of a
+Scanning (`syn` visitors), the conversion of cargo's JSON messages
+(checked against the pinned toolchain's recorded output in
+`crates/cargo-tauten/tests/golden/`), rendering, workspace loading, async
+contracts, and A002 (authority) are tested, not proved. The scanners'
+tests are themselves calibrated by mutation: the CI gate runs
+`cargo-mutants` over `scan.rs`, `effects.rs` and `manifest.rs` of
+`tauten-check` and requires every viable mutant to be killed by a test
+(147 mutants, 125 caught, 22 unviable, 0 surviving on 2026-11-20; one
+equivalent mutant is excluded with its reason in `.cargo/mutants.toml`).
+A killed mutant shows a test notices the change, not that the scanner
+reads every Rust construct: the per-rule `dominion` text above is the
+statement of what each one does not see. No theorem is about a threat model: a proof of a
 decision against its own specification does not show the specification is
 the right one.

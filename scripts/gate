@@ -36,6 +36,15 @@ cargo run --locked --quiet -p cargo-tauten -- tauten generated --only rules \
 step "benchmark tasks: admission criteria (reference/null/sloppy agents)"
 scripts/bench-validate
 
+step "scanner mutation gate: every mutant of the fact extraction is killed (T7)"
+# The proved kernel decides; these scanners produce its facts. Zero
+# surviving mutants; equivalent ones are listed with reasons in
+# .cargo/mutants.toml.
+scripts/mutants --file crates/tauten-check/src/scan.rs \
+  --file crates/tauten-check/src/effects.rs \
+  --file crates/tauten-check/src/manifest.rs \
+  --jobs "${TAUTEN_MUTANT_JOBS:-$(nproc)}"
+
 step "dependencies: licenses, advisories, sources"
 cargo deny --locked check
 

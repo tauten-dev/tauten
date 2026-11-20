@@ -395,6 +395,15 @@ mod tests {
             no_std("#![cfg_attr(test, allow(dead_code))]\n"),
             NoStd::Absent
         );
+        assert_eq!(
+            no_std("#![cfg_attr(not(test), some_tool)]\n"),
+            NoStd::Absent
+        );
+        assert_eq!(
+            no_std("#![cfg_attr(unix, tool(x, no_std))]\n"),
+            NoStd::Absent
+        );
+        assert_eq!(no_std("#![cfg_attr(not(test), no_std)]\n"), NoStd::NotTest);
     }
 
     #[test]
@@ -419,6 +428,25 @@ mod tests {
     fn comment_starting_exactly_at_a_literal_end_is_a_comment() {
         let found = placeholder_comments("let s = (\"x\"// todo\n);\n");
         assert_eq!(found.len(), 1);
+    }
+
+    #[test]
+    fn exceptions_inside_cfg_attr_are_conditional() {
+        let src = "#![cfg_attr(not(test), allow(clippy::a))]\n\
+                   #[cfg_attr(unix, cfg_attr(test, expect(clippy::b, reason = \"x, y\")))]\n\
+                   fn f() {}\n";
+        let found: Vec<_> = lint_exceptions(src)
+            .expect("parses")
+            .into_iter()
+            .map(|e| (e.lint, e.crate_level, e.allow, e.conditional))
+            .collect();
+        assert_eq!(
+            found,
+            vec![
+                ("clippy::a".to_owned(), true, true, true),
+                ("clippy::b".to_owned(), false, false, true),
+            ]
+        );
     }
 
     #[test]

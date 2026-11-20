@@ -4,4 +4,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 out="${CARGO_TARGET_DIR:-target}/mutants"
+# Each parallel job must build in its own copy's target directory: with the
+# image's shared CARGO_TARGET_DIR, jobs would test each other's binaries.
+unset CARGO_TARGET_DIR
 cargo mutants --cargo-arg=--locked --package tauten-check --output "$out" "$@"

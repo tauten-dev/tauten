@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- Scanner mutation gate and a rewritten `proofs/TRUST.md` (T7, #34). The CI
+  gate runs `cargo-mutants` over the fact extraction (`scan.rs`,
+  `effects.rs`, `manifest.rs`) and requires zero survivors: 147 mutants,
+  125 caught, 22 unviable. New unit tests cover every type form the effect
+  classifier reads, crate type expansion, where clauses, walked modules
+  and impls, and `cfg_attr` exceptions; two branches that no input could
+  reach were removed, one equivalent mutant is excluded with its reason.
+  `scripts/mutants` now builds each parallel job in its own target
+  directory (they used to share the image's, and tested each other's
+  binaries). `TRUST.md` lists what is proved, compiler-enforced and tested,
+  and what each scanner does not see.
+
 - Evidence that cannot go stale (A5, #9). `#[evidence(subject = T,
   exclusive)]` adds `mint_exclusive`, returning a `Permit` that holds the
   only `&mut T`: check and act are one chained call (`Permit::act`);

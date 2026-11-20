@@ -1,0 +1,8 @@
+# cargo-mutants configuration (scripts/mutants). Each exclusion is an
+# equivalent mutant, with the reason it cannot be killed.
+exclude_re = [
+    # `stronger` picks the higher-ranked no_std declaration; ranks are equal
+    # only for equal declarations (`Unparsed` is never passed in), so `>`
+    # and `>=` return the same value.
+    "scan.rs.*replace > with >= in stronger",
+]
