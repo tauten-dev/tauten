@@ -170,6 +170,23 @@ def claims : List Name := [
   ``Tauten.Instances.publish_reachable_model,
   ``Tauten.Instances.publish_inv,
   ``Tauten.Instances.publish_discharged,
+  -- atomic publish under named filesystem assumptions (A7)
+  ``Tauten.Machine.rsys_of_model,
+  ``Tauten.Durable.publish_step_model,
+  ``Tauten.Durable.publish_old_or_new,
+  ``Tauten.Durable.publish_durable_on_done,
+  ``Tauten.Durable.durable_model,
+  ``Tauten.Durable.publish_stops_on_failure,
+  ``Tauten.Durable.publish_frame,
+  ``Tauten.Durable.create_new_never_replaces,
+  ``Tauten.Durable.publish_create_step_model,
+  ``Tauten.Durable.profile_mono,
+  ``Tauten.Durable.crash_characterisation,
+  ``Tauten.Durable.posix_satisfies,
+  ``Tauten.Durable.posix_done_reachable,
+  ``Tauten.Durable.old_or_new_needs_rename_atomic,
+  ``Tauten.Durable.old_or_new_needs_sync_file,
+  ``Tauten.Durable.durable_needs_sync_dir,
   -- the macros' generated code, per instance (P3)
   ``Tauten.Instances.percent_try_new_shape,
   ``Tauten.Instances.percent_try_new_ok_iff,
@@ -384,9 +401,13 @@ def reviewedFunctions : List Name := [
   ``tauten_proof_instances.tauten.publish.step,
   ``tauten_proof_instances.tauten.publish.holds_temp,
   ``tauten_proof_instances.tauten.publish.terminal,
+  ``tauten_proof_instances.tauten.publish.create_step,
+  ``tauten_proof_instances.tauten.publish.durable,
   ``tauten_proof_instances.machines.publish_step,
   ``tauten_proof_instances.machines.publish_holds_temp,
   ``tauten_proof_instances.machines.publish_terminal,
+  ``tauten_proof_instances.machines.publish_create_step,
+  ``tauten_proof_instances.machines.publish_durable,
   ``tauten_proof_instances.contracts.scale.closure.Insts.CoreOpsFunctionFnTupleResultU32OpError.call,
   ``tauten_proof_instances.contracts.scale.closure_1.Insts.CoreOpsFunctionFnOnceTupleShared1U32Bool.call_once,
   ``tauten_proof_instances.contracts.share,
@@ -466,6 +487,85 @@ def auditAxioms : CommandElabM Unit := do
   logInfo m!"AXIOM_AUDIT ok: {sorted.size} theorems, {claims.length} required claims, axioms ⊆ {allowedAxioms}"
 
 run_cmd auditAxioms
+
+/-! ## Named assumptions (A8)
+
+For every audited theorem, the named assumptions (`@[tauten_assumption
+"ID"]`) its hypotheses mention, through definitions under `Tauten`, are
+printed as `PREMISES <theorem>: [IDs]`. A theorem with no tagged hypothesis
+whose conclusion is a tagged proposition, a conjunction of them or an
+existential over them (a witness that the assumptions can hold together) is
+printed as `ESTABLISHES <theorem>: [IDs]`. Same derivation as the proofs
+template's `Audit.lean`.
+-/
+
+/-- Whether `decl` is declared in a `Tauten` module. -/
+def inTauten (env : Environment) (decl : Name) : Bool :=
+  match env.getModuleIdxFor? decl with
+  | some idx => (`Tauten).isPrefixOf env.header.moduleNames[idx.toNat]!
+  | none => false
+
+/-- The assumption IDs mentioned by `e`, unfolding definitions declared in
+`Tauten` modules (never theorems, never other libraries). -/
+def assumptionsIn (env : Environment) (e : Expr) : Array String := Id.run do
+  let mut seen : NameSet := {}
+  let mut todo : Array Name := e.getUsedConstants
+  let mut ids : Array String := #[]
+  while h : todo.size > 0 do
+    let c := todo[todo.size - 1]
+    todo := todo.pop
+    if seen.contains c then continue
+    seen := seen.insert c
+    if let some id := tautenAssumptionAttr.getParam? env c then
+      unless ids.contains id do ids := ids.push id
+    else if inTauten env c then
+      if let some (.defnInfo d) := env.find? c then
+        todo := todo ++ d.value.getUsedConstants
+  return ids.qsort (· < ·)
+
+/-- The IDs a conclusion establishes: a tagged proposition, a conjunction
+or an existential of such. -/
+partial def establishedBy (env : Environment) (e : Expr) : MetaM (Array String) := do
+  let e ← whnfR e
+  if e.isAppOfArity ``And 2 then
+    return (← establishedBy env e.appFn!.appArg!) ++ (← establishedBy env e.appArg!)
+  if e.isAppOfArity ``Exists 2 then
+    let body := e.appArg!
+    if let .lam n ty b bi := body then
+      return ← withLocalDecl n bi ty fun x => establishedBy env (b.instantiate1 x)
+    return #[]
+  let fn := e.getAppFn
+  if fn.isConst then
+    if let some id := tautenAssumptionAttr.getParam? env fn.constName! then
+      return #[id]
+  return #[]
+
+/-- (premise IDs, established IDs) of a theorem's statement. -/
+def assumptionFacts (env : Environment) (type : Expr) : MetaM (Array String × Array String) :=
+  forallTelescope type fun xs body => do
+    let mut premises : Array String := #[]
+    for x in xs do
+      let t ← inferType x
+      if ← isProp t then
+        for id in assumptionsIn env t do
+          unless premises.contains id do premises := premises.push id
+    let sorted := premises.qsort (· < ·)
+    if sorted.isEmpty then
+      let est := (← establishedBy env body).qsort (· < ·)
+      return (sorted, est.toList.eraseDups.toArray)
+    return (sorted, #[])
+
+def auditAssumptions : CommandElabM Unit := do
+  let env ← getEnv
+  for decl in auditedTheorems env do
+    if let some info := env.find? decl then
+      let (premises, established) ← liftTermElabM (assumptionFacts env info.type)
+      unless premises.isEmpty do
+        logInfo m!"PREMISES {decl}: {premises.toList}"
+      unless established.isEmpty do
+        logInfo m!"ESTABLISHES {decl}: {established.toList}"
+
+run_cmd auditAssumptions
 
 /-- The crates whose translation is audited. -/
 def extractedCrates : List Name := [`tauten_check_kernel, `tauten_proof_instances]

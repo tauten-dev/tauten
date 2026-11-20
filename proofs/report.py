@@ -16,6 +16,7 @@ import sys
 ALLOWED = {"propext", "Classical.choice", "Quot.sound"}
 ERROR = re.compile(r"^error:\s*(?P<file>[^\s:]+\.lean):\d+:\d+:", re.M)
 AXIOMS = re.compile(r"AXIOMS (?P<name>\S+): \[(?P<axioms>[^\]]*)\]", re.S)
+PREMISES = re.compile(r"(?P<kind>PREMISES|ESTABLISHES) (?P<name>\S+): \[(?P<ids>[^\]]*)\]", re.S)
 
 
 def emit(**fields) -> None:
@@ -31,6 +32,10 @@ def lake(log: str, status: int) -> int:
     for match in AXIOMS.finditer(log):
         axioms = {a.strip() for a in match.group("axioms").split(",") if a.strip()}
         emit(theorem=match.group("name"), status="ok" if axioms <= ALLOWED else "fail")
+    for match in PREMISES.finditer(log):
+        ids = [i.strip() for i in match.group("ids").split(",") if i.strip()]
+        key = "premises" if match.group("kind") == "PREMISES" else "establishes"
+        emit(theorem=match.group("name"), **{key: ids})
     emit(stage="audit", status="ok" if status == 0 else "fail")
     return 0 if status == 0 else 1
 

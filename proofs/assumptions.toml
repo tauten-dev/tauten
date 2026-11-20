@@ -1,0 +1,24 @@
+# Named assumptions about the filesystem that tauten's publish claims rest
+# on (`assumes` in proofs/claims.toml). Each is a flag of the `Profile` in
+# proofs/Tauten/Durable.lean, tagged @[tauten_assumption "ID"]; the audit
+# derives which theorems use it. None is an axiom.
+
+[[assumption]]
+id = "FS.rename-atomic"
+statement = "Renaming a file over another replaces the target in one step: no reader, and no crash, sees the target missing."
+scope = "POSIX rename(2) on local filesystems; not guaranteed on some network filesystems"
+
+[[assumption]]
+id = "FS.sync-file"
+statement = "When fsync on a file reports success, its contents survive a crash."
+scope = "local filesystems with honest write barriers"
+
+[[assumption]]
+id = "FS.sync-dir"
+statement = "When fsync on a directory reports success, its entries (a completed rename) survive a crash."
+scope = "Linux local filesystems; macOS needs F_FULLFSYNC"
+
+[[assumption]]
+id = "FS.exclusive-create"
+statement = "A no-replace rename (renameat2 RENAME_NOREPLACE) fails when the target exists, atomically."
+scope = "Linux with renameat2 support on the filesystem"

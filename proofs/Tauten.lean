@@ -23,3 +23,5 @@ import Tauten.Publish
 import Tauten.ExceptionGroup
 import Tauten.Layout
 import Tauten.Compiler
+import Tauten.TautenAssumption
+import Tauten.Durable

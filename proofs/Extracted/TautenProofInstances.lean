@@ -127,11 +127,12 @@ inductive tauten.publish.Command where
 | WriteTemp : tauten.publish.Command
 | SyncTemp : tauten.publish.Command
 | Rename : tauten.publish.Command
+| RenameNoReplace : tauten.publish.Command
 | SyncDir : tauten.publish.Command
 | RemoveTemp : tauten.publish.Command
 
 /-- [tauten::publish::step]:
-    Source: 'crates/tauten/src/publish.rs', lines 66:0-66:65
+    Source: 'crates/tauten/src/publish.rs', lines 69:0-69:65
     Name pattern: [tauten::publish::step]
     Visibility: public -/
 @[rust_fun "tauten::publish::step"]
@@ -192,8 +193,32 @@ def tauten.publish.step
     | tauten.publish.Event.Ok => ok (phase, tauten.publish.Command.Nothing)
     | tauten.publish.Event.Err => ok (phase, tauten.publish.Command.Nothing)
 
+/-- [tauten::publish::create_step]:
+    Source: 'crates/tauten/src/publish.rs', lines 102:0-102:72
+    Name pattern: [tauten::publish::create_step]
+    Visibility: public -/
+@[rust_fun "tauten::publish::create_step"]
+def tauten.publish.create_step
+  (phase : tauten.publish.Phase) (event : tauten.publish.Event) :
+  Result (tauten.publish.Phase × tauten.publish.Command)
+  := do
+  let (next, c) ← tauten.publish.step phase event
+  match c with
+  | tauten.publish.Command.Nothing => ok (next, tauten.publish.Command.Nothing)
+  | tauten.publish.Command.WriteTemp =>
+    ok (next, tauten.publish.Command.WriteTemp)
+  | tauten.publish.Command.SyncTemp =>
+    ok (next, tauten.publish.Command.SyncTemp)
+  | tauten.publish.Command.Rename =>
+    ok (next, tauten.publish.Command.RenameNoReplace)
+  | tauten.publish.Command.RenameNoReplace =>
+    ok (next, tauten.publish.Command.RenameNoReplace)
+  | tauten.publish.Command.SyncDir => ok (next, tauten.publish.Command.SyncDir)
+  | tauten.publish.Command.RemoveTemp =>
+    ok (next, tauten.publish.Command.RemoveTemp)
+
 /-- [tauten::publish::holds_temp]:
-    Source: 'crates/tauten/src/publish.rs', lines 96:0-96:45
+    Source: 'crates/tauten/src/publish.rs', lines 111:0-111:45
     Name pattern: [tauten::publish::holds_temp]
     Visibility: public -/
 @[rust_fun "tauten::publish::holds_temp"]
@@ -210,7 +235,7 @@ def tauten.publish.holds_temp
   | tauten.publish.Phase.Failed => ok false
 
 /-- [tauten::publish::terminal]:
-    Source: 'crates/tauten/src/publish.rs', lines 105:0-105:43
+    Source: 'crates/tauten/src/publish.rs', lines 120:0-120:43
     Name pattern: [tauten::publish::terminal]
     Visibility: public -/
 @[rust_fun "tauten::publish::terminal"]
@@ -224,6 +249,22 @@ def tauten.publish.terminal (phase : tauten.publish.Phase) : Result Bool := do
   | tauten.publish.Phase.Cleaning => ok false
   | tauten.publish.Phase.Done => ok true
   | tauten.publish.Phase.Failed => ok true
+
+/-- [tauten::publish::durable]:
+    Source: 'crates/tauten/src/publish.rs', lines 136:0-136:42
+    Name pattern: [tauten::publish::durable]
+    Visibility: public -/
+@[rust_fun "tauten::publish::durable"]
+def tauten.publish.durable (phase : tauten.publish.Phase) : Result Bool := do
+  match phase with
+  | tauten.publish.Phase.Idle => ok false
+  | tauten.publish.Phase.Writing => ok false
+  | tauten.publish.Phase.Written => ok false
+  | tauten.publish.Phase.Synced => ok false
+  | tauten.publish.Phase.Renamed => ok false
+  | tauten.publish.Phase.Cleaning => ok false
+  | tauten.publish.Phase.Done => ok true
+  | tauten.publish.Phase.Failed => ok false
 
 /-- Trait declaration: [tauten::refine::sealed::Sealed]
     Source: 'crates/tauten/src/refine.rs', lines 18:4-18:20
@@ -628,6 +669,21 @@ def machines.publish_holds_temp
 def machines.publish_terminal
   (phase : tauten.publish.Phase) : Result Bool := do
   tauten.publish.terminal phase
+
+/-- [tauten_proof_instances::machines::publish_create_step]:
+    Source: 'crates/tauten-proof-instances/src/machines.rs', lines 26:0-28:1
+    Visibility: public -/
+def machines.publish_create_step
+  (phase : tauten.publish.Phase) (event : tauten.publish.Event) :
+  Result (tauten.publish.Phase × tauten.publish.Command)
+  := do
+  tauten.publish.create_step phase event
+
+/-- [tauten_proof_instances::machines::publish_durable]:
+    Source: 'crates/tauten-proof-instances/src/machines.rs', lines 32:0-34:1
+    Visibility: public -/
+def machines.publish_durable (phase : tauten.publish.Phase) : Result Bool := do
+  tauten.publish.durable phase
 
 /-- [tauten_proof_instances::refined::__tauten_percent::Percent]
     Source: 'crates/tauten-proof-instances/src/refined.rs', lines 4:0-4:33

@@ -2,6 +2,27 @@
 
 ## Unreleased
 
+- Atomic publish, proved (A7, #11). `proofs/Tauten/Durable.lean` runs the
+  publish machine against a filesystem model with crashes; each filesystem
+  guarantee is a switchable flag and a named assumption
+  (`proofs/assumptions.toml`): `FS.rename-atomic`, `FS.sync-file`,
+  `FS.sync-dir`, `FS.exclusive-create`. Proved over the extracted steps:
+  `publish_old_or_new` (a reader, and a reader after any crash, sees the old
+  or the new content; under rename-atomic and sync-file),
+  `publish_durable_on_done` (adding sync-dir, `tauten::publish::durable`
+  phases survive any crash with the new content),
+  `create_new_never_replaces` (under exclusive-create, for the new
+  `tauten::publish::create_step`, which moves with `RenameNoReplace`),
+  `publish_stops_on_failure` and `publish_frame` (no assumption),
+  `profile_mono` and `crash_characterisation`. One profile satisfies every
+  assumption (`posix_satisfies`) and reaches `Done`; three necessity
+  theorems show each property failing with its guarantee switched off.
+  Mutants `skip-sync`, `failure-ignored`, `durable-too-early`,
+  `replace-under-create-new`, with `rename-before-sync` from A6. tauten's
+  own proof gate now derives each theorem's assumptions (`PREMISES`,
+  `ESTABLISHES`), as the template's does; the machine library gains
+  `RSysReachable` and `rsys_of_model` for extracted steps.
+
 - `cargo tauten obligations [--list]` (D3, #37): in kernel crates,
   arithmetic and indexing findings (TAU-N001, TAU-N002, TAU-P003) are
   listed as proof obligations: proved (subsumed by a recorded proof that the

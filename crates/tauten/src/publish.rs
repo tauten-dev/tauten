@@ -55,6 +55,9 @@ pub enum Command {
     SyncTemp,
     /// Rename the temporary file over the target.
     Rename,
+    /// Rename the temporary file to the target only if no target exists
+    /// (`renameat2` with `RENAME_NOREPLACE`); fails otherwise.
+    RenameNoReplace,
     /// Sync the directory, making the rename durable.
     SyncDir,
     /// Remove the temporary file.
@@ -91,6 +94,18 @@ pub const fn step(phase: Phase, event: Event) -> (Phase, Command) {
     }
 }
 
+/// One step of a create-new publish: the same protocol, but the final move
+/// never replaces an existing target ([`Command::RenameNoReplace`]). If a
+/// target appeared since the check, the move fails and the publish cleans
+/// up like any other failure.
+#[must_use]
+pub const fn create_step(phase: Phase, event: Event) -> (Phase, Command) {
+    match step(phase, event) {
+        (next, Command::Rename) => (next, Command::RenameNoReplace),
+        other => other,
+    }
+}
+
 /// Whether the machine is responsible for a temporary file in `phase`.
 #[must_use]
 pub const fn holds_temp(phase: Phase) -> bool {
@@ -114,6 +129,23 @@ pub const fn terminal(phase: Phase) -> bool {
     }
 }
 
+/// Whether the new content is durable in `phase`: only once the publish is
+/// `Done` (the directory sync reported success). Proved in
+/// `proofs/Tauten/Durable.lean` under named filesystem assumptions.
+#[must_use]
+pub const fn durable(phase: Phase) -> bool {
+    match phase {
+        Phase::Done => true,
+        Phase::Idle
+        | Phase::Writing
+        | Phase::Written
+        | Phase::Synced
+        | Phase::Renamed
+        | Phase::Cleaning
+        | Phase::Failed => false,
+    }
+}
+
 /// The publish protocol as a [`Machine`].
 #[derive(Debug, Clone, Copy)]
 pub struct Publish;
@@ -124,6 +156,19 @@ impl Machine for Publish {
     type Command = Command;
     fn step(state: Phase, event: Event) -> (Phase, Command) {
         step(state, event)
+    }
+}
+
+/// The create-new publish protocol as a [`Machine`].
+#[derive(Debug, Clone, Copy)]
+pub struct CreateNew;
+
+impl Machine for CreateNew {
+    type State = Phase;
+    type Event = Event;
+    type Command = Command;
+    fn step(state: Phase, event: Event) -> (Phase, Command) {
+        create_step(state, event)
     }
 }
 
@@ -180,5 +225,23 @@ mod tests {
             [Command::RemoveTemp, Command::RemoveTemp, Command::Nothing]
         );
         assert!(!holds_temp(end) && terminal(end));
+    }
+
+    #[test]
+    fn create_new_never_issues_a_replacing_rename() {
+        let (end, commands) = run::<CreateNew>(
+            Phase::Idle,
+            [Event::Start, Event::Ok, Event::Ok, Event::Ok, Event::Ok],
+        );
+        assert_eq!(end, Phase::Done);
+        assert!(commands.contains(&Command::RenameNoReplace));
+        assert!(!commands.contains(&Command::Rename));
+        // A target that appeared meanwhile: the move fails, and the
+        // publish cleans up.
+        let (end, _) = run::<CreateNew>(
+            Phase::Idle,
+            [Event::Start, Event::Ok, Event::Ok, Event::Err, Event::Ok],
+        );
+        assert_eq!(end, Phase::Failed);
     }
 }

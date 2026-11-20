@@ -88,6 +88,7 @@ def interpretD : Disk → Cmd → Disk → Prop
   | _, .WriteTemp, d' => d'.temp = true ∨ d'.lastOk = false
   | d, .SyncTemp, d' => d'.temp = d.temp
   | _, .Rename, d' => (d'.lastOk = true ∧ d'.temp = false) ∨ d'.lastOk = false
+  | _, .RenameNoReplace, d' => (d'.lastOk = true ∧ d'.temp = false) ∨ d'.lastOk = false
   | d, .SyncDir, d' => d'.temp = d.temp
   | _, .RemoveTemp, d' => (d'.lastOk = true ∧ d'.temp = false) ∨ d'.lastOk = false
 

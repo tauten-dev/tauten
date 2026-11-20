@@ -5,7 +5,7 @@
 # proofs/claims.json, which is the website's badge data. Claims of
 # tauten-proof-instances are about the macros' expansion for these
 # instances only: label them "Proved for listed instances".
-version = 1
+version = 2
 
 [gate]
 command = ["sh", "proofs/run.sh"]
@@ -373,8 +373,8 @@ crate = "tauten-proof-instances"
 file = "crates/tauten-proof-instances/src/machines.rs"
 function = "publish_step"
 lean = "tauten_proof_instances.machines.publish_step"
-theorems = ["Tauten.Instances.publish_step_model", "Tauten.Instances.publish_inv", "Tauten.Instances.publish_discharged"]
-mutants = ["cleanup-skipped", "rename-before-sync"]
+theorems = ["Tauten.Instances.publish_step_model", "Tauten.Instances.publish_inv", "Tauten.Instances.publish_discharged", "Tauten.Durable.publish_stops_on_failure", "Tauten.Durable.publish_frame"]
+mutants = ["cleanup-skipped", "rename-before-sync", "failure-ignored"]
 
 [[claim]]
 crate = "tauten-check-kernel"
@@ -423,3 +423,35 @@ function = "passes"
 lean = "tauten_check_kernel.compiler.passes"
 theorems = ["Tauten.Kernel.passes_spec", "Tauten.Kernel.check_passes_iff", "Tauten.Kernel.warnings_never_fail"]
 mutants = ["warning-fails"]
+
+[[claim]]
+crate = "tauten"
+file = "crates/tauten/src/publish.rs"
+function = "step"
+lean = "tauten_proof_instances.tauten.publish.step"
+theorems = ["Tauten.Durable.publish_old_or_new"]
+assumes = ["FS.rename-atomic", "FS.sync-file"]
+witness = "Tauten.Durable.posix_satisfies"
+necessity = ["Tauten.Durable.old_or_new_needs_rename_atomic", "Tauten.Durable.old_or_new_needs_sync_file"]
+mutants = ["skip-sync", "rename-before-sync", "failure-ignored"]
+
+[[claim]]
+crate = "tauten"
+file = "crates/tauten/src/publish.rs"
+function = "durable"
+lean = "tauten_proof_instances.tauten.publish.durable"
+theorems = ["Tauten.Durable.publish_durable_on_done", "Tauten.Durable.durable_model"]
+assumes = ["FS.rename-atomic", "FS.sync-dir", "FS.sync-file"]
+witness = "Tauten.Durable.posix_satisfies"
+necessity = ["Tauten.Durable.durable_needs_sync_dir", "Tauten.Durable.posix_done_reachable"]
+mutants = ["durable-too-early", "skip-sync"]
+
+[[claim]]
+crate = "tauten"
+file = "crates/tauten/src/publish.rs"
+function = "create_step"
+lean = "tauten_proof_instances.tauten.publish.create_step"
+theorems = ["Tauten.Durable.create_new_never_replaces", "Tauten.Durable.publish_create_step_model"]
+assumes = ["FS.exclusive-create"]
+witness = "Tauten.Durable.posix_satisfies"
+mutants = ["replace-under-create-new"]

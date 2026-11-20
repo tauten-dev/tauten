@@ -20,3 +20,15 @@ pub const fn publish_holds_temp(phase: Phase) -> bool {
 pub const fn publish_terminal(phase: Phase) -> bool {
     publish::terminal(phase)
 }
+
+/// One step of [`tauten::publish::create_step`].
+#[must_use]
+pub const fn publish_create_step(phase: Phase, event: Event) -> (Phase, Command) {
+    publish::create_step(phase, event)
+}
+
+/// [`tauten::publish::durable`].
+#[must_use]
+pub const fn publish_durable(phase: Phase) -> bool {
+    publish::durable(phase)
+}

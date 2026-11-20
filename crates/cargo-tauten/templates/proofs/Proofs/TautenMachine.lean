@@ -13,7 +13,8 @@ event, command) is proved once here, generically:
 * `RMachine`, `RReachable`, `rinv_of_step`: the same for a step function as
   Aeneas extracts it, returning `Result (S × C)`; the per-step obligation is
   a Hoare triple over the extracted function.
-* `World` and `SysReachable`: the machine run against a world that
+* `World` and `SysReachable` (`RSysReachable` and `rsys_of_model` for an
+  extracted step): the machine run against a world that
   interprets its commands, delivers its events, and may take adversary
   steps (a crash, a delay) at any time; `sys_inv_of_step` is the induction
   for the pair.
@@ -159,6 +160,33 @@ theorem sys_inv_of_step (m : Machine S E C) (w : World E C W) (init : S × W →
   | init x hx => exact h0 x hx
   | step s v v' e _ hd hi ih => exact hstep s v v' e ih hd hi
   | adversary s v v' _ ha ih => exact hadv s v v' ih ha
+
+/-- Reachable configurations of an extracted step against a world: a
+step counts only when the extracted function succeeds. -/
+inductive RSysReachable (m : RMachine S E C) (w : World E C W) (init : S × W → Prop) :
+    S × W → Prop
+  | init (x : S × W) : init x → RSysReachable m w init x
+  | step (s s' : S) (c : C) (v v' : W) (e : E) :
+      RSysReachable m w init (s, v) → w.deliver v e → m.step s e = ok (s', c) →
+      w.interpret v c v' → RSysReachable m w init (s', v')
+  | adversary (s : S) (v v' : W) :
+      RSysReachable m w init (s, v) → w.adversary v v' → RSysReachable m w init (s, v')
+
+/-- An extracted step that never fails and agrees with a pure model
+reaches only the pure model's configurations, so everything proved about
+the model holds for the extracted code. -/
+theorem rsys_of_model (m : RMachine S E C) (p : Machine S E C)
+    (hmodel : ∀ s e, m.step s e = ok (p.step s e)) (w : World E C W) (init : S × W → Prop) :
+    ∀ x, RSysReachable m w init x → SysReachable p w init x := by
+  intro x h
+  induction h with
+  | init x hx => exact SysReachable.init x hx
+  | step s s' c v v' e _ hd hok hi ih =>
+    rw [hmodel] at hok
+    have heq : p.step s e = (s', c) := by simpa using hok
+    have := SysReachable.step s v v' e ih hd (by rw [heq]; exact hi)
+    rwa [heq] at this
+  | adversary s v v' _ ha ih => exact SysReachable.adversary s v v' ih ha
 
 /-- In every reachable terminal configuration nothing acquired is held. -/
 def Discharged (m : Machine S E C) (w : World E C W) (init : S × W → Prop)
