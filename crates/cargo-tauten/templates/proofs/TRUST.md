@@ -28,6 +28,13 @@ Everything below is trusted, not proved.
   report a survivor or a kill; it cannot prove anything.
 - `Audit.lean`'s total-shape check (`∀ args, f args ⦃ _ ⦄`, no hypotheses),
   which decides whether a claim may subsume lint findings.
+- `Audit.lean`'s assumption derivation: the IDs tagged
+  `@[tauten_assumption]` that a theorem's hypotheses mention, unfolding
+  definitions of the `Proofs` library only, and the IDs a witness's
+  conclusion establishes (a tagged proposition, a conjunction or an
+  existential of them). A premise written without a tagged definition is
+  not seen; reviewers read the statements. The decision on the derived
+  lists is the proved `tauten_check_kernel::assumption::assumptions_ok`.
 - `run.sh`, `compose.yaml`, `container.sh`: run the gate in the image on a
   copy of the checkout.
 - `cargo tauten proofs`: reads the gate's `TAUTEN-PROOFS` lines, decides

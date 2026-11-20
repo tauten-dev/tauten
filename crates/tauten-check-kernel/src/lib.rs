@@ -16,6 +16,7 @@
 
 extern crate alloc;
 
+pub mod assumption;
 pub mod badge;
 pub mod binding;
 pub mod control;

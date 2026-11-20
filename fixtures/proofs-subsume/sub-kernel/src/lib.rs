@@ -26,3 +26,11 @@ pub fn double(a: u32) -> u32 {
 pub fn triple(a: u32) -> u32 {
     a * 3
 }
+
+/// The later of two counter readings. Correct only under a named
+/// assumption about the counter (`FIXTURE.counter-monotone`), so its claim
+/// is proved under that assumption, never proved outright.
+#[must_use]
+pub fn latest(stored: u32, seen: u32) -> u32 {
+    if seen >= stored { seen } else { stored }
+}

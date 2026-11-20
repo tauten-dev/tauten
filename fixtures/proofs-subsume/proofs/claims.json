@@ -18,7 +18,8 @@
         "guard-dropped"
       ],
       "outcome": "proved",
-      "fingerprint": "fnv1a64:ff169ca9a60b6e6c"
+      "badge": "proved",
+      "fingerprint": "fnv1a64:b3d002247280c993"
     },
     {
       "crate": "sub-kernel",
@@ -36,7 +37,8 @@
         "second-value"
       ],
       "outcome": "proved",
-      "fingerprint": "fnv1a64:ff169ca9a60b6e6c"
+      "badge": "proved",
+      "fingerprint": "fnv1a64:b3d002247280c993"
     },
     {
       "crate": "sub-kernel",
@@ -54,8 +56,30 @@
         "quadruple"
       ],
       "outcome": "audit-failed",
+      "badge": "not-established",
       "detail": "Proofs.SubKernel.double_spec does not state that sub_kernel.double never fails for every input",
-      "fingerprint": "fnv1a64:ff169ca9a60b6e6c"
+      "fingerprint": "fnv1a64:b3d002247280c993"
+    },
+    {
+      "crate": "sub-kernel",
+      "file": "sub-kernel/src/lib.rs",
+      "function": "latest",
+      "lean": "sub_kernel.latest",
+      "theorems": [
+        "Proofs.SubKernel.latest_is_later_reading"
+      ],
+      "total": null,
+      "subsumes": [],
+      "mutants": [
+        "stored-wins"
+      ],
+      "assumes": [
+        "FIXTURE.counter-monotone"
+      ],
+      "witness": "Proofs.SubKernel.constant_counter_is_monotone",
+      "outcome": "proved",
+      "badge": "proved-under",
+      "fingerprint": "fnv1a64:b3d002247280c993"
     }
   ]
 }

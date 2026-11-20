@@ -146,6 +146,10 @@ const PROOFS_TEMPLATE: &[(&str, &str)] = &[
         include_str!("../templates/proofs/Proofs.lean"),
     ),
     (
+        "proofs/Proofs/TautenAssumption.lean",
+        include_str!("../templates/proofs/Proofs/TautenAssumption.lean"),
+    ),
+    (
         "proofs/Proofs/{{MODULE}}.lean",
         include_str!("../templates/proofs/Proofs/Module.lean"),
     ),

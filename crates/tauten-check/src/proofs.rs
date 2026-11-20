@@ -127,6 +127,15 @@ pub struct Claim {
     /// at best `proved-under`, never `proved`. Version 2 only.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub assumes: Vec<String>,
+    /// A theorem with no assumption among its hypotheses that proves the
+    /// claim's assumptions can hold together (for example of an in-memory
+    /// model), so the theorems are not vacuous. Required with `assumes`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub witness: Option<String>,
+    /// Theorems showing an assumption is needed (the property fails
+    /// without it). Optional; each must pass like the claim's theorems.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub necessity: Vec<String>,
 }
 
 /// `proofs/assumptions.toml`: the named assumptions claims may rest on.
@@ -262,8 +271,17 @@ impl ClaimsFile {
             if !seen.insert((claim.file.as_str(), claim.function.as_str())) {
                 return Err(problem("is claimed twice"));
             }
-            if !claim.assumes.is_empty() && file.version < 2 {
-                return Err(problem("`assumes` needs `version = 2`"));
+            if (!claim.assumes.is_empty() || claim.witness.is_some() || !claim.necessity.is_empty())
+                && file.version < 2
+            {
+                return Err(problem(
+                    "`assumes`, `witness` and `necessity` need `version = 2`",
+                ));
+            }
+            if !claim.assumes.is_empty() && claim.witness.is_none() {
+                return Err(problem(
+                    "`assumes` needs a `witness` theorem showing the assumptions can hold together",
+                ));
             }
         }
         if let Some(a) = file.amend.iter().find(|a| a.reason.trim().is_empty()) {
@@ -348,6 +366,22 @@ pub enum Event {
         #[serde(default)]
         detail: Option<String>,
     },
+    /// The named assumptions a theorem's hypotheses mention, derived by
+    /// the audit from its statement.
+    Premises {
+        /// Fully qualified theorem name.
+        theorem: String,
+        /// Assumption IDs.
+        premises: Vec<String>,
+    },
+    /// The named assumptions a theorem without assumption hypotheses
+    /// proves can hold (a witness), derived by the audit.
+    Establishes {
+        /// Fully qualified theorem name.
+        theorem: String,
+        /// Assumption IDs.
+        establishes: Vec<String>,
+    },
     /// A theorem passed the axiom audit (`ok`) or did not (`fail`).
     Theorem {
         /// Fully qualified theorem name.
@@ -403,6 +437,8 @@ impl Report {
             Event::Stage { .. }
             | Event::Theorem { .. }
             | Event::Total { .. }
+            | Event::Premises { .. }
+            | Event::Establishes { .. }
             | Event::Mutant { .. } => None,
         })
     }
@@ -428,8 +464,64 @@ impl Report {
         })
     }
 
-    /// The claim's theorems as controls that must pass, with every audit
-    /// result reported for them (an `ok` audit is a pass).
+    /// The audit's derived assumption IDs: (premises of the claim's
+    /// theorems, what its witness establishes).
+    fn assumption_facts<'a>(&'a self, claim: &'a Claim) -> (BTreeSet<&'a str>, BTreeSet<&'a str>) {
+        let mut premises = BTreeSet::new();
+        let mut established = BTreeSet::new();
+        for event in &self.events {
+            match event {
+                Event::Premises {
+                    theorem,
+                    premises: ids,
+                } if claim.theorems.contains(theorem) => {
+                    premises.extend(ids.iter().map(String::as_str));
+                }
+                Event::Establishes {
+                    theorem,
+                    establishes: ids,
+                } if claim.witness.as_ref() == Some(theorem) => {
+                    established.extend(ids.iter().map(String::as_str));
+                }
+                Event::Premises { .. }
+                | Event::Establishes { .. }
+                | Event::Stage { .. }
+                | Event::Theorem { .. }
+                | Event::Total { .. }
+                | Event::Mutant { .. } => {}
+            }
+        }
+        (premises, established)
+    }
+
+    /// Whether the claim declares exactly the assumptions its theorems
+    /// rest on and its witness establishes them: the proved
+    /// [`tauten_check_kernel::assumption::assumptions_ok`].
+    fn assumptions_ok<'a>(&'a self, claim: &'a Claim) -> bool {
+        use tauten_check_kernel::registry::Entry;
+        let (premises, established) = self.assumption_facts(claim);
+        let mut ids: BTreeMap<&'a str, usize> = BTreeMap::new();
+        let mut entries = |names: Vec<&'a str>| -> Vec<Entry> {
+            names
+                .into_iter()
+                .map(|n| {
+                    let next = ids.len();
+                    Entry {
+                        id: *ids.entry(n).or_insert(next),
+                        strength: 0,
+                    }
+                })
+                .collect()
+        };
+        let declared = entries(claim.assumes.iter().map(String::as_str).collect());
+        let derived = entries(premises.into_iter().collect());
+        let witnessed = entries(established.into_iter().collect());
+        tauten_check_kernel::assumption::assumptions_ok(&declared, &derived, &witnessed)
+    }
+
+    /// Everything that must pass for the claim: its theorems, its witness
+    /// and necessity theorems (audited like theorems), and, as the last
+    /// control, the assumption check. An `ok` audit is a pass.
     fn theorem_controls(
         &self,
         claim: &Claim,
@@ -438,18 +530,19 @@ impl Report {
         Vec<kernel_control::Observation>,
     ) {
         use kernel_control::{Control, Expect, Observation, Seen};
-        let controls = (0..claim.theorems.len())
+        let names = required_theorems(claim);
+        let controls = (0..=names.len())
             .map(|id| Control {
                 id,
                 expect: Expect::Pass,
             })
             .collect();
-        let observed = self
+        let mut observed: Vec<Observation> = self
             .events
             .iter()
             .filter_map(|event| match event {
                 Event::Theorem { theorem, status } => {
-                    let id = claim.theorems.iter().position(|t| t == theorem)?;
+                    let id = names.iter().position(|t| *t == theorem)?;
                     let seen = if status == "ok" {
                         Seen::Pass
                     } else {
@@ -457,9 +550,21 @@ impl Report {
                     };
                     Some(Observation { id, seen })
                 }
-                Event::Stage { .. } | Event::Total { .. } | Event::Mutant { .. } => None,
+                Event::Stage { .. }
+                | Event::Total { .. }
+                | Event::Premises { .. }
+                | Event::Establishes { .. }
+                | Event::Mutant { .. } => None,
             })
             .collect();
+        observed.push(Observation {
+            id: names.len(),
+            seen: if self.assumptions_ok(claim) {
+                Seen::Pass
+            } else {
+                Seen::FailOther
+            },
+        });
         (controls, observed)
     }
 
@@ -505,7 +610,11 @@ impl Report {
                     };
                     Some(Observation { id, seen })
                 }
-                Event::Stage { .. } | Event::Theorem { .. } | Event::Total { .. } => None,
+                Event::Stage { .. }
+                | Event::Theorem { .. }
+                | Event::Total { .. }
+                | Event::Premises { .. }
+                | Event::Establishes { .. } => None,
             })
             .collect();
         (controls, observed)
@@ -520,9 +629,30 @@ impl Report {
             } => {
                 mutant == name && status == "killed" && broken.iter().any(|t| theorems.contains(t))
             }
-            Event::Stage { .. } | Event::Theorem { .. } | Event::Total { .. } => false,
+            Event::Stage { .. }
+            | Event::Theorem { .. }
+            | Event::Total { .. }
+            | Event::Premises { .. }
+            | Event::Establishes { .. } => false,
         })
     }
+}
+
+/// The claim's theorems, then its witness and necessity theorems, without
+/// repeats.
+fn required_theorems(claim: &Claim) -> Vec<&str> {
+    let mut names: Vec<&str> = Vec::new();
+    for name in claim
+        .theorems
+        .iter()
+        .chain(&claim.witness)
+        .chain(&claim.necessity)
+    {
+        if !names.contains(&name.as_str()) {
+            names.push(name);
+        }
+    }
+    names
 }
 
 /// The outcome of one claim, with a reason when it is not proved. The
@@ -541,7 +671,10 @@ pub fn outcome(claim: &Claim, report: &Report) -> (Outcome, Option<String>) {
             .events
             .iter()
             .any(|event| matches!(event, Event::Stage { .. }));
-    let missing_theorem = claim.theorems.iter().find(|t| !report.theorem_ok(t));
+    let missing_theorem = required_theorems(claim)
+        .into_iter()
+        .find(|t| !report.theorem_ok(t));
+    let assumptions_ok = report.assumptions_ok(claim);
     let total_ok = claim
         .total
         .as_ref()
@@ -595,6 +728,8 @@ pub fn outcome(claim: &Claim, report: &Report) -> (Outcome, Option<String>) {
                     Event::Stage { .. }
                     | Event::Theorem { .. }
                     | Event::Total { .. }
+                    | Event::Premises { .. }
+                    | Event::Establishes { .. }
                     | Event::Mutant { .. } => None,
                 })
                 .unwrap_or_else(|| "proof toolchain missing".to_owned())
@@ -611,6 +746,11 @@ pub fn outcome(claim: &Claim, report: &Report) -> (Outcome, Option<String>) {
                 ))
             } else if claim.theorems.is_empty() {
                 Some("the claim lists no theorem".to_owned())
+            } else if !assumptions_ok {
+                Some(format!(
+                    "the claim's `assumes` ({}) is not exactly what its theorems assume, or its witness does not establish them",
+                    claim.assumes.join(", ")
+                ))
             } else if !kernel_control::admit(&theorems, &theorem_results) {
                 Some("a theorem was reported more than once".to_owned())
             } else {
@@ -1055,7 +1195,19 @@ pub fn conservation<'a>(file: &'a ClaimsFile, record: &'a Record) -> Conservatio
         .iter()
         .flat_map(|c| assumption_entries(&c.claim))
         .collect();
-    let current_assumes: Vec<_> = file.claim.iter().flat_map(assumption_entries).collect();
+    // Only claims already on record may not gain assumptions; a new claim
+    // states its own.
+    let current_assumes: Vec<_> = file
+        .claim
+        .iter()
+        .filter(|c| {
+            record
+                .claims
+                .iter()
+                .any(|r| r.claim.file == c.file && r.claim.function == c.function)
+        })
+        .flat_map(assumption_entries)
+        .collect();
     let amend_keys: Vec<RegistryKey<'a>> = file
         .amend
         .iter()

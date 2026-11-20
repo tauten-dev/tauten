@@ -2,7 +2,7 @@
 # this file). `cargo tauten proofs` runs the gate below and records one
 # outcome per claim in proofs/claims.json: proved, drift, build-failed,
 # audit-failed, mutant-survived or tool-missing.
-version = 1
+version = 2
 
 [gate]
 # Run from the workspace root. proofs/run.sh checks for Docker and the
@@ -45,6 +45,18 @@ total = "Proofs.SubKernel.double_spec"
 subsumes = ["TAU-N001"]
 mutants = ["quadruple"]
 
+# Proved under a named assumption (proofs/assumptions.toml): the badge is
+# proved-under, and the witness shows the assumption can hold.
+[[claim]]
+crate = "sub-kernel"
+file = "sub-kernel/src/lib.rs"
+function = "latest"
+lean = "sub_kernel.latest"
+theorems = ["Proofs.SubKernel.latest_is_later_reading"]
+assumes = ["FIXTURE.counter-monotone"]
+witness = "Proofs.SubKernel.constant_counter_is_monotone"
+mutants = ["stored-wins"]
+
 [[mutant]]
 name = "guard-dropped"
 file = "sub-kernel/src/lib.rs"
@@ -62,3 +74,9 @@ name = "quadruple"
 file = "sub-kernel/src/lib.rs"
 before = "a * 2"
 after = "a * 4"
+
+[[mutant]]
+name = "stored-wins"
+file = "sub-kernel/src/lib.rs"
+before = "if seen >= stored { seen } else { stored }"
+after = "stored"

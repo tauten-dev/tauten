@@ -35,6 +35,33 @@ trusted rather than proved.
    Docker or the image every claim is `tool-missing`; nothing passes
    without the gate.
 
+## Assumptions about the outside world
+
+A theorem about code that talks to the outside world (a filesystem, a
+clock, a hash function) usually needs a premise the code cannot prove. Do
+not make it a Lean `axiom`. Name it:
+
+1. Define it once in `proofs/assumptions.toml` (`id`, `statement`, `scope`,
+   `tested_by`).
+2. Tag the Lean proposition with the same ID and take it as a hypothesis:
+
+       @[tauten_assumption "FS.rename-atomic"]
+       def RenameAtomic (fs : FsModel) : Prop := ...
+
+       theorem publish_old_or_new (fs : FsModel) (h : RenameAtomic fs) : ...
+
+3. In the claim (`version = 2`), list it under `assumes` and name a
+   `witness`: a theorem with no such hypothesis whose conclusion is the
+   assumptions (a conjunction or an existential of them, for example of an
+   in-memory model). It shows they can hold together, so the theorems are
+   not vacuous. Optional `necessity` theorems show an assumption is needed.
+
+The audit derives which assumptions each theorem's hypotheses use; a claim
+whose `assumes` is not exactly that list, or whose witness does not
+establish it, is `audit-failed`. A claim with assumptions is recorded as
+`proved-under`, never `proved`, and never subsumes a finding. Adding an
+assumption to a recorded claim needs an `[[amend]]` entry (TAU-R002).
+
 ## Subsuming arithmetic and indexing lints
 
 In a `kernel` crate, a claim may name a `total` theorem: one of the shape

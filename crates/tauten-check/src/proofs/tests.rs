@@ -582,7 +582,7 @@ fn freshness_is_decided_by_bindings() {
 fn assumptions_lower_the_badge() {
     let text = CLAIMS.replace("version = 1", "version = 2").replace(
         "mutants = [\"add-wraps\"]",
-        "mutants = [\"add-wraps\"]\nassumes = [\"FIXTURE.example\"]",
+        "mutants = [\"add-wraps\"]\nassumes = [\"FIXTURE.example\"]\nwitness = \"K.example_holds\"",
     );
     let file = ClaimsFile::parse(&text).expect("valid v2 claims");
     let c = file.claim[0].clone();
@@ -601,7 +601,7 @@ fn assumptions_lower_the_badge() {
     // `assumes` needs version 2.
     assert!(ClaimsFile::parse(&text.replace("version = 2", "version = 1")).is_err());
 
-    let (o, _) = outcome(&c, &passing());
+    let (o, _) = outcome(&c, &assumed(&["FIXTURE.example"], &["FIXTURE.example"]));
     assert_eq!(o, Outcome::Proved);
     assert_eq!(badge(&c, o, true), Badge::ProvedUnder);
     assert_eq!(badge(&c, o, false), Badge::Pending);
@@ -618,6 +618,101 @@ fn assumptions_lower_the_badge() {
     let d = run(finding("TAU-N001", Tier::Kernel, 2), &rec, true);
     assert_eq!(d.severity, Severity::Error);
     assert!(d.subsumed_by.is_none());
+}
+
+/// A passing report in which `K.add_spec` assumes `premises` and the
+/// witness `K.example_holds` establishes `established`.
+fn assumed(premises: &[&str], established: &[&str]) -> Report {
+    let list = |ids: &[&str]| {
+        ids.iter()
+            .map(|i| format!("\"{i}\""))
+            .collect::<Vec<_>>()
+            .join(",")
+    };
+    let r = with(&passing(), r#"{"theorem":"K.example_holds","status":"ok"}"#);
+    let r = with(
+        &r,
+        &format!(
+            r#"{{"theorem":"K.add_spec","premises":[{}]}}"#,
+            list(premises)
+        ),
+    );
+    with(
+        &r,
+        &format!(
+            r#"{{"theorem":"K.example_holds","establishes":[{}]}}"#,
+            list(established)
+        ),
+    )
+}
+
+/// A8: a claim's `assumes` is exactly what its theorems assume, and a
+/// witness shows the assumptions can hold.
+#[test]
+fn assumptions_are_derived_and_witnessed() {
+    let v2 = CLAIMS.replace("version = 1", "version = 2");
+    let declared = |assumes: &str| {
+        ClaimsFile::parse(&v2.replace(
+            "mutants = [\"add-wraps\"]",
+            &format!(
+                "mutants = [\"add-wraps\"]\nassumes = [{assumes}]\nwitness = \"K.example_holds\""
+            ),
+        ))
+        .expect("valid")
+        .claim
+        .remove(0)
+    };
+    let a = declared("\"A\"");
+    assert_eq!(outcome(&a, &assumed(&["A"], &["A"])).0, Outcome::Proved);
+    // A theorem assumes something the claim does not declare.
+    let (o, why) = outcome(&a, &assumed(&["A", "B"], &["A", "B"]));
+    assert_eq!(o, Outcome::AuditFailed);
+    assert!(why.is_some_and(|w| w.contains("assumes")));
+    assert_eq!(
+        outcome(&claim(), &assumed(&["A"], &[])).0,
+        Outcome::AuditFailed
+    );
+    // The claim declares something no theorem assumes (removing a
+    // hypothesis keeps a stale `assumes`).
+    let ab = declared("\"A\", \"B\"");
+    assert_eq!(
+        outcome(&ab, &assumed(&["A"], &["A", "B"])).0,
+        Outcome::AuditFailed
+    );
+    // The witness does not establish every assumption.
+    assert_eq!(outcome(&a, &assumed(&["A"], &[])).0, Outcome::AuditFailed);
+    // The witness itself must pass the audit.
+    let failed_witness = without(
+        &assumed(&["A"], &["A"]),
+        "theorem: \"K.example_holds\", status: \"ok\"",
+    );
+    let failed_witness = with(
+        &failed_witness,
+        r#"{"theorem":"K.example_holds","status":"fail"}"#,
+    );
+    assert_eq!(outcome(&a, &failed_witness).0, Outcome::AuditFailed);
+    // No premise lines at all: a declared assumption is not confirmed.
+    assert_eq!(outcome(&a, &passing()).0, Outcome::AuditFailed);
+    // `assumes` without `witness` does not parse.
+    assert!(
+        ClaimsFile::parse(&v2.replace(
+            "mutants = [\"add-wraps\"]",
+            "mutants = [\"add-wraps\"]\nassumes = [\"A\"]",
+        ))
+        .is_err()
+    );
+    // Necessity theorems must pass like theorems.
+    let mut n = a.clone();
+    n.necessity = vec!["K.a_needed".to_owned()];
+    assert_eq!(
+        outcome(&n, &assumed(&["A"], &["A"])).0,
+        Outcome::AuditFailed
+    );
+    let ok = with(
+        &assumed(&["A"], &["A"]),
+        r#"{"theorem":"K.a_needed","status":"ok"}"#,
+    );
+    assert_eq!(outcome(&n, &ok).0, Outcome::Proved);
 }
 
 fn committed(claims: &ClaimsFile) -> Record {
@@ -709,7 +804,7 @@ fn assumptions_may_not_grow() {
     let record = committed(&base);
     let assumed = ClaimsFile::parse(&v2.replace(
         r#"mutants = ["add-wraps"]"#,
-        "mutants = [\"add-wraps\"]\nassumes = [\"FS.rename-atomic\"]",
+        "mutants = [\"add-wraps\"]\nassumes = [\"FS.rename-atomic\"]\nwitness = \"K.fs_holds\"",
     ))
     .expect("valid");
     let found = conservation(&assumed, &record);
@@ -733,9 +828,20 @@ reason = "the claim now covers the durable path"
         "{}{amend}",
         v2.replace(
             r#"mutants = ["add-wraps"]"#,
-            "mutants = [\"add-wraps\"]\nassumes = [\"FS.rename-atomic\"]",
+            "mutants = [\"add-wraps\"]\nassumes = [\"FS.rename-atomic\"]\nwitness = \"K.fs_holds\"",
         )
     ))
     .expect("valid");
     assert_eq!(conservation(&amended, &record), Conservation::default());
+}
+
+#[test]
+fn a_new_claim_states_its_own_assumptions() {
+    let v2 = CLAIMS.replace("version = 1", "version = 2");
+    let record = committed(&ClaimsFile::parse(&v2).expect("valid"));
+    let extra = format!(
+        "{v2}\n[[claim]]\ncrate = \"k\"\nfile = \"crates/k/src/lib.rs\"\nfunction = \"sub\"\nlean = \"k.sub\"\ntheorems = [\"K.sub_spec\"]\nmutants = [\"sub-wraps\"]\nassumes = [\"A\"]\nwitness = \"K.a_holds\"\n"
+    );
+    let found = conservation(&ClaimsFile::parse(&extra).expect("valid"), &record);
+    assert_eq!(found, Conservation::default());
 }

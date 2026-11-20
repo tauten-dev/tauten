@@ -12,7 +12,9 @@ repository copy in /work. Reads proofs/claims.toml and runs, in order:
   audit    `lake build Audit`: every theorem of the Proofs library depends
            only on propext, Classical.choice and Quot.sound; the audit also
            lists each theorem that states a function never fails, for every
-           input (`∀ args, f args ⦃ _ ⦄`, no hypotheses)
+           input (`∀ args, f args ⦃ _ ⦄`, no hypotheses), and the named
+           assumptions each theorem's hypotheses mention (`premises`) or,
+           for a witness, its conclusion establishes (`establishes`)
   mutants  every `[[mutant]]` applied to a copy of its crate, translated
            and built against the theorems: it must break at least one
 
@@ -94,6 +96,7 @@ DECLARATION = re.compile(
 NAMESPACE = re.compile(r"^namespace\s+(?P<name>\S+)", re.M)
 AXIOMS = re.compile(r"AXIOMS (?P<name>\S+): \[(?P<axioms>[^\]]*)\]", re.S)
 TOTAL = re.compile(r"TOTAL (?P<theorem>\S+) (?P<function>\S+)")
+PREMISES = re.compile(r"(?P<kind>PREMISES|ESTABLISHES) (?P<name>\S+): \[(?P<ids>[^\]]*)\]", re.S)
 SORRY_DEPENDENT = re.compile(r"SORRY_DEPENDENT (?P<name>\S+)")
 REPORTER = """
 
@@ -101,7 +104,7 @@ open Lean Elab Command in
 run_cmd do
   let env ← getEnv
   for entry in env.constants.map₂.toList do
-    if entry.2.isThm then
+    if (match entry.2 with | .thmInfo _ => true | _ => false) then
       let axioms ← liftCoreM (Lean.collectAxioms entry.1)
       if axioms.contains ``sorryAx then
         logInfo m!"SORRY_DEPENDENT {entry.1}"
@@ -245,6 +248,10 @@ def gate() -> int:
         emit(theorem=name, status="ok" if axioms <= ALLOWED else "fail")
     for match in TOTAL.finditer(audit.stdout):
         emit(total=match.group("theorem"), function=match.group("function"))
+    for match in PREMISES.finditer(audit.stdout):
+        ids = [i.strip() for i in match.group("ids").split(",") if i.strip()]
+        key = "premises" if match.group("kind") == "PREMISES" else "establishes"
+        emit(theorem=match.group("name"), **{key: ids})
     if audit.returncode != 0 or not audited:
         emit(stage="audit", status="fail")
         return 1

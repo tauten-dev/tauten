@@ -20,6 +20,189 @@ set_option maxRecDepth 2048
 
 namespace tauten_check_kernel
 
+/-- [tauten_check_kernel::registry::Entry]
+    Source: 'crates/tauten-check-kernel/src/registry.rs', lines 25:0-30:1
+    Visibility: public -/
+structure registry.Entry where
+  id : Std.Usize
+  strength : Std.U32
+
+/-- [tauten_check_kernel::registry::kept]: loop body 0:
+    Source: 'crates/tauten-check-kernel/src/registry.rs', lines 37:4-42:5
+    Visibility: public -/
+@[rust_loop_body]
+def registry.kept_loop.body
+  (list : Slice registry.Entry) (id : Std.Usize) (strength : Std.U32)
+  (found : Bool) (i : Std.Usize) :
+  Result (ControlFlow (Bool × Std.Usize) Bool)
+  := do
+  let i1 := Slice.len list
+  if i < i1
+  then
+    let o ←
+      core.slice.Slice.get (core.slice.index.SliceIndexUsizeSlice
+        registry.Entry) list i
+    let found1 ←
+      match o with
+      | none => ok found
+      | some e =>
+        if found
+        then ok true
+        else if e.id = id
+             then ok (strength <= e.strength)
+             else ok false
+    let i2 ← lift (core.num.Usize.saturating_add i 1#usize)
+    ok (cont (found1, i2))
+  else ok (done found)
+
+/-- [tauten_check_kernel::registry::kept]: loop 0:
+    Source: 'crates/tauten-check-kernel/src/registry.rs', lines 37:4-42:5
+    Visibility: public -/
+@[rust_loop]
+def registry.kept_loop
+  (list : Slice registry.Entry) (id : Std.Usize) (strength : Std.U32)
+  (found : Bool) (i : Std.Usize) :
+  Result Bool
+  := do
+  loop
+    (fun (found1, i1) => registry.kept_loop.body list id strength found1 i1)
+    (found, i)
+
+/-- [tauten_check_kernel::registry::kept]:
+    Source: 'crates/tauten-check-kernel/src/registry.rs', lines 34:0-44:1
+    Visibility: public -/
+@[reducible]
+def registry.kept
+  (list : Slice registry.Entry) (id : Std.Usize) (strength : Std.U32) :
+  Result Bool
+  := do
+  registry.kept_loop list id strength false 0#usize
+
+/-- [tauten_check_kernel::control::member]: loop body 0:
+    Source: 'crates/tauten-check-kernel/src/control.rs', lines 94:4-99:5
+    Visibility: public -/
+@[rust_loop_body]
+def control.member_loop.body
+  (ids : Slice Std.Usize) (id : Std.Usize) (found : Bool) (i : Std.Usize) :
+  Result (ControlFlow (Bool × Std.Usize) Bool)
+  := do
+  let i1 := Slice.len ids
+  if i < i1
+  then
+    let o ←
+      core.slice.Slice.get (core.slice.index.SliceIndexUsizeSlice Std.Usize)
+        ids i
+    let found1 ←
+      match o with
+      | none => ok found
+      | some x => if found
+                  then ok true
+                  else ok (x = id)
+    let i2 ← lift (core.num.Usize.saturating_add i 1#usize)
+    ok (cont (found1, i2))
+  else ok (done found)
+
+/-- [tauten_check_kernel::control::member]: loop 0:
+    Source: 'crates/tauten-check-kernel/src/control.rs', lines 94:4-99:5
+    Visibility: public -/
+@[rust_loop]
+def control.member_loop
+  (ids : Slice Std.Usize) (id : Std.Usize) (found : Bool) (i : Std.Usize) :
+  Result Bool
+  := do
+  loop
+    (fun (found1, i1) => control.member_loop.body ids id found1 i1)
+    (found, i)
+
+/-- [tauten_check_kernel::control::member]:
+    Source: 'crates/tauten-check-kernel/src/control.rs', lines 91:0-101:1
+    Visibility: public -/
+@[reducible]
+def control.member (ids : Slice Std.Usize) (id : Std.Usize) : Result Bool := do
+  control.member_loop ids id false 0#usize
+
+/-- [tauten_check_kernel::registry::conserves]: loop body 0:
+    Source: 'crates/tauten-check-kernel/src/registry.rs', lines 52:4-57:5
+    Visibility: public -/
+@[rust_loop_body]
+def registry.conserves_loop.body
+  (old : Slice registry.Entry) (new : Slice registry.Entry)
+  (amended : Slice Std.Usize) (ok1 : Bool) (i : Std.Usize) :
+  Result (ControlFlow (Bool × Std.Usize) Bool)
+  := do
+  let i1 := Slice.len old
+  if i < i1
+  then
+    let o ←
+      core.slice.Slice.get (core.slice.index.SliceIndexUsizeSlice
+        registry.Entry) old i
+    let ok2 ←
+      match o with
+      | none => ok ok1
+      | some o1 =>
+        if ok1
+        then
+          do
+          let b ← control.member amended o1.id
+          if b
+          then ok true
+          else registry.kept new o1.id o1.strength
+        else ok false
+    let i2 ← lift (core.num.Usize.saturating_add i 1#usize)
+    ok (cont (ok2, i2))
+  else ok (done ok1)
+
+/-- [tauten_check_kernel::registry::conserves]: loop 0:
+    Source: 'crates/tauten-check-kernel/src/registry.rs', lines 52:4-57:5
+    Visibility: public -/
+@[rust_loop]
+def registry.conserves_loop
+  (old : Slice registry.Entry) (new : Slice registry.Entry)
+  (amended : Slice Std.Usize) (ok1 : Bool) (i : Std.Usize) :
+  Result Bool
+  := do
+  loop
+    (fun (ok2, i1) => registry.conserves_loop.body old new amended ok2 i1)
+    (ok1, i)
+
+/-- [tauten_check_kernel::registry::conserves]:
+    Source: 'crates/tauten-check-kernel/src/registry.rs', lines 49:0-59:1
+    Visibility: public -/
+@[reducible]
+def registry.conserves
+  (old : Slice registry.Entry) (new : Slice registry.Entry)
+  (amended : Slice Std.Usize) :
+  Result Bool
+  := do
+  registry.conserves_loop old new amended true 0#usize
+
+/-- [tauten_check_kernel::assumption::assumptions_ok]:
+    Source: 'crates/tauten-check-kernel/src/assumption.rs', lines 20:0-23:1
+    Visibility: public -/
+def assumption.assumptions_ok
+  (declared : Slice registry.Entry) (derived : Slice registry.Entry)
+  (established : Slice registry.Entry) :
+  Result Bool
+  := do
+  let s ← lift (Array.to_slice (Std.Array.empty Std.Usize))
+  let b ← registry.conserves declared derived s
+  let same ←
+    if b
+    then
+      do
+      let s1 ← lift (Array.to_slice (Std.Array.empty Std.Usize))
+      registry.conserves derived declared s1
+    else ok false
+  if same
+  then
+    let b1 ← core.slice.Slice.is_empty declared
+    if b1
+    then ok true
+    else
+      let s1 ← lift (Array.to_slice (Std.Array.empty Std.Usize))
+      registry.conserves declared established s1
+  else ok false
+
 /-- [tauten_check_kernel::badge::Method]
     Source: 'crates/tauten-check-kernel/src/badge.rs', lines 12:0-21:1
     Visibility: public -/
@@ -433,49 +616,6 @@ def control.control_ok
     | control.Seen.ToolMissing => ok false
     | control.Seen.Empty => ok false
     | control.Seen.NotRun => ok false
-
-/-- [tauten_check_kernel::control::member]: loop body 0:
-    Source: 'crates/tauten-check-kernel/src/control.rs', lines 94:4-99:5
-    Visibility: public -/
-@[rust_loop_body]
-def control.member_loop.body
-  (ids : Slice Std.Usize) (id : Std.Usize) (found : Bool) (i : Std.Usize) :
-  Result (ControlFlow (Bool × Std.Usize) Bool)
-  := do
-  let i1 := Slice.len ids
-  if i < i1
-  then
-    let o ←
-      core.slice.Slice.get (core.slice.index.SliceIndexUsizeSlice Std.Usize)
-        ids i
-    let found1 ←
-      match o with
-      | none => ok found
-      | some x => if found
-                  then ok true
-                  else ok (x = id)
-    let i2 ← lift (core.num.Usize.saturating_add i 1#usize)
-    ok (cont (found1, i2))
-  else ok (done found)
-
-/-- [tauten_check_kernel::control::member]: loop 0:
-    Source: 'crates/tauten-check-kernel/src/control.rs', lines 94:4-99:5
-    Visibility: public -/
-@[rust_loop]
-def control.member_loop
-  (ids : Slice Std.Usize) (id : Std.Usize) (found : Bool) (i : Std.Usize) :
-  Result Bool
-  := do
-  loop
-    (fun (found1, i1) => control.member_loop.body ids id found1 i1)
-    (found, i)
-
-/-- [tauten_check_kernel::control::member]:
-    Source: 'crates/tauten-check-kernel/src/control.rs', lines 91:0-101:1
-    Visibility: public -/
-@[reducible]
-def control.member (ids : Slice Std.Usize) (id : Std.Usize) : Result Bool := do
-  control.member_loop ids id false 0#usize
 
 /-- [tauten_check_kernel::control::named]: loop body 0:
     Source: 'crates/tauten-check-kernel/src/control.rs', lines 108:4-113:5
@@ -1532,119 +1672,6 @@ def ratchet.increases
   Result (alloc.vec.Vec Bool)
   := do
   ratchet.increases_loop old next (alloc.vec.Vec.new Bool) 0#usize
-
-/-- [tauten_check_kernel::registry::Entry]
-    Source: 'crates/tauten-check-kernel/src/registry.rs', lines 25:0-30:1
-    Visibility: public -/
-structure registry.Entry where
-  id : Std.Usize
-  strength : Std.U32
-
-/-- [tauten_check_kernel::registry::kept]: loop body 0:
-    Source: 'crates/tauten-check-kernel/src/registry.rs', lines 37:4-42:5
-    Visibility: public -/
-@[rust_loop_body]
-def registry.kept_loop.body
-  (list : Slice registry.Entry) (id : Std.Usize) (strength : Std.U32)
-  (found : Bool) (i : Std.Usize) :
-  Result (ControlFlow (Bool × Std.Usize) Bool)
-  := do
-  let i1 := Slice.len list
-  if i < i1
-  then
-    let o ←
-      core.slice.Slice.get (core.slice.index.SliceIndexUsizeSlice
-        registry.Entry) list i
-    let found1 ←
-      match o with
-      | none => ok found
-      | some e =>
-        if found
-        then ok true
-        else if e.id = id
-             then ok (strength <= e.strength)
-             else ok false
-    let i2 ← lift (core.num.Usize.saturating_add i 1#usize)
-    ok (cont (found1, i2))
-  else ok (done found)
-
-/-- [tauten_check_kernel::registry::kept]: loop 0:
-    Source: 'crates/tauten-check-kernel/src/registry.rs', lines 37:4-42:5
-    Visibility: public -/
-@[rust_loop]
-def registry.kept_loop
-  (list : Slice registry.Entry) (id : Std.Usize) (strength : Std.U32)
-  (found : Bool) (i : Std.Usize) :
-  Result Bool
-  := do
-  loop
-    (fun (found1, i1) => registry.kept_loop.body list id strength found1 i1)
-    (found, i)
-
-/-- [tauten_check_kernel::registry::kept]:
-    Source: 'crates/tauten-check-kernel/src/registry.rs', lines 34:0-44:1
-    Visibility: public -/
-@[reducible]
-def registry.kept
-  (list : Slice registry.Entry) (id : Std.Usize) (strength : Std.U32) :
-  Result Bool
-  := do
-  registry.kept_loop list id strength false 0#usize
-
-/-- [tauten_check_kernel::registry::conserves]: loop body 0:
-    Source: 'crates/tauten-check-kernel/src/registry.rs', lines 52:4-57:5
-    Visibility: public -/
-@[rust_loop_body]
-def registry.conserves_loop.body
-  (old : Slice registry.Entry) (new : Slice registry.Entry)
-  (amended : Slice Std.Usize) (ok1 : Bool) (i : Std.Usize) :
-  Result (ControlFlow (Bool × Std.Usize) Bool)
-  := do
-  let i1 := Slice.len old
-  if i < i1
-  then
-    let o ←
-      core.slice.Slice.get (core.slice.index.SliceIndexUsizeSlice
-        registry.Entry) old i
-    let ok2 ←
-      match o with
-      | none => ok ok1
-      | some o1 =>
-        if ok1
-        then
-          do
-          let b ← control.member amended o1.id
-          if b
-          then ok true
-          else registry.kept new o1.id o1.strength
-        else ok false
-    let i2 ← lift (core.num.Usize.saturating_add i 1#usize)
-    ok (cont (ok2, i2))
-  else ok (done ok1)
-
-/-- [tauten_check_kernel::registry::conserves]: loop 0:
-    Source: 'crates/tauten-check-kernel/src/registry.rs', lines 52:4-57:5
-    Visibility: public -/
-@[rust_loop]
-def registry.conserves_loop
-  (old : Slice registry.Entry) (new : Slice registry.Entry)
-  (amended : Slice Std.Usize) (ok1 : Bool) (i : Std.Usize) :
-  Result Bool
-  := do
-  loop
-    (fun (ok2, i1) => registry.conserves_loop.body old new amended ok2 i1)
-    (ok1, i)
-
-/-- [tauten_check_kernel::registry::conserves]:
-    Source: 'crates/tauten-check-kernel/src/registry.rs', lines 49:0-59:1
-    Visibility: public -/
-@[reducible]
-def registry.conserves
-  (old : Slice registry.Entry) (new : Slice registry.Entry)
-  (amended : Slice Std.Usize) :
-  Result Bool
-  := do
-  registry.conserves_loop old new amended true 0#usize
 
 /-- [tauten_check_kernel::severity::Severity]
     Source: 'crates/tauten-check-kernel/src/severity.rs', lines 14:0-19:1

@@ -50,4 +50,12 @@ def double (a : Std.U32) : Result Std.U32 := do
 def triple (a : Std.U32) : Result Std.U32 := do
   a * 3#u32
 
+/-- [sub_kernel::latest]:
+    Source: 'sub-kernel/src/lib.rs', lines 34:0-36:1
+    Visibility: public -/
+def latest (stored : Std.U32) (seen : Std.U32) : Result Std.U32 := do
+  if seen >= stored
+  then ok seen
+  else ok stored
+
 end sub_kernel

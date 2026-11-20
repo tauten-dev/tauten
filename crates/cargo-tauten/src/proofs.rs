@@ -74,9 +74,13 @@ pub fn run(ws: &Loaded, write: bool) -> Result<ExitCode> {
         let found = proofs::conservation(&file, &committed);
         if !found.weakened.is_empty() {
             for (_, f, function, kind, name) in &found.weakened {
+                let change = match kind {
+                    proofs::AmendKind::Assumption => "gain assumption",
+                    proofs::AmendKind::Theorem => "lose theorem",
+                    proofs::AmendKind::Mutant => "lose mutant",
+                };
                 eprintln!(
-                    "tauten: TAU-R002: {f}: claim `{function}` would lose {} `{name}` (or gain it, for an assumption) without an `[[amend]]` entry",
-                    kind.name()
+                    "tauten: TAU-R002: {f}: claim `{function}` would {change} `{name}` without an `[[amend]]` entry"
                 );
             }
             eprintln!("tauten: not recording {CLAIMS_JSON}: a recorded claim would be weakened");

@@ -15,3 +15,4 @@ import Tauten.Control
 import Tauten.Binding
 import Tauten.Badge
 import Tauten.Registry
+import Tauten.Assumption

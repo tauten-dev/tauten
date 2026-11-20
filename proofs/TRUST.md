@@ -53,6 +53,12 @@ production calls. Everything below is trusted, not proved.
   reason names the change. Conservation is relative to the committed
   record: whoever reviews a commit that rewrites `claims.json` (or deletes
   it) is trusted to see a weakening in its diff, as for a baseline.
+- Named assumptions (A8): in projects using the proofs template, the
+  template's `Audit.lean` derives each theorem's tagged premises and a
+  witness's established assumptions (audit code, not proved; see the
+  template's `TRUST.md`); `cargo tauten proofs` decides with the proved
+  `assumption::assumptions_ok`. tauten's own claims rest on no assumption,
+  and its own `Audit.lean` does not run the derivation.
 
 ## What tauten's own proofs additionally trust
 

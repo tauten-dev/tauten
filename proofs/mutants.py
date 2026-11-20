@@ -352,6 +352,25 @@ REGISTRY_MUTANTS = (
            REGISTRY[1:]),
 )
 
+ASSUMPTION = (T + "assumptions_ok_iff", T + "undeclared_assumption_refused", T + "unused_assumption_refused", T + "unwitnessed_refused")
+ASSUMPTION_MUTANTS = (
+    # assumption: a hypothesis the claim does not declare is accepted
+    Mutant("undeclared-accepted", "assumption.rs",
+           "conserves(declared, derived, &[]) && conserves(derived, declared, &[])",
+           "conserves(declared, derived, &[])",
+           ASSUMPTION),
+    # assumption: a declared assumption no theorem uses is accepted
+    Mutant("unused-accepted", "assumption.rs",
+           "conserves(declared, derived, &[]) && conserves(derived, declared, &[])",
+           "conserves(derived, declared, &[])",
+           ASSUMPTION),
+    # assumption: assumptions without a witness are accepted
+    Mutant("witness-not-required", "assumption.rs",
+           "same && (declared.is_empty() || conserves(declared, established, &[]))",
+           "same",
+           ASSUMPTION),
+)
+
 BADGE_MUTANTS = (
     # badge: a claim with assumptions shows as proved outright
     Mutant("assumptions-ignored", "badge.rs",
@@ -426,7 +445,7 @@ MUTANTS = (
            "    if crate_wide && blocking {",
            "    if crate_wide || blocking {",
            (T + "exception_spec",)),
-) + RATCHET_MUTANTS + TABLE_MUTANTS + SUBSUME_MUTANTS + EFFECTS_MUTANTS + OUTCOME_MUTANTS + SPAN_MUTANTS + CONTROL_MUTANTS + BINDING_MUTANTS + BADGE_MUTANTS + REGISTRY_MUTANTS
+) + RATCHET_MUTANTS + TABLE_MUTANTS + SUBSUME_MUTANTS + EFFECTS_MUTANTS + OUTCOME_MUTANTS + SPAN_MUTANTS + CONTROL_MUTANTS + BINDING_MUTANTS + BADGE_MUTANTS + REGISTRY_MUTANTS + ASSUMPTION_MUTANTS
 
 I = "Tauten.Instances."
 REFINED_TYPES = ("percent", "port", "offset", "count")

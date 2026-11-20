@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- Named assumptions are derived, not just declared. Tag a Lean proposition
+  `@[tauten_assumption "ID"]` (template file `Proofs/TautenAssumption.lean`);
+  the audit derives which assumptions each theorem's hypotheses use, and a
+  claim's `assumes` must be exactly that list. A claim with assumptions names
+  a `witness` theorem showing they can hold together; optional `necessity`
+  theorems must pass like theorems. Decided by the proved
+  `tauten_check_kernel::assumption::assumptions_ok`. Existing proofs
+  directories: copy the template's `Audit.lean`, `gate.py` and
+  `Proofs/TautenAssumption.lean`.
+
 - TAU-R002: a recorded proof claim may not be weakened. `proofs/claims.toml`
   may not drop a theorem or mutant recorded in the committed
   `proofs/claims.json`, nor add an assumption, unless an `[[amend]]` entry

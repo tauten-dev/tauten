@@ -20,6 +20,9 @@ outcome per claim of `proofs/claims.toml`.
    `TOTAL <theorem> <f>`. A claim's `total` theorem must be one of these
    before `cargo tauten check` lets it subsume arithmetic and indexing
    findings.
+3. Named assumptions (`@[tauten_assumption "ID"]`, see
+   `Proofs/TautenAssumption.lean` and the section below): each theorem's
+   `PREMISES` and, for a witness, what it `ESTABLISHES`.
 -/
 
 open Lean Elab Command Meta
@@ -52,6 +55,73 @@ def totalOver (type : Expr) : MetaM (Option Name) :=
       unless arg == x do return none
     return some fn.constName!
 
+/-! ## Named assumptions (A8)
+
+3. For every theorem, the named assumptions (`@[tauten_assumption "ID"]`)
+   its hypotheses mention, through definitions of the `Proofs` library, are
+   printed as `PREMISES <theorem>: [IDs]`. A theorem with no tagged
+   hypothesis whose conclusion is a tagged proposition, a conjunction of
+   them or an existential over them (a witness that the assumptions can
+   hold together) is printed as `ESTABLISHES <theorem>: [IDs]`. A negated
+   or otherwise wrapped occurrence establishes nothing.
+-/
+
+/-- Whether `decl` belongs to the `Proofs` library. -/
+def inProofs (env : Environment) (decl : Name) : Bool :=
+  match env.getModuleIdxFor? decl with
+  | some idx => (`Proofs).isPrefixOf env.header.moduleNames[idx.toNat]!
+  | none => false
+
+/-- The assumption IDs mentioned by `e`, unfolding definitions of the
+`Proofs` library (never theorems, never other libraries). -/
+def assumptionsIn (env : Environment) (e : Expr) : Array String := Id.run do
+  let mut seen : NameSet := {}
+  let mut todo : Array Name := e.getUsedConstants
+  let mut ids : Array String := #[]
+  while h : todo.size > 0 do
+    let c := todo[todo.size - 1]
+    todo := todo.pop
+    if seen.contains c then continue
+    seen := seen.insert c
+    if let some id := tautenAssumptionAttr.getParam? env c then
+      unless ids.contains id do ids := ids.push id
+    else if inProofs env c then
+      if let some (.defnInfo d) := env.find? c then
+        todo := todo ++ d.value.getUsedConstants
+  return ids.qsort (· < ·)
+
+/-- The IDs a conclusion establishes: a tagged proposition, a conjunction
+or an existential of such. -/
+partial def establishedBy (env : Environment) (e : Expr) : MetaM (Array String) := do
+  let e ← whnfR e
+  if e.isAppOfArity ``And 2 then
+    return (← establishedBy env e.appFn!.appArg!) ++ (← establishedBy env e.appArg!)
+  if e.isAppOfArity ``Exists 2 then
+    let body := e.appArg!
+    if let .lam n ty b bi := body then
+      return ← withLocalDecl n bi ty fun x => establishedBy env (b.instantiate1 x)
+    return #[]
+  let fn := e.getAppFn
+  if fn.isConst then
+    if let some id := tautenAssumptionAttr.getParam? env fn.constName! then
+      return #[id]
+  return #[]
+
+/-- (premise IDs, established IDs) of a theorem's statement. -/
+def assumptionFacts (env : Environment) (type : Expr) : MetaM (Array String × Array String) :=
+  forallTelescope type fun xs body => do
+    let mut premises : Array String := #[]
+    for x in xs do
+      let t ← inferType x
+      if ← isProp t then
+        for id in assumptionsIn env t do
+          unless premises.contains id do premises := premises.push id
+    let sorted := premises.qsort (· < ·)
+    if sorted.isEmpty then
+      let est := (← establishedBy env body).qsort (· < ·)
+      return (sorted, est.toList.eraseDups.toArray)
+    return (sorted, #[])
+
 def audit : CommandElabM Unit := do
   let env ← getEnv
   let theorems := proofTheorems env
@@ -66,6 +136,10 @@ def audit : CommandElabM Unit := do
     if let some info := env.find? decl then
       if let some fn ← liftTermElabM (totalOver info.type) then
         logInfo m!"TOTAL {decl} {fn}"
+      let (premises, established) ← liftTermElabM (assumptionFacts env info.type)
+      logInfo m!"PREMISES {decl}: {premises.toList}"
+      unless established.isEmpty do
+        logInfo m!"ESTABLISHES {decl}: {established.toList}"
   logInfo m!"AXIOM_AUDIT ok: {theorems.size} theorems, axioms ⊆ {allowedAxioms}"
 
 run_cmd audit

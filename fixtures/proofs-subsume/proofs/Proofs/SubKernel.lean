@@ -1,4 +1,5 @@
 import Extracted.SubKernel
+import Proofs.TautenAssumption
 
 /-!
 # Theorems about `sub-kernel` (the proof-subsumption fixture)
@@ -59,5 +60,27 @@ theorem double_spec (a : U32) (h : a.val ≤ 1000) :
   unfold double
   step as ⟨ r, hr ⟩
   scalar_tac
+
+/-- The counter source never goes backwards. -/
+@[tauten_assumption "FIXTURE.counter-monotone"]
+def CounterMonotone (read : Nat → U32) : Prop := ∀ i j, i ≤ j → (read i).val ≤ (read j).val
+
+/-- Under `FIXTURE.counter-monotone`, `latest` of an earlier and a later
+reading is the later one. -/
+theorem latest_is_later_reading (read : Nat → U32) (h : CounterMonotone read)
+    (i j : Nat) (hij : i ≤ j) :
+    latest (read i) (read j) ⦃ r => r = read j ⦄ := by
+  have := h i j hij
+  unfold latest
+  split
+  · simp
+  · rename_i hn
+    simp only [WP.spec_ok]
+    exfalso; apply hn; scalar_tac
+
+/-- The assumption can hold: a constant counter never goes backwards. -/
+theorem constant_counter_is_monotone : CounterMonotone (fun _ => 0#u32) := by
+  intro i j _
+  simp
 
 end Proofs.SubKernel

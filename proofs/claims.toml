@@ -298,3 +298,11 @@ function = "kept"
 lean = "tauten_check_kernel.registry.kept"
 theorems = ["Tauten.Kernel.kept_spec"]
 mutants = ["removal-accepted", "lowering-accepted"]
+
+[[claim]]
+crate = "tauten-check-kernel"
+file = "crates/tauten-check-kernel/src/assumption.rs"
+function = "assumptions_ok"
+lean = "tauten_check_kernel.assumption.assumptions_ok"
+theorems = ["Tauten.Kernel.assumptions_ok_iff", "Tauten.Kernel.undeclared_assumption_refused", "Tauten.Kernel.unused_assumption_refused", "Tauten.Kernel.unwitnessed_refused"]
+mutants = ["undeclared-accepted", "unused-accepted", "witness-not-required"]

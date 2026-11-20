@@ -1,0 +1,8 @@
+# Named assumptions about the outside world that claims rest on
+# (`assumes` in proofs/claims.toml). Each is tagged in Lean with
+# @[tauten_assumption "ID"]; the audit derives which theorems use it.
+
+[[assumption]]
+id = "FIXTURE.counter-monotone"
+statement = "The counter source never goes backwards: a later reading is at least an earlier one."
+scope = "fixture only"

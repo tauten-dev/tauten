@@ -191,7 +191,7 @@ mod proofs {
             fs::write(&claims, text).expect("write");
             let output = tauten(&["proofs"], &root);
             assert_eq!(output.status.code(), Some(1), "{name}");
-            assert_eq!(outcomes(&output), ["tool-missing"; 3], "{name}");
+            assert_eq!(outcomes(&output), ["tool-missing"; 4], "{name}");
             let record = fs::read_to_string(root.join("proofs/claims.json")).expect("recorded");
             assert!(!record.contains("\"proved\""), "{name}: {record}");
             // and the check then subsumes nothing
