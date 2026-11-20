@@ -1,18 +1,28 @@
 # Status
 
-Updated 2026-11-19. Name final: tauten; license MIT; code at github.com/tauten-dev/tauten (public). Every line says how far an item got:
+Updated 2026-11-20. Name final: tauten; license MIT; code at github.com/tauten-dev/tauten (public). Every line says how far an item got:
 **specified → implemented → exercised**. "Exercised" means it ran against
 real input in this repository, and the evidence is named. Versions 0.0.1
 0.0.2, 0.0.3 and 0.0.4 are on crates.io; the site is at tauten.dev. Benchmark: no
 defect-reduction benefit established (ceiling; held-out run stopped by its
 go/no-go rule; audited findings were not defects).
 
+## Since 0.0.4 (2026-11-20)
+
+Discipline and proofs roadmap items closed on `main`: T4, T5, T6, T7, A5, A7,
+A11, A12, D3 and B6; 0.0.5 in progress (D2, #39, #42, #46, A7b; see
+`docs/ROADMAP.md`). tauten's own proof gate: 58 claims (3 of them
+`proved-under` named filesystem assumptions), 103 calibrated mutants; the
+fact-extracting scanners are calibrated by `cargo-mutants` in the CI gate
+(0 surviving); the gate runs as the checkout's owner, not root. Writfold's
+adoption branch is being merged by the owner's writfold agent.
+
 ## Milestones (see PLAN.md §6)
 
 | # | Item | State | Evidence |
 |---|---|---|---|
-| M0 | Plan, mapping, agent profile, rule table (37 rules, ~200 banned API paths) | **done** | `docs/`, `crates/tauten-check/agents.md`, `crates/tauten-check/rules.toml`, generated `docs/RULES.md` (drift-checked) |
-| M0 | Fixtures ported from Sovel examples | **exercised** | `fixtures/cases`: 28 reject + 3 accept crates, exact expected IDs, one tier per crate (`tests/fixtures.rs`) |
+| M0 | Plan, mapping, agent profile, rule table (42 rules, ~200 banned API paths) | **done** | `docs/`, `crates/tauten-check/agents.md`, `crates/tauten-check/rules.toml`, generated `docs/RULES.md` (drift-checked) |
+| M0 | Fixtures ported from Sovel examples | **exercised** | `fixtures/cases`: 42 reject + 5 accept crates (plus workspace fixtures `layers`, `rej-overflow`, `generated`, `inherit`, `extract`, `proofs-subsume`), exact expected IDs, one tier per crate (`tests/fixtures.rs`) |
 | M0b | Writfold dry run | **exercised** | `docs/dry-runs/writfold-2026-11-18.md`. It found 4 defects in tauten, now fixed. |
 | M1 | `cargo tauten check` (human/JSON), `explain` (+`--markdown`), `profile`, `--assume-tier` | **exercised** | fixtures, self-check, writfold |
 | M1 | Ratchet: `cargo tauten baseline`, `--baseline`, stale-baseline rule TAU-R001, increases refused | **exercised** | unit tests; `tests/ratchet.rs`; writfold clone (707 accepted → 1 new `unwrap` = 1 error → stale slot = R001 → increase refused) |

@@ -18,7 +18,35 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:44e1a95d1da44210"
+      "fingerprint": "fnv1a64:453ba4730cf3cd12",
+      "inputs": {
+        "lean:tiers.Tier": "fnv1a64:53087a40e6ca99b4",
+        "lean:tiers.rank": "fnv1a64:c38e3761a3f05342",
+        "mutant:core-edge-swapped": "fnv1a64:d623aed49d303b27",
+        "mutant:kernel-ranks-as-core": "fnv1a64:2d102c2574acc982",
+        "proof:Tauten/Tiers.lean": "fnv1a64:82de6d44b7426686",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "core-edge-swapped",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.may_depend_on_spec",
+            "Tauten.Kernel.rank_spec"
+          ]
+        },
+        {
+          "mutant": "kernel-ranks-as-core",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.kernel_depends_only_on_kernel",
+            "Tauten.Kernel.may_depend_on_antisymm",
+            "Tauten.Kernel.may_depend_on_spec",
+            "Tauten.Kernel.rank_spec"
+          ]
+        }
+      ]
     },
     {
       "crate": "tauten-check-kernel",
@@ -43,7 +71,58 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:44e1a95d1da44210"
+      "fingerprint": "fnv1a64:453ba4730cf3cd12",
+      "inputs": {
+        "lean:tiers.Tier": "fnv1a64:53087a40e6ca99b4",
+        "lean:tiers.may_depend_on": "fnv1a64:65ce64445e3a06f1",
+        "lean:tiers.rank": "fnv1a64:c38e3761a3f05342",
+        "mutant:core-edge-swapped": "fnv1a64:d623aed49d303b27",
+        "mutant:kernel-ranks-as-core": "fnv1a64:2d102c2574acc982",
+        "mutant:one-step-outward": "fnv1a64:347854f893a913c0",
+        "mutant:same-tier-refused": "fnv1a64:f0d4e1f5b60e0622",
+        "proof:Tauten/Tiers.lean": "fnv1a64:82de6d44b7426686",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "same-tier-refused",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.kernel_depends_only_on_kernel",
+            "Tauten.Kernel.may_depend_on_refl",
+            "Tauten.Kernel.may_depend_on_spec",
+            "Tauten.Kernel.may_depend_on_total"
+          ]
+        },
+        {
+          "mutant": "one-step-outward",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.kernel_depends_only_on_kernel",
+            "Tauten.Kernel.may_depend_on_antisymm",
+            "Tauten.Kernel.may_depend_on_spec",
+            "Tauten.Kernel.may_depend_on_trans"
+          ]
+        },
+        {
+          "mutant": "core-edge-swapped",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.may_depend_on_spec",
+            "Tauten.Kernel.rank_spec"
+          ]
+        },
+        {
+          "mutant": "kernel-ranks-as-core",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.kernel_depends_only_on_kernel",
+            "Tauten.Kernel.may_depend_on_antisymm",
+            "Tauten.Kernel.may_depend_on_spec",
+            "Tauten.Kernel.rank_spec"
+          ]
+        }
+      ]
     },
     {
       "crate": "tauten-check-kernel",
@@ -60,7 +139,25 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:44e1a95d1da44210"
+      "fingerprint": "fnv1a64:453ba4730cf3cd12",
+      "inputs": {
+        "lean:severity.Level": "fnv1a64:7ced964c9470c680",
+        "lean:severity.is_blocking": "fnv1a64:efab3c370008275b",
+        "mutant:warn-blocks": "fnv1a64:bd540c60e10206ea",
+        "proof:Tauten/Severity.lean": "fnv1a64:d54becf1facd6edc",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "warn-blocks",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.exception_spec",
+            "Tauten.Kernel.is_blocking_spec",
+            "Tauten.Kernel.severity_spec"
+          ]
+        }
+      ]
     },
     {
       "crate": "tauten-check-kernel",
@@ -78,7 +175,35 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:44e1a95d1da44210"
+      "fingerprint": "fnv1a64:453ba4730cf3cd12",
+      "inputs": {
+        "lean:severity.Level": "fnv1a64:7ced964c9470c680",
+        "lean:severity.Severity": "fnv1a64:f48fd026309c9331",
+        "lean:severity.is_blocking": "fnv1a64:efab3c370008275b",
+        "lean:severity.severity": "fnv1a64:d2622a3f5b41a887",
+        "mutant:no-level-is-error": "fnv1a64:aad0b7a5f845d185",
+        "mutant:warn-blocks": "fnv1a64:bd540c60e10206ea",
+        "proof:Tauten/Severity.lean": "fnv1a64:d54becf1facd6edc",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "warn-blocks",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.exception_spec",
+            "Tauten.Kernel.is_blocking_spec",
+            "Tauten.Kernel.severity_spec"
+          ]
+        },
+        {
+          "mutant": "no-level-is-error",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.severity_spec"
+          ]
+        }
+      ]
     },
     {
       "crate": "tauten-check-kernel",
@@ -96,7 +221,36 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:44e1a95d1da44210"
+      "fingerprint": "fnv1a64:453ba4730cf3cd12",
+      "inputs": {
+        "lean:exception.permitted": "fnv1a64:b2f17637245bc2d7",
+        "lean:severity.Level": "fnv1a64:7ced964c9470c680",
+        "lean:tiers.Tier": "fnv1a64:53087a40e6ca99b4",
+        "mutant:kernel-excuses": "fnv1a64:54968731de5f70e2",
+        "mutant:rule-flag-ignored": "fnv1a64:732d7a4880775fef",
+        "proof:Tauten/Exception.lean": "fnv1a64:46351ebd70e36ba0",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "kernel-excuses",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.exception_spec",
+            "Tauten.Kernel.kernel_never_excuses_levelled_rule",
+            "Tauten.Kernel.permitted_spec"
+          ]
+        },
+        {
+          "mutant": "rule-flag-ignored",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.exception_spec",
+            "Tauten.Kernel.no_exceptions_never_excused",
+            "Tauten.Kernel.permitted_spec"
+          ]
+        }
+      ]
     },
     {
       "crate": "tauten-check-kernel",
@@ -118,7 +272,57 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:44e1a95d1da44210"
+      "fingerprint": "fnv1a64:453ba4730cf3cd12",
+      "inputs": {
+        "lean:exception.Excuse": "fnv1a64:6cd5bc494218d3ca",
+        "lean:exception.excuse": "fnv1a64:3c31183737f414f2",
+        "lean:exception.permitted": "fnv1a64:b2f17637245bc2d7",
+        "lean:severity.Level": "fnv1a64:7ced964c9470c680",
+        "lean:severity.is_blocking": "fnv1a64:efab3c370008275b",
+        "lean:tiers.Tier": "fnv1a64:53087a40e6ca99b4",
+        "mutant:crate-wide-any": "fnv1a64:9197c1f570927320",
+        "mutant:kernel-excuses": "fnv1a64:54968731de5f70e2",
+        "mutant:rule-flag-ignored": "fnv1a64:732d7a4880775fef",
+        "mutant:warn-blocks": "fnv1a64:bd540c60e10206ea",
+        "proof:Tauten/Exception.lean": "fnv1a64:46351ebd70e36ba0",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "warn-blocks",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.exception_spec",
+            "Tauten.Kernel.is_blocking_spec",
+            "Tauten.Kernel.severity_spec"
+          ]
+        },
+        {
+          "mutant": "kernel-excuses",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.exception_spec",
+            "Tauten.Kernel.kernel_never_excuses_levelled_rule",
+            "Tauten.Kernel.permitted_spec"
+          ]
+        },
+        {
+          "mutant": "rule-flag-ignored",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.exception_spec",
+            "Tauten.Kernel.no_exceptions_never_excused",
+            "Tauten.Kernel.permitted_spec"
+          ]
+        },
+        {
+          "mutant": "crate-wide-any",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.exception_spec"
+          ]
+        }
+      ]
     },
     {
       "crate": "tauten-check-kernel",
@@ -135,7 +339,41 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:44e1a95d1da44210"
+      "fingerprint": "fnv1a64:453ba4730cf3cd12",
+      "inputs": {
+        "lean:exception.Covered": "fnv1a64:6256def05c33b893",
+        "lean:exception.Excuse": "fnv1a64:6cd5bc494218d3ca",
+        "lean:exception.excuse": "fnv1a64:3c31183737f414f2",
+        "lean:exception.permitted": "fnv1a64:b2f17637245bc2d7",
+        "lean:exception.rank": "fnv1a64:54683232373bfea5",
+        "lean:exception.worse": "fnv1a64:adc432e79e2291cc",
+        "lean:exception.worst": "fnv1a64:5e26dcd3685d827c",
+        "lean:exception.worst_loop": "fnv1a64:66a3cee24aac85c6",
+        "lean:exception.worst_loop.body": "fnv1a64:ef5673335e93ddd8",
+        "lean:severity.Level": "fnv1a64:7ced964c9470c680",
+        "lean:severity.is_blocking": "fnv1a64:efab3c370008275b",
+        "lean:tiers.Tier": "fnv1a64:53087a40e6ca99b4",
+        "mutant:group-allowed": "fnv1a64:6e66c074bc3c9039",
+        "proof:Tauten/Control.lean": "fnv1a64:15597dcfcbd4a7ae",
+        "proof:Tauten/Exception.lean": "fnv1a64:46351ebd70e36ba0",
+        "proof:Tauten/ExceptionGroup.lean": "fnv1a64:c848b1878514d051",
+        "proof:Tauten/Outcome.lean": "fnv1a64:9a1457f8e8fa48b8",
+        "proof:Tauten/Ratchet.lean": "fnv1a64:348d5f7de112f0f7",
+        "proof:Tauten/RatchetModel.lean": "fnv1a64:68e378121c48660e",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "group-allowed",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.decide_single",
+            "Tauten.Kernel.decide_spec",
+            "Tauten.Kernel.group_never_weaker",
+            "Tauten.Kernel.worst_spec"
+          ]
+        }
+      ]
     },
     {
       "crate": "tauten-check-kernel",
@@ -156,7 +394,54 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:44e1a95d1da44210"
+      "fingerprint": "fnv1a64:453ba4730cf3cd12",
+      "inputs": {
+        "lean:exception.Covered": "fnv1a64:6256def05c33b893",
+        "lean:exception.Excuse": "fnv1a64:6cd5bc494218d3ca",
+        "lean:exception.Form": "fnv1a64:0f412d447bdb8cf2",
+        "lean:exception.decide": "fnv1a64:a6b1958711e943b9",
+        "lean:exception.excuse": "fnv1a64:3c31183737f414f2",
+        "lean:exception.permitted": "fnv1a64:b2f17637245bc2d7",
+        "lean:exception.rank": "fnv1a64:54683232373bfea5",
+        "lean:exception.worse": "fnv1a64:adc432e79e2291cc",
+        "lean:exception.worst": "fnv1a64:5e26dcd3685d827c",
+        "lean:exception.worst_loop": "fnv1a64:66a3cee24aac85c6",
+        "lean:exception.worst_loop.body": "fnv1a64:ef5673335e93ddd8",
+        "lean:severity.Level": "fnv1a64:7ced964c9470c680",
+        "lean:severity.is_blocking": "fnv1a64:efab3c370008275b",
+        "lean:tiers.Tier": "fnv1a64:53087a40e6ca99b4",
+        "mutant:conditional-allowed": "fnv1a64:e5cff54187369d0b",
+        "mutant:group-allowed": "fnv1a64:6e66c074bc3c9039",
+        "proof:Tauten/Control.lean": "fnv1a64:15597dcfcbd4a7ae",
+        "proof:Tauten/Exception.lean": "fnv1a64:46351ebd70e36ba0",
+        "proof:Tauten/ExceptionGroup.lean": "fnv1a64:c848b1878514d051",
+        "proof:Tauten/Outcome.lean": "fnv1a64:9a1457f8e8fa48b8",
+        "proof:Tauten/Ratchet.lean": "fnv1a64:348d5f7de112f0f7",
+        "proof:Tauten/RatchetModel.lean": "fnv1a64:68e378121c48660e",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "conditional-allowed",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.conditional_never_allowed_in_kernel",
+            "Tauten.Kernel.decide_single",
+            "Tauten.Kernel.decide_spec",
+            "Tauten.Kernel.group_never_weaker"
+          ]
+        },
+        {
+          "mutant": "group-allowed",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.decide_single",
+            "Tauten.Kernel.decide_spec",
+            "Tauten.Kernel.group_never_weaker",
+            "Tauten.Kernel.worst_spec"
+          ]
+        }
+      ]
     },
     {
       "crate": "tauten-check-kernel",
@@ -176,7 +461,44 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:44e1a95d1da44210"
+      "fingerprint": "fnv1a64:453ba4730cf3cd12",
+      "inputs": {
+        "lean:exception.Setting": "fnv1a64:d6e6a79d3cf0ecd4",
+        "lean:exception.loosens": "fnv1a64:ea888ccc2332fd08",
+        "lean:exception.loosens_loop": "fnv1a64:9facdbcd30a78133",
+        "lean:exception.loosens_loop.body": "fnv1a64:6c1344aecea5f51c",
+        "lean:exception.weakens": "fnv1a64:7a051036f2d3336d",
+        "lean:severity.Level": "fnv1a64:7ced964c9470c680",
+        "lean:severity.is_blocking": "fnv1a64:efab3c370008275b",
+        "mutant:expect-not-weakening": "fnv1a64:f6ca3de922a3bb23",
+        "mutant:loosens-ignores-level": "fnv1a64:a4e4568e71de1915",
+        "proof:Tauten/Control.lean": "fnv1a64:15597dcfcbd4a7ae",
+        "proof:Tauten/Exception.lean": "fnv1a64:46351ebd70e36ba0",
+        "proof:Tauten/ExceptionGroup.lean": "fnv1a64:c848b1878514d051",
+        "proof:Tauten/Outcome.lean": "fnv1a64:9a1457f8e8fa48b8",
+        "proof:Tauten/Ratchet.lean": "fnv1a64:348d5f7de112f0f7",
+        "proof:Tauten/RatchetModel.lean": "fnv1a64:68e378121c48660e",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "loosens-ignores-level",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.loosens_spec",
+            "Tauten.Kernel.x003_iff"
+          ]
+        },
+        {
+          "mutant": "expect-not-weakening",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.loosens_spec",
+            "Tauten.Kernel.weakens_spec",
+            "Tauten.Kernel.x003_iff"
+          ]
+        }
+      ]
     },
     {
       "crate": "tauten-check-kernel",
@@ -204,7 +526,105 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:44e1a95d1da44210"
+      "fingerprint": "fnv1a64:453ba4730cf3cd12",
+      "inputs": {
+        "lean:ratchet.Finding": "fnv1a64:139b49fafdac8820",
+        "lean:ratchet.apply": "fnv1a64:a286ee6709f5237f",
+        "lean:ratchet.apply_loop": "fnv1a64:e13a46dbb8facd9a",
+        "lean:ratchet.apply_loop.body": "fnv1a64:5e3836a76db5b1bd",
+        "lean:ratchet.take": "fnv1a64:9771dc54cd950e06",
+        "lean:ratchet.take_at": "fnv1a64:5bf79b796abb3559",
+        "mutant:cover-not-consumed": "fnv1a64:04ad868a80af24dd",
+        "mutant:covered-flag-dropped": "fnv1a64:f79ae9b75421d9ed",
+        "mutant:headroom-ignored": "fnv1a64:08e0f0fdc9ca2589",
+        "mutant:missing-key-accepts-one": "fnv1a64:53c60b8bc64f760d",
+        "mutant:stale-needs-two": "fnv1a64:d589bd4e7df76716",
+        "mutant:warnings-covered": "fnv1a64:513d9634784551af",
+        "proof:Tauten/Ratchet.lean": "fnv1a64:348d5f7de112f0f7",
+        "proof:Tauten/RatchetModel.lean": "fnv1a64:68e378121c48660e",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "warnings-covered",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.apply_cover_count",
+            "Tauten.Kernel.apply_covered_iff",
+            "Tauten.Kernel.apply_left_spec",
+            "Tauten.Kernel.apply_suppressed_le_accepted",
+            "Tauten.Kernel.ratchet_example",
+            "Tauten.Kernel.ratchet_headroom",
+            "Tauten.Kernel.ratchet_passes_iff",
+            "Tauten.Kernel.ratchet_stale_iff"
+          ]
+        },
+        {
+          "mutant": "headroom-ignored",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.apply_cover_count",
+            "Tauten.Kernel.apply_covered_iff",
+            "Tauten.Kernel.apply_left_spec",
+            "Tauten.Kernel.apply_suppressed_le_accepted",
+            "Tauten.Kernel.ratchet_example",
+            "Tauten.Kernel.ratchet_headroom",
+            "Tauten.Kernel.ratchet_passes_iff",
+            "Tauten.Kernel.ratchet_stale_iff"
+          ]
+        },
+        {
+          "mutant": "cover-not-consumed",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.apply_cover_count",
+            "Tauten.Kernel.apply_covered_iff",
+            "Tauten.Kernel.apply_left_spec",
+            "Tauten.Kernel.apply_suppressed_le_accepted",
+            "Tauten.Kernel.ratchet_example",
+            "Tauten.Kernel.ratchet_headroom",
+            "Tauten.Kernel.ratchet_passes_iff",
+            "Tauten.Kernel.ratchet_stale_iff"
+          ]
+        },
+        {
+          "mutant": "covered-flag-dropped",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.apply_conserves",
+            "Tauten.Kernel.apply_cover_count",
+            "Tauten.Kernel.apply_covered_iff",
+            "Tauten.Kernel.apply_left_spec",
+            "Tauten.Kernel.apply_suppressed_le_accepted",
+            "Tauten.Kernel.ratchet_example",
+            "Tauten.Kernel.ratchet_headroom",
+            "Tauten.Kernel.ratchet_passes_iff",
+            "Tauten.Kernel.ratchet_stale_iff"
+          ]
+        },
+        {
+          "mutant": "stale-needs-two",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.ratchet_example",
+            "Tauten.Kernel.ratchet_passes_iff",
+            "Tauten.Kernel.ratchet_stale_iff"
+          ]
+        },
+        {
+          "mutant": "missing-key-accepts-one",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.increase_example",
+            "Tauten.Kernel.increases_flags",
+            "Tauten.Kernel.increases_none_iff",
+            "Tauten.Kernel.ratchet_example",
+            "Tauten.Kernel.ratchet_passes_iff",
+            "Tauten.Kernel.ratchet_stale_iff",
+            "Tauten.Kernel.regenerated_baseline_never_grows"
+          ]
+        }
+      ]
     },
     {
       "crate": "tauten-check-kernel",
@@ -227,7 +647,103 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:44e1a95d1da44210"
+      "fingerprint": "fnv1a64:453ba4730cf3cd12",
+      "inputs": {
+        "lean:ratchet.count_at": "fnv1a64:ea37c22ffa1db03b",
+        "lean:ratchet.stale": "fnv1a64:8242ff5513b287bf",
+        "lean:ratchet.stale_loop": "fnv1a64:cf1e3c23c72357d1",
+        "lean:ratchet.stale_loop.body": "fnv1a64:0d937f060508f08a",
+        "mutant:cover-not-consumed": "fnv1a64:04ad868a80af24dd",
+        "mutant:covered-flag-dropped": "fnv1a64:f79ae9b75421d9ed",
+        "mutant:headroom-ignored": "fnv1a64:08e0f0fdc9ca2589",
+        "mutant:missing-key-accepts-one": "fnv1a64:53c60b8bc64f760d",
+        "mutant:stale-needs-two": "fnv1a64:d589bd4e7df76716",
+        "mutant:warnings-covered": "fnv1a64:513d9634784551af",
+        "proof:Tauten/Ratchet.lean": "fnv1a64:348d5f7de112f0f7",
+        "proof:Tauten/RatchetModel.lean": "fnv1a64:68e378121c48660e",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "warnings-covered",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.apply_cover_count",
+            "Tauten.Kernel.apply_covered_iff",
+            "Tauten.Kernel.apply_left_spec",
+            "Tauten.Kernel.apply_suppressed_le_accepted",
+            "Tauten.Kernel.ratchet_example",
+            "Tauten.Kernel.ratchet_headroom",
+            "Tauten.Kernel.ratchet_passes_iff",
+            "Tauten.Kernel.ratchet_stale_iff"
+          ]
+        },
+        {
+          "mutant": "headroom-ignored",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.apply_cover_count",
+            "Tauten.Kernel.apply_covered_iff",
+            "Tauten.Kernel.apply_left_spec",
+            "Tauten.Kernel.apply_suppressed_le_accepted",
+            "Tauten.Kernel.ratchet_example",
+            "Tauten.Kernel.ratchet_headroom",
+            "Tauten.Kernel.ratchet_passes_iff",
+            "Tauten.Kernel.ratchet_stale_iff"
+          ]
+        },
+        {
+          "mutant": "cover-not-consumed",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.apply_cover_count",
+            "Tauten.Kernel.apply_covered_iff",
+            "Tauten.Kernel.apply_left_spec",
+            "Tauten.Kernel.apply_suppressed_le_accepted",
+            "Tauten.Kernel.ratchet_example",
+            "Tauten.Kernel.ratchet_headroom",
+            "Tauten.Kernel.ratchet_passes_iff",
+            "Tauten.Kernel.ratchet_stale_iff"
+          ]
+        },
+        {
+          "mutant": "covered-flag-dropped",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.apply_conserves",
+            "Tauten.Kernel.apply_cover_count",
+            "Tauten.Kernel.apply_covered_iff",
+            "Tauten.Kernel.apply_left_spec",
+            "Tauten.Kernel.apply_suppressed_le_accepted",
+            "Tauten.Kernel.ratchet_example",
+            "Tauten.Kernel.ratchet_headroom",
+            "Tauten.Kernel.ratchet_passes_iff",
+            "Tauten.Kernel.ratchet_stale_iff"
+          ]
+        },
+        {
+          "mutant": "stale-needs-two",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.ratchet_example",
+            "Tauten.Kernel.ratchet_passes_iff",
+            "Tauten.Kernel.ratchet_stale_iff"
+          ]
+        },
+        {
+          "mutant": "missing-key-accepts-one",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.increase_example",
+            "Tauten.Kernel.increases_flags",
+            "Tauten.Kernel.increases_none_iff",
+            "Tauten.Kernel.ratchet_example",
+            "Tauten.Kernel.ratchet_passes_iff",
+            "Tauten.Kernel.ratchet_stale_iff",
+            "Tauten.Kernel.regenerated_baseline_never_grows"
+          ]
+        }
+      ]
     },
     {
       "crate": "tauten-check-kernel",
@@ -244,7 +760,32 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:44e1a95d1da44210"
+      "fingerprint": "fnv1a64:453ba4730cf3cd12",
+      "inputs": {
+        "lean:ratchet.Finding": "fnv1a64:139b49fafdac8820",
+        "lean:ratchet.add_error": "fnv1a64:024a48d6bd496f1f",
+        "lean:ratchet.add_error_at": "fnv1a64:004356a15b5a869b",
+        "lean:ratchet.count_errors": "fnv1a64:71c5a728ad3adc20",
+        "lean:ratchet.count_errors_loop": "fnv1a64:f9d864ad17fbaa23",
+        "lean:ratchet.count_errors_loop.body": "fnv1a64:33d608668208e3c1",
+        "lean:ratchet.zeros": "fnv1a64:ff38ae08a84e36a5",
+        "lean:ratchet.zeros_loop": "fnv1a64:48492c4a1cdd39fb",
+        "lean:ratchet.zeros_loop.body": "fnv1a64:93ce0f3e27ea9654",
+        "mutant:warnings-counted": "fnv1a64:ef1fadc04c7c09bb",
+        "proof:Tauten/Ratchet.lean": "fnv1a64:348d5f7de112f0f7",
+        "proof:Tauten/RatchetModel.lean": "fnv1a64:68e378121c48660e",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "warnings-counted",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.count_errors_counts",
+            "Tauten.Kernel.regenerated_baseline_never_grows"
+          ]
+        }
+      ]
     },
     {
       "crate": "tauten-check-kernel",
@@ -266,7 +807,54 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:44e1a95d1da44210"
+      "fingerprint": "fnv1a64:453ba4730cf3cd12",
+      "inputs": {
+        "lean:ratchet.Entry": "fnv1a64:e25af805b313068f",
+        "lean:ratchet.count_at": "fnv1a64:ea37c22ffa1db03b",
+        "lean:ratchet.grows_at": "fnv1a64:48d8e76347c1b969",
+        "lean:ratchet.increases": "fnv1a64:341ab9fa7c1d47e1",
+        "lean:ratchet.increases_loop": "fnv1a64:a6bf7e8802ffb174",
+        "lean:ratchet.increases_loop.body": "fnv1a64:94d2253c5dffdec0",
+        "mutant:equal-is-growth": "fnv1a64:b9d57cc73b82611f",
+        "mutant:missing-key-accepts-one": "fnv1a64:53c60b8bc64f760d",
+        "mutant:warnings-counted": "fnv1a64:ef1fadc04c7c09bb",
+        "proof:Tauten/Ratchet.lean": "fnv1a64:348d5f7de112f0f7",
+        "proof:Tauten/RatchetModel.lean": "fnv1a64:68e378121c48660e",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "warnings-counted",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.count_errors_counts",
+            "Tauten.Kernel.regenerated_baseline_never_grows"
+          ]
+        },
+        {
+          "mutant": "equal-is-growth",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.increase_example",
+            "Tauten.Kernel.increases_flags",
+            "Tauten.Kernel.increases_none_iff",
+            "Tauten.Kernel.regenerated_baseline_never_grows"
+          ]
+        },
+        {
+          "mutant": "missing-key-accepts-one",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.increase_example",
+            "Tauten.Kernel.increases_flags",
+            "Tauten.Kernel.increases_none_iff",
+            "Tauten.Kernel.ratchet_example",
+            "Tauten.Kernel.ratchet_passes_iff",
+            "Tauten.Kernel.ratchet_stale_iff",
+            "Tauten.Kernel.regenerated_baseline_never_grows"
+          ]
+        }
+      ]
     },
     {
       "crate": "tauten-check-kernel",
@@ -288,7 +876,76 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:44e1a95d1da44210"
+      "fingerprint": "fnv1a64:453ba4730cf3cd12",
+      "inputs": {
+        "lean:table.Invalid": "fnv1a64:813b4d30c23a02ca",
+        "lean:table.absent": "fnv1a64:f0f57ef6fdf41f9e",
+        "lean:table.contains": "fnv1a64:0d021e68409878cf",
+        "lean:table.duplicate": "fnv1a64:30e51c518299b718",
+        "lean:table.find_before": "fnv1a64:f0b04749010bf346",
+        "lean:table.find_before_loop": "fnv1a64:71acd2b6ec1cfb76",
+        "lean:table.find_before_loop.body": "fnv1a64:994edb63978d38c8",
+        "lean:table.first_duplicate": "fnv1a64:ec7f20f8d9d2fb02",
+        "lean:table.first_duplicate_loop": "fnv1a64:c7b3b6ad72ea132a",
+        "lean:table.first_duplicate_loop.body": "fnv1a64:93e16256e606b9b0",
+        "lean:table.first_missing": "fnv1a64:adeeccf83c980da8",
+        "lean:table.first_missing_loop": "fnv1a64:eb573891172e9cce",
+        "lean:table.first_missing_loop.body": "fnv1a64:fc066ebe66b2bb72",
+        "lean:table.is_at": "fnv1a64:b73b1b990d3099c9",
+        "lean:table.missing_at": "fnv1a64:9800943f8bd6aa57",
+        "lean:table.owner_at": "fnv1a64:6f02274d47547f18",
+        "lean:table.repeat_at": "fnv1a64:26aa77c6d0e9e410",
+        "lean:table.validate": "fnv1a64:efe60a4d55eebee0",
+        "mutant:duplicate-ids-accepted": "fnv1a64:eb40b54136cc747d",
+        "mutant:duplicate-lints-accepted": "fnv1a64:a4c0516d6a46ce9a",
+        "mutant:required-id-missing-accepted": "fnv1a64:145be4f71cd18252",
+        "mutant:search-stops-short": "fnv1a64:f564c25bb601cca2",
+        "mutant:unknown-api-rule-accepted": "fnv1a64:231f85b6b87e051f",
+        "proof:Tauten/Table.lean": "fnv1a64:088cb8997dd0cdf5",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "duplicate-ids-accepted",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.validate_examples",
+            "Tauten.Kernel.validate_ok_iff"
+          ]
+        },
+        {
+          "mutant": "duplicate-lints-accepted",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.validate_examples",
+            "Tauten.Kernel.validate_ok_iff"
+          ]
+        },
+        {
+          "mutant": "unknown-api-rule-accepted",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.validate_examples",
+            "Tauten.Kernel.validate_ok_iff"
+          ]
+        },
+        {
+          "mutant": "required-id-missing-accepted",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.validate_examples",
+            "Tauten.Kernel.validate_ok_iff"
+          ]
+        },
+        {
+          "mutant": "search-stops-short",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.validate_examples",
+            "Tauten.Kernel.validate_ok_iff"
+          ]
+        }
+      ]
     },
     {
       "crate": "tauten-check-kernel",
@@ -311,7 +968,51 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:44e1a95d1da44210"
+      "fingerprint": "fnv1a64:453ba4730cf3cd12",
+      "inputs": {
+        "lean:subsume.Finding": "fnv1a64:74ab1027ef0373f8",
+        "lean:subsume.subsumes": "fnv1a64:c6dad2197f5b34a7",
+        "lean:tiers.Tier": "fnv1a64:53087a40e6ca99b4",
+        "mutant:any-finding-subsumed": "fnv1a64:826f8d0a44e0b456",
+        "mutant:core-subsumed": "fnv1a64:ceb271c565f02ff6",
+        "mutant:stale-proof-subsumes": "fnv1a64:e5135106ea20f1c9",
+        "mutant:unlisted-rule-subsumed": "fnv1a64:24ff7adf52f9eaad",
+        "proof:Tauten/Subsume.lean": "fnv1a64:a177bc55a73a9baa",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "stale-proof-subsumes",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.stale_proof_never_subsumes",
+            "Tauten.Kernel.subsumes_spec"
+          ]
+        },
+        {
+          "mutant": "core-subsumed",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.subsumes_only_in_kernel",
+            "Tauten.Kernel.subsumes_spec"
+          ]
+        },
+        {
+          "mutant": "any-finding-subsumed",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.subsumes_only_arithmetic_and_indexing",
+            "Tauten.Kernel.subsumes_spec"
+          ]
+        },
+        {
+          "mutant": "unlisted-rule-subsumed",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.subsumes_spec"
+          ]
+        }
+      ]
     },
     {
       "crate": "tauten-check-kernel",
@@ -331,7 +1032,50 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:44e1a95d1da44210"
+      "fingerprint": "fnv1a64:453ba4730cf3cd12",
+      "inputs": {
+        "lean:effects.Row": "fnv1a64:9e5110f75fc06247",
+        "lean:effects.Source": "fnv1a64:750c520b04825fec",
+        "lean:effects.add": "fnv1a64:e56b2b8930c50adc",
+        "lean:effects.add_at": "fnv1a64:1239c0ed6ba16757",
+        "lean:effects.derive": "fnv1a64:714af7ec76def790",
+        "lean:effects.derive_loop": "fnv1a64:61e6a1575ba25948",
+        "lean:effects.derive_loop.body": "fnv1a64:b19cccbd9f7935d3",
+        "lean:effects.empty": "fnv1a64:8f61f43da1079727",
+        "mutant:dir-not-write": "fnv1a64:d2ef3abff5b02086",
+        "mutant:fail-ignored": "fnv1a64:672a12b32b642e2a",
+        "mutant:readdir-writes": "fnv1a64:75c2890c9f13685b",
+        "proof:Tauten/Effects.lean": "fnv1a64:1e27d53022b71fd0",
+        "proof:Tauten/Ratchet.lean": "fnv1a64:348d5f7de112f0f7",
+        "proof:Tauten/RatchetModel.lean": "fnv1a64:68e378121c48660e",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "dir-not-write",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.derive_spec",
+            "Tauten.Kernel.f001_decision"
+          ]
+        },
+        {
+          "mutant": "readdir-writes",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.derive_spec",
+            "Tauten.Kernel.f001_decision"
+          ]
+        },
+        {
+          "mutant": "fail-ignored",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.derive_spec",
+            "Tauten.Kernel.f001_decision"
+          ]
+        }
+      ]
     },
     {
       "crate": "tauten-check-kernel",
@@ -348,7 +1092,32 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:44e1a95d1da44210"
+      "fingerprint": "fnv1a64:453ba4730cf3cd12",
+      "inputs": {
+        "lean:effects.Row": "fnv1a64:9e5110f75fc06247",
+        "lean:effects.missing": "fnv1a64:52f170f3140f6baf",
+        "mutant:missing-net-swapped": "fnv1a64:e0665c4b33e99724",
+        "proof:Tauten/Effects.lean": "fnv1a64:1e27d53022b71fd0",
+        "proof:Tauten/Ratchet.lean": "fnv1a64:348d5f7de112f0f7",
+        "proof:Tauten/RatchetModel.lean": "fnv1a64:68e378121c48660e",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "missing-net-swapped",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.agrees_spec",
+            "Tauten.Kernel.extra_spec",
+            "Tauten.Kernel.f001_decision",
+            "Tauten.Kernel.f001_error_iff",
+            "Tauten.Kernel.f001_examples",
+            "Tauten.Kernel.f001_silent_iff",
+            "Tauten.Kernel.missing_spec",
+            "Tauten.Kernel.verdict_spec"
+          ]
+        }
+      ]
     },
     {
       "crate": "tauten-check-kernel",
@@ -365,7 +1134,33 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:44e1a95d1da44210"
+      "fingerprint": "fnv1a64:453ba4730cf3cd12",
+      "inputs": {
+        "lean:effects.Row": "fnv1a64:9e5110f75fc06247",
+        "lean:effects.extra": "fnv1a64:10a7109af951ea02",
+        "lean:effects.missing": "fnv1a64:52f170f3140f6baf",
+        "mutant:missing-net-swapped": "fnv1a64:e0665c4b33e99724",
+        "proof:Tauten/Effects.lean": "fnv1a64:1e27d53022b71fd0",
+        "proof:Tauten/Ratchet.lean": "fnv1a64:348d5f7de112f0f7",
+        "proof:Tauten/RatchetModel.lean": "fnv1a64:68e378121c48660e",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "missing-net-swapped",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.agrees_spec",
+            "Tauten.Kernel.extra_spec",
+            "Tauten.Kernel.f001_decision",
+            "Tauten.Kernel.f001_error_iff",
+            "Tauten.Kernel.f001_examples",
+            "Tauten.Kernel.f001_silent_iff",
+            "Tauten.Kernel.missing_spec",
+            "Tauten.Kernel.verdict_spec"
+          ]
+        }
+      ]
     },
     {
       "crate": "tauten-check-kernel",
@@ -385,7 +1180,48 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:44e1a95d1da44210"
+      "fingerprint": "fnv1a64:453ba4730cf3cd12",
+      "inputs": {
+        "lean:effects.Row": "fnv1a64:9e5110f75fc06247",
+        "lean:effects.agrees": "fnv1a64:88b48fabe093169b",
+        "lean:effects.extra": "fnv1a64:10a7109af951ea02",
+        "lean:effects.is_empty": "fnv1a64:aa096f62ab9ec310",
+        "lean:effects.missing": "fnv1a64:52f170f3140f6baf",
+        "mutant:agrees-ignores-extra": "fnv1a64:6ba508b5aed59c2d",
+        "mutant:missing-net-swapped": "fnv1a64:e0665c4b33e99724",
+        "proof:Tauten/Effects.lean": "fnv1a64:1e27d53022b71fd0",
+        "proof:Tauten/Ratchet.lean": "fnv1a64:348d5f7de112f0f7",
+        "proof:Tauten/RatchetModel.lean": "fnv1a64:68e378121c48660e",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "agrees-ignores-extra",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.agrees_spec",
+            "Tauten.Kernel.f001_decision",
+            "Tauten.Kernel.f001_error_iff",
+            "Tauten.Kernel.f001_examples",
+            "Tauten.Kernel.f001_silent_iff",
+            "Tauten.Kernel.verdict_spec"
+          ]
+        },
+        {
+          "mutant": "missing-net-swapped",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.agrees_spec",
+            "Tauten.Kernel.extra_spec",
+            "Tauten.Kernel.f001_decision",
+            "Tauten.Kernel.f001_error_iff",
+            "Tauten.Kernel.f001_examples",
+            "Tauten.Kernel.f001_silent_iff",
+            "Tauten.Kernel.missing_spec",
+            "Tauten.Kernel.verdict_spec"
+          ]
+        }
+      ]
     },
     {
       "crate": "tauten-check-kernel",
@@ -405,7 +1241,42 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:44e1a95d1da44210"
+      "fingerprint": "fnv1a64:453ba4730cf3cd12",
+      "inputs": {
+        "lean:effects.Row": "fnv1a64:9e5110f75fc06247",
+        "lean:effects.Verdict": "fnv1a64:7106ce8032b32ba0",
+        "lean:effects.agrees": "fnv1a64:88b48fabe093169b",
+        "lean:effects.extra": "fnv1a64:10a7109af951ea02",
+        "lean:effects.is_empty": "fnv1a64:aa096f62ab9ec310",
+        "lean:effects.missing": "fnv1a64:52f170f3140f6baf",
+        "lean:effects.verdict": "fnv1a64:9d654f9ce5413ff0",
+        "mutant:undeclared-always-blocks": "fnv1a64:0e218854172b52d5",
+        "mutant:unresolved-blocks": "fnv1a64:655df6b20c745161",
+        "proof:Tauten/Effects.lean": "fnv1a64:1e27d53022b71fd0",
+        "proof:Tauten/Ratchet.lean": "fnv1a64:348d5f7de112f0f7",
+        "proof:Tauten/RatchetModel.lean": "fnv1a64:68e378121c48660e",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "unresolved-blocks",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.f001_error_iff",
+            "Tauten.Kernel.f001_silent_iff",
+            "Tauten.Kernel.verdict_spec"
+          ]
+        },
+        {
+          "mutant": "undeclared-always-blocks",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.f001_error_iff",
+            "Tauten.Kernel.f001_silent_iff",
+            "Tauten.Kernel.verdict_spec"
+          ]
+        }
+      ]
     },
     {
       "crate": "tauten-check-kernel",
@@ -427,7 +1298,49 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:44e1a95d1da44210"
+      "fingerprint": "fnv1a64:453ba4730cf3cd12",
+      "inputs": {
+        "lean:outcome.Facts": "fnv1a64:2ca27bb2ed8b7f45",
+        "lean:outcome.Outcome": "fnv1a64:7bc6bdb4bda38b48",
+        "lean:outcome.Stage": "fnv1a64:88ac3738ff36ceba",
+        "lean:outcome.outcome": "fnv1a64:eb5192379d6fcfc1",
+        "lean:outcome.passed": "fnv1a64:06c6f52cd9cacc22",
+        "mutant:absent-passes": "fnv1a64:d8d76df3327b6097",
+        "mutant:changed-ignored": "fnv1a64:1045cec3352f594f",
+        "mutant:mutants-ignored": "fnv1a64:8a40a845722cf2d8",
+        "proof:Tauten/Outcome.lean": "fnv1a64:9a1457f8e8fa48b8",
+        "proof:Tauten/Ratchet.lean": "fnv1a64:348d5f7de112f0f7",
+        "proof:Tauten/RatchetModel.lean": "fnv1a64:68e378121c48660e",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "changed-ignored",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.outcome_examples",
+            "Tauten.Kernel.outcome_proved_iff"
+          ]
+        },
+        {
+          "mutant": "mutants-ignored",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.outcome_mutant_survived_iff",
+            "Tauten.Kernel.outcome_proved_iff"
+          ]
+        },
+        {
+          "mutant": "absent-passes",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.outcome_examples",
+            "Tauten.Kernel.outcome_mutant_survived_iff",
+            "Tauten.Kernel.outcome_proved_iff",
+            "Tauten.Kernel.outcome_tool_missing_iff"
+          ]
+        }
+      ]
     },
     {
       "crate": "tauten-check-kernel",
@@ -448,7 +1361,53 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:44e1a95d1da44210"
+      "fingerprint": "fnv1a64:453ba4730cf3cd12",
+      "inputs": {
+        "lean:span.consider": "fnv1a64:1faf81d7fddee09b",
+        "lean:span.covers": "fnv1a64:c876e64678308752",
+        "lean:span.innermost": "fnv1a64:d0fc1a80b4cf9604",
+        "lean:span.innermost_loop": "fnv1a64:a63646e63b7b3c93",
+        "lean:span.innermost_loop.body": "fnv1a64:64adb160bb9af0d3",
+        "lean:span.width": "fnv1a64:6883d8bcde857ee6",
+        "mutant:covers-ignores-end": "fnv1a64:1aafa8b125121c4f",
+        "mutant:skips-first-span": "fnv1a64:b7c4eed36ccb8daf",
+        "mutant:tie-takes-later": "fnv1a64:6f658ab515d8e730",
+        "mutant:widest-wins": "fnv1a64:5d5940a491072c29",
+        "proof:Tauten/Ratchet.lean": "fnv1a64:348d5f7de112f0f7",
+        "proof:Tauten/RatchetModel.lean": "fnv1a64:68e378121c48660e",
+        "proof:Tauten/Span.lean": "fnv1a64:54371c8c08f4aa00",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "tie-takes-later",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.innermost_spec"
+          ]
+        },
+        {
+          "mutant": "widest-wins",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.innermost_spec"
+          ]
+        },
+        {
+          "mutant": "skips-first-span",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.innermost_spec"
+          ]
+        },
+        {
+          "mutant": "covers-ignores-end",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.innermost_spec"
+          ]
+        }
+      ]
     },
     {
       "crate": "tauten-proof-instances",
@@ -473,7 +1432,70 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:67d65c9e53f07613"
+      "fingerprint": "fnv1a64:664e25a0d1397909",
+      "inputs": {
+        "lean:refined.__tauten_percent.Percent": "fnv1a64:54a1807425470fda",
+        "lean:refined.__tauten_percent.Percent.try_new": "fnv1a64:a6897baa1a6e8159",
+        "lean:refined.__tauten_percent.Percent.try_new.closure": "fnv1a64:089007f07a905534",
+        "lean:tauten.contract.holds": "fnv1a64:694f437f8f26d73b",
+        "lean:tauten.error.RefineError": "fnv1a64:1447374f34920b51",
+        "lean:tauten.error.RefineError.new": "fnv1a64:7f7a5539d6ff4f6c",
+        "mutant:attributes-dropped": "fnv1a64:e78d5f1735793f5d",
+        "mutant:refined-check-inverted": "fnv1a64:d6939f7c77630246",
+        "mutant:try-from-unchecked": "fnv1a64:5cf3e632a12e36de",
+        "proof:Tauten/MacroShapes.lean": "fnv1a64:0b4c9b9e89d4ca44",
+        "proof:Tauten/Refined.lean": "fnv1a64:98b4a6a450a0afef",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "refined-check-inverted",
+          "status": "killed",
+          "broken": [
+            "Tauten.Instances.count_boundaries",
+            "Tauten.Instances.count_try_new_err_iff",
+            "Tauten.Instances.count_try_new_ok_iff",
+            "Tauten.Instances.count_try_new_shape",
+            "Tauten.Instances.count_try_new_sound",
+            "Tauten.Instances.offset_boundaries",
+            "Tauten.Instances.offset_try_new_err_iff",
+            "Tauten.Instances.offset_try_new_ok_iff",
+            "Tauten.Instances.offset_try_new_shape",
+            "Tauten.Instances.offset_try_new_sound",
+            "Tauten.Instances.percent_boundaries",
+            "Tauten.Instances.percent_try_new_err_iff",
+            "Tauten.Instances.percent_try_new_ok_iff",
+            "Tauten.Instances.percent_try_new_shape",
+            "Tauten.Instances.percent_try_new_sound",
+            "Tauten.Instances.port_boundaries",
+            "Tauten.Instances.port_try_new_err_iff",
+            "Tauten.Instances.port_try_new_ok_iff",
+            "Tauten.Instances.port_try_new_shape",
+            "Tauten.Instances.port_try_new_sound"
+          ]
+        },
+        {
+          "mutant": "try-from-unchecked",
+          "status": "killed",
+          "broken": [
+            "Tauten.Instances.count_try_from_spec",
+            "Tauten.Instances.offset_try_from_spec",
+            "Tauten.Instances.percent_try_from_spec",
+            "Tauten.Instances.port_try_from_spec"
+          ]
+        },
+        {
+          "mutant": "attributes-dropped",
+          "status": "killed",
+          "broken": [
+            "Tauten.Instances.count_derived_spec",
+            "Tauten.Instances.offset_derived_spec",
+            "Tauten.Instances.percent_derived_spec",
+            "Tauten.Instances.port_derived_spec",
+            "Tauten.Instances.tag_control_spec"
+          ]
+        }
+      ]
     },
     {
       "crate": "tauten-proof-instances",
@@ -498,7 +1520,70 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:67d65c9e53f07613"
+      "fingerprint": "fnv1a64:664e25a0d1397909",
+      "inputs": {
+        "lean:refined.__tauten_port.Port": "fnv1a64:8e80ce710ed0461e",
+        "lean:refined.__tauten_port.Port.try_new": "fnv1a64:f6fecdf4605f02ec",
+        "lean:refined.__tauten_port.Port.try_new.closure": "fnv1a64:4adc55a35d57aa5e",
+        "lean:tauten.contract.holds": "fnv1a64:694f437f8f26d73b",
+        "lean:tauten.error.RefineError": "fnv1a64:1447374f34920b51",
+        "lean:tauten.error.RefineError.new": "fnv1a64:7f7a5539d6ff4f6c",
+        "mutant:attributes-dropped": "fnv1a64:e78d5f1735793f5d",
+        "mutant:refined-check-inverted": "fnv1a64:d6939f7c77630246",
+        "mutant:try-from-unchecked": "fnv1a64:5cf3e632a12e36de",
+        "proof:Tauten/MacroShapes.lean": "fnv1a64:0b4c9b9e89d4ca44",
+        "proof:Tauten/Refined.lean": "fnv1a64:98b4a6a450a0afef",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "refined-check-inverted",
+          "status": "killed",
+          "broken": [
+            "Tauten.Instances.count_boundaries",
+            "Tauten.Instances.count_try_new_err_iff",
+            "Tauten.Instances.count_try_new_ok_iff",
+            "Tauten.Instances.count_try_new_shape",
+            "Tauten.Instances.count_try_new_sound",
+            "Tauten.Instances.offset_boundaries",
+            "Tauten.Instances.offset_try_new_err_iff",
+            "Tauten.Instances.offset_try_new_ok_iff",
+            "Tauten.Instances.offset_try_new_shape",
+            "Tauten.Instances.offset_try_new_sound",
+            "Tauten.Instances.percent_boundaries",
+            "Tauten.Instances.percent_try_new_err_iff",
+            "Tauten.Instances.percent_try_new_ok_iff",
+            "Tauten.Instances.percent_try_new_shape",
+            "Tauten.Instances.percent_try_new_sound",
+            "Tauten.Instances.port_boundaries",
+            "Tauten.Instances.port_try_new_err_iff",
+            "Tauten.Instances.port_try_new_ok_iff",
+            "Tauten.Instances.port_try_new_shape",
+            "Tauten.Instances.port_try_new_sound"
+          ]
+        },
+        {
+          "mutant": "try-from-unchecked",
+          "status": "killed",
+          "broken": [
+            "Tauten.Instances.count_try_from_spec",
+            "Tauten.Instances.offset_try_from_spec",
+            "Tauten.Instances.percent_try_from_spec",
+            "Tauten.Instances.port_try_from_spec"
+          ]
+        },
+        {
+          "mutant": "attributes-dropped",
+          "status": "killed",
+          "broken": [
+            "Tauten.Instances.count_derived_spec",
+            "Tauten.Instances.offset_derived_spec",
+            "Tauten.Instances.percent_derived_spec",
+            "Tauten.Instances.port_derived_spec",
+            "Tauten.Instances.tag_control_spec"
+          ]
+        }
+      ]
     },
     {
       "crate": "tauten-proof-instances",
@@ -523,7 +1608,70 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:67d65c9e53f07613"
+      "fingerprint": "fnv1a64:664e25a0d1397909",
+      "inputs": {
+        "lean:refined.__tauten_offset.Offset": "fnv1a64:5a326687630fe204",
+        "lean:refined.__tauten_offset.Offset.try_new": "fnv1a64:2b4bd85b5616e074",
+        "lean:refined.__tauten_offset.Offset.try_new.closure": "fnv1a64:e040dd61f0a52a1a",
+        "lean:tauten.contract.holds": "fnv1a64:694f437f8f26d73b",
+        "lean:tauten.error.RefineError": "fnv1a64:1447374f34920b51",
+        "lean:tauten.error.RefineError.new": "fnv1a64:7f7a5539d6ff4f6c",
+        "mutant:attributes-dropped": "fnv1a64:e78d5f1735793f5d",
+        "mutant:refined-check-inverted": "fnv1a64:d6939f7c77630246",
+        "mutant:try-from-unchecked": "fnv1a64:5cf3e632a12e36de",
+        "proof:Tauten/MacroShapes.lean": "fnv1a64:0b4c9b9e89d4ca44",
+        "proof:Tauten/Refined.lean": "fnv1a64:98b4a6a450a0afef",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "refined-check-inverted",
+          "status": "killed",
+          "broken": [
+            "Tauten.Instances.count_boundaries",
+            "Tauten.Instances.count_try_new_err_iff",
+            "Tauten.Instances.count_try_new_ok_iff",
+            "Tauten.Instances.count_try_new_shape",
+            "Tauten.Instances.count_try_new_sound",
+            "Tauten.Instances.offset_boundaries",
+            "Tauten.Instances.offset_try_new_err_iff",
+            "Tauten.Instances.offset_try_new_ok_iff",
+            "Tauten.Instances.offset_try_new_shape",
+            "Tauten.Instances.offset_try_new_sound",
+            "Tauten.Instances.percent_boundaries",
+            "Tauten.Instances.percent_try_new_err_iff",
+            "Tauten.Instances.percent_try_new_ok_iff",
+            "Tauten.Instances.percent_try_new_shape",
+            "Tauten.Instances.percent_try_new_sound",
+            "Tauten.Instances.port_boundaries",
+            "Tauten.Instances.port_try_new_err_iff",
+            "Tauten.Instances.port_try_new_ok_iff",
+            "Tauten.Instances.port_try_new_shape",
+            "Tauten.Instances.port_try_new_sound"
+          ]
+        },
+        {
+          "mutant": "try-from-unchecked",
+          "status": "killed",
+          "broken": [
+            "Tauten.Instances.count_try_from_spec",
+            "Tauten.Instances.offset_try_from_spec",
+            "Tauten.Instances.percent_try_from_spec",
+            "Tauten.Instances.port_try_from_spec"
+          ]
+        },
+        {
+          "mutant": "attributes-dropped",
+          "status": "killed",
+          "broken": [
+            "Tauten.Instances.count_derived_spec",
+            "Tauten.Instances.offset_derived_spec",
+            "Tauten.Instances.percent_derived_spec",
+            "Tauten.Instances.port_derived_spec",
+            "Tauten.Instances.tag_control_spec"
+          ]
+        }
+      ]
     },
     {
       "crate": "tauten-proof-instances",
@@ -548,7 +1696,70 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:67d65c9e53f07613"
+      "fingerprint": "fnv1a64:664e25a0d1397909",
+      "inputs": {
+        "lean:refined.__tauten_count.Count": "fnv1a64:034ec399bde8f40b",
+        "lean:refined.__tauten_count.Count.try_new": "fnv1a64:bb192e699cc186bf",
+        "lean:refined.__tauten_count.Count.try_new.closure": "fnv1a64:073564b241e6a240",
+        "lean:tauten.contract.holds": "fnv1a64:694f437f8f26d73b",
+        "lean:tauten.error.RefineError": "fnv1a64:1447374f34920b51",
+        "lean:tauten.error.RefineError.new": "fnv1a64:7f7a5539d6ff4f6c",
+        "mutant:attributes-dropped": "fnv1a64:e78d5f1735793f5d",
+        "mutant:refined-check-inverted": "fnv1a64:d6939f7c77630246",
+        "mutant:try-from-unchecked": "fnv1a64:5cf3e632a12e36de",
+        "proof:Tauten/MacroShapes.lean": "fnv1a64:0b4c9b9e89d4ca44",
+        "proof:Tauten/Refined.lean": "fnv1a64:98b4a6a450a0afef",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "refined-check-inverted",
+          "status": "killed",
+          "broken": [
+            "Tauten.Instances.count_boundaries",
+            "Tauten.Instances.count_try_new_err_iff",
+            "Tauten.Instances.count_try_new_ok_iff",
+            "Tauten.Instances.count_try_new_shape",
+            "Tauten.Instances.count_try_new_sound",
+            "Tauten.Instances.offset_boundaries",
+            "Tauten.Instances.offset_try_new_err_iff",
+            "Tauten.Instances.offset_try_new_ok_iff",
+            "Tauten.Instances.offset_try_new_shape",
+            "Tauten.Instances.offset_try_new_sound",
+            "Tauten.Instances.percent_boundaries",
+            "Tauten.Instances.percent_try_new_err_iff",
+            "Tauten.Instances.percent_try_new_ok_iff",
+            "Tauten.Instances.percent_try_new_shape",
+            "Tauten.Instances.percent_try_new_sound",
+            "Tauten.Instances.port_boundaries",
+            "Tauten.Instances.port_try_new_err_iff",
+            "Tauten.Instances.port_try_new_ok_iff",
+            "Tauten.Instances.port_try_new_shape",
+            "Tauten.Instances.port_try_new_sound"
+          ]
+        },
+        {
+          "mutant": "try-from-unchecked",
+          "status": "killed",
+          "broken": [
+            "Tauten.Instances.count_try_from_spec",
+            "Tauten.Instances.offset_try_from_spec",
+            "Tauten.Instances.percent_try_from_spec",
+            "Tauten.Instances.port_try_from_spec"
+          ]
+        },
+        {
+          "mutant": "attributes-dropped",
+          "status": "killed",
+          "broken": [
+            "Tauten.Instances.count_derived_spec",
+            "Tauten.Instances.offset_derived_spec",
+            "Tauten.Instances.percent_derived_spec",
+            "Tauten.Instances.port_derived_spec",
+            "Tauten.Instances.tag_control_spec"
+          ]
+        }
+      ]
     },
     {
       "crate": "tauten-proof-instances",
@@ -573,7 +1784,159 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:67d65c9e53f07613"
+      "fingerprint": "fnv1a64:664e25a0d1397909",
+      "inputs": {
+        "lean:contracts.OpError": "fnv1a64:8f5997720f293e86",
+        "lean:contracts.OpError.Insts.CoreConvertFromContractViolation": "fnv1a64:9501a6c9c8b0074f",
+        "lean:contracts.OpError.Insts.CoreConvertFromContractViolation.from": "fnv1a64:7b635458718eb9d7",
+        "lean:contracts.deposit": "fnv1a64:61f0bdf9a18b05c9",
+        "lean:contracts.deposit.closure": "fnv1a64:737606ddb8695a11",
+        "lean:contracts.deposit.closure.Insts.CoreOpsFunctionFnTupleResultU64OpError.call": "fnv1a64:082f23131ecdae1e",
+        "lean:contracts.deposit.closure_1": "fnv1a64:938b17c9f8d0a2be",
+        "lean:contracts.deposit.closure_1.Insts.CoreOpsFunctionFnOnceTupleShared1U64Bool": "fnv1a64:8bd501b2417b3999",
+        "lean:tauten.contract.holds": "fnv1a64:694f437f8f26d73b",
+        "lean:tauten.contract.snapshot": "fnv1a64:9f8761fad48498c2",
+        "lean:tauten.error.ContractViolation": "fnv1a64:721c4b0489021342",
+        "lean:tauten.error.ContractViolation.ensures": "fnv1a64:d33252a91a8db09a",
+        "lean:tauten.error.ContractViolation.requires": "fnv1a64:1a02ce14eaa95b99",
+        "mutant:ensures-reported-as-requires": "fnv1a64:74880e77bf19c501",
+        "mutant:ensures-skipped": "fnv1a64:b19f6fb04b090d7a",
+        "mutant:requires-after-body": "fnv1a64:2ddb3da5f5c25d19",
+        "mutant:requires-dropped": "fnv1a64:056fa6ba2fd3e260",
+        "mutant:requires-inverted": "fnv1a64:dfa9eba21c0b3ddc",
+        "proof:Tauten/Contracts.lean": "fnv1a64:2cfba76bebc53039",
+        "proof:Tauten/MacroShapes.lean": "fnv1a64:0b4c9b9e89d4ca44",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "requires-inverted",
+          "status": "killed",
+          "broken": [
+            "Tauten.Instances.contract_examples",
+            "Tauten.Instances.deposit_never_ensures",
+            "Tauten.Instances.deposit_ok",
+            "Tauten.Instances.deposit_overflow",
+            "Tauten.Instances.deposit_requires_iff",
+            "Tauten.Instances.deposit_shape",
+            "Tauten.Instances.scale_ensures_iff",
+            "Tauten.Instances.scale_ok",
+            "Tauten.Instances.scale_overflow",
+            "Tauten.Instances.scale_requires_iff",
+            "Tauten.Instances.scale_shape",
+            "Tauten.Instances.share_ok",
+            "Tauten.Instances.share_requires_iff",
+            "Tauten.Instances.share_requires_skips_body",
+            "Tauten.Instances.share_shape",
+            "Tauten.Instances.withdraw_insufficient",
+            "Tauten.Instances.withdraw_never_ensures",
+            "Tauten.Instances.withdraw_ok",
+            "Tauten.Instances.withdraw_requires_iff",
+            "Tauten.Instances.withdraw_requires_keeps_balance",
+            "Tauten.Instances.withdraw_shape"
+          ]
+        },
+        {
+          "mutant": "requires-dropped",
+          "status": "killed",
+          "broken": [
+            "Tauten.Instances.contract_examples",
+            "Tauten.Instances.deposit_never_ensures",
+            "Tauten.Instances.deposit_ok",
+            "Tauten.Instances.deposit_overflow",
+            "Tauten.Instances.deposit_requires_iff",
+            "Tauten.Instances.deposit_shape",
+            "Tauten.Instances.scale_ensures_iff",
+            "Tauten.Instances.scale_ok",
+            "Tauten.Instances.scale_overflow",
+            "Tauten.Instances.scale_requires_iff",
+            "Tauten.Instances.scale_shape",
+            "Tauten.Instances.share_ok",
+            "Tauten.Instances.share_requires_iff",
+            "Tauten.Instances.share_requires_skips_body",
+            "Tauten.Instances.share_shape",
+            "Tauten.Instances.withdraw_insufficient",
+            "Tauten.Instances.withdraw_never_ensures",
+            "Tauten.Instances.withdraw_ok",
+            "Tauten.Instances.withdraw_requires_iff",
+            "Tauten.Instances.withdraw_requires_keeps_balance",
+            "Tauten.Instances.withdraw_shape"
+          ]
+        },
+        {
+          "mutant": "requires-after-body",
+          "status": "killed",
+          "broken": [
+            "Tauten.Instances.contract_examples",
+            "Tauten.Instances.deposit_never_ensures",
+            "Tauten.Instances.deposit_ok",
+            "Tauten.Instances.deposit_overflow",
+            "Tauten.Instances.deposit_requires_iff",
+            "Tauten.Instances.deposit_shape",
+            "Tauten.Instances.scale_ensures_iff",
+            "Tauten.Instances.scale_ok",
+            "Tauten.Instances.scale_overflow",
+            "Tauten.Instances.scale_requires_iff",
+            "Tauten.Instances.scale_shape",
+            "Tauten.Instances.share_ok",
+            "Tauten.Instances.share_requires_iff",
+            "Tauten.Instances.share_requires_skips_body",
+            "Tauten.Instances.share_shape",
+            "Tauten.Instances.withdraw_insufficient",
+            "Tauten.Instances.withdraw_never_ensures",
+            "Tauten.Instances.withdraw_ok",
+            "Tauten.Instances.withdraw_requires_iff",
+            "Tauten.Instances.withdraw_requires_keeps_balance",
+            "Tauten.Instances.withdraw_shape"
+          ]
+        },
+        {
+          "mutant": "ensures-skipped",
+          "status": "killed",
+          "broken": [
+            "Tauten.Instances.contract_examples",
+            "Tauten.Instances.deposit_never_ensures",
+            "Tauten.Instances.deposit_ok",
+            "Tauten.Instances.deposit_overflow",
+            "Tauten.Instances.deposit_requires_iff",
+            "Tauten.Instances.deposit_shape",
+            "Tauten.Instances.scale_ensures_iff",
+            "Tauten.Instances.scale_ok",
+            "Tauten.Instances.scale_overflow",
+            "Tauten.Instances.scale_requires_iff",
+            "Tauten.Instances.scale_shape",
+            "Tauten.Instances.withdraw_insufficient",
+            "Tauten.Instances.withdraw_never_ensures",
+            "Tauten.Instances.withdraw_ok",
+            "Tauten.Instances.withdraw_requires_iff",
+            "Tauten.Instances.withdraw_requires_keeps_balance",
+            "Tauten.Instances.withdraw_shape"
+          ]
+        },
+        {
+          "mutant": "ensures-reported-as-requires",
+          "status": "killed",
+          "broken": [
+            "Tauten.Instances.contract_examples",
+            "Tauten.Instances.deposit_never_ensures",
+            "Tauten.Instances.deposit_ok",
+            "Tauten.Instances.deposit_overflow",
+            "Tauten.Instances.deposit_requires_iff",
+            "Tauten.Instances.deposit_shape",
+            "Tauten.Instances.scale_ensures_iff",
+            "Tauten.Instances.scale_ok",
+            "Tauten.Instances.scale_overflow",
+            "Tauten.Instances.scale_requires_iff",
+            "Tauten.Instances.scale_shape",
+            "Tauten.Instances.withdraw_insufficient",
+            "Tauten.Instances.withdraw_never_ensures",
+            "Tauten.Instances.withdraw_ok",
+            "Tauten.Instances.withdraw_requires_iff",
+            "Tauten.Instances.withdraw_requires_keeps_balance",
+            "Tauten.Instances.withdraw_shape"
+          ]
+        }
+      ]
     },
     {
       "crate": "tauten-proof-instances",
@@ -600,7 +1963,172 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:67d65c9e53f07613"
+      "fingerprint": "fnv1a64:664e25a0d1397909",
+      "inputs": {
+        "lean:contracts.OpError": "fnv1a64:8f5997720f293e86",
+        "lean:contracts.OpError.Insts.CoreConvertFromContractViolation": "fnv1a64:9501a6c9c8b0074f",
+        "lean:contracts.OpError.Insts.CoreConvertFromContractViolation.from": "fnv1a64:7b635458718eb9d7",
+        "lean:contracts.withdraw": "fnv1a64:db56f5378df2369f",
+        "lean:contracts.withdraw.closure": "fnv1a64:799e5082041a84f0",
+        "lean:contracts.withdraw.closure_1": "fnv1a64:aa76a124221bbb69",
+        "lean:contracts.withdraw.closure_1.Insts.CoreOpsFunctionFnOnceTupleShared1U64Bool": "fnv1a64:d1efd9c217acf162",
+        "lean:tauten.contract.holds": "fnv1a64:694f437f8f26d73b",
+        "lean:tauten.contract.snapshot": "fnv1a64:9f8761fad48498c2",
+        "lean:tauten.error.ContractViolation": "fnv1a64:721c4b0489021342",
+        "lean:tauten.error.ContractViolation.ensures": "fnv1a64:d33252a91a8db09a",
+        "lean:tauten.error.ContractViolation.requires": "fnv1a64:1a02ce14eaa95b99",
+        "mutant:ensures-reported-as-requires": "fnv1a64:74880e77bf19c501",
+        "mutant:ensures-skipped": "fnv1a64:b19f6fb04b090d7a",
+        "mutant:requires-after-body": "fnv1a64:2ddb3da5f5c25d19",
+        "mutant:requires-dropped": "fnv1a64:056fa6ba2fd3e260",
+        "mutant:requires-inverted": "fnv1a64:dfa9eba21c0b3ddc",
+        "mutant:snapshot-after-body": "fnv1a64:9c68ddba2b056528",
+        "proof:Tauten/Contracts.lean": "fnv1a64:2cfba76bebc53039",
+        "proof:Tauten/MacroShapes.lean": "fnv1a64:0b4c9b9e89d4ca44",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "requires-inverted",
+          "status": "killed",
+          "broken": [
+            "Tauten.Instances.contract_examples",
+            "Tauten.Instances.deposit_never_ensures",
+            "Tauten.Instances.deposit_ok",
+            "Tauten.Instances.deposit_overflow",
+            "Tauten.Instances.deposit_requires_iff",
+            "Tauten.Instances.deposit_shape",
+            "Tauten.Instances.scale_ensures_iff",
+            "Tauten.Instances.scale_ok",
+            "Tauten.Instances.scale_overflow",
+            "Tauten.Instances.scale_requires_iff",
+            "Tauten.Instances.scale_shape",
+            "Tauten.Instances.share_ok",
+            "Tauten.Instances.share_requires_iff",
+            "Tauten.Instances.share_requires_skips_body",
+            "Tauten.Instances.share_shape",
+            "Tauten.Instances.withdraw_insufficient",
+            "Tauten.Instances.withdraw_never_ensures",
+            "Tauten.Instances.withdraw_ok",
+            "Tauten.Instances.withdraw_requires_iff",
+            "Tauten.Instances.withdraw_requires_keeps_balance",
+            "Tauten.Instances.withdraw_shape"
+          ]
+        },
+        {
+          "mutant": "requires-dropped",
+          "status": "killed",
+          "broken": [
+            "Tauten.Instances.contract_examples",
+            "Tauten.Instances.deposit_never_ensures",
+            "Tauten.Instances.deposit_ok",
+            "Tauten.Instances.deposit_overflow",
+            "Tauten.Instances.deposit_requires_iff",
+            "Tauten.Instances.deposit_shape",
+            "Tauten.Instances.scale_ensures_iff",
+            "Tauten.Instances.scale_ok",
+            "Tauten.Instances.scale_overflow",
+            "Tauten.Instances.scale_requires_iff",
+            "Tauten.Instances.scale_shape",
+            "Tauten.Instances.share_ok",
+            "Tauten.Instances.share_requires_iff",
+            "Tauten.Instances.share_requires_skips_body",
+            "Tauten.Instances.share_shape",
+            "Tauten.Instances.withdraw_insufficient",
+            "Tauten.Instances.withdraw_never_ensures",
+            "Tauten.Instances.withdraw_ok",
+            "Tauten.Instances.withdraw_requires_iff",
+            "Tauten.Instances.withdraw_requires_keeps_balance",
+            "Tauten.Instances.withdraw_shape"
+          ]
+        },
+        {
+          "mutant": "requires-after-body",
+          "status": "killed",
+          "broken": [
+            "Tauten.Instances.contract_examples",
+            "Tauten.Instances.deposit_never_ensures",
+            "Tauten.Instances.deposit_ok",
+            "Tauten.Instances.deposit_overflow",
+            "Tauten.Instances.deposit_requires_iff",
+            "Tauten.Instances.deposit_shape",
+            "Tauten.Instances.scale_ensures_iff",
+            "Tauten.Instances.scale_ok",
+            "Tauten.Instances.scale_overflow",
+            "Tauten.Instances.scale_requires_iff",
+            "Tauten.Instances.scale_shape",
+            "Tauten.Instances.share_ok",
+            "Tauten.Instances.share_requires_iff",
+            "Tauten.Instances.share_requires_skips_body",
+            "Tauten.Instances.share_shape",
+            "Tauten.Instances.withdraw_insufficient",
+            "Tauten.Instances.withdraw_never_ensures",
+            "Tauten.Instances.withdraw_ok",
+            "Tauten.Instances.withdraw_requires_iff",
+            "Tauten.Instances.withdraw_requires_keeps_balance",
+            "Tauten.Instances.withdraw_shape"
+          ]
+        },
+        {
+          "mutant": "snapshot-after-body",
+          "status": "killed",
+          "broken": [
+            "Tauten.Instances.contract_examples",
+            "Tauten.Instances.withdraw_insufficient",
+            "Tauten.Instances.withdraw_never_ensures",
+            "Tauten.Instances.withdraw_ok",
+            "Tauten.Instances.withdraw_requires_iff",
+            "Tauten.Instances.withdraw_requires_keeps_balance",
+            "Tauten.Instances.withdraw_shape"
+          ]
+        },
+        {
+          "mutant": "ensures-skipped",
+          "status": "killed",
+          "broken": [
+            "Tauten.Instances.contract_examples",
+            "Tauten.Instances.deposit_never_ensures",
+            "Tauten.Instances.deposit_ok",
+            "Tauten.Instances.deposit_overflow",
+            "Tauten.Instances.deposit_requires_iff",
+            "Tauten.Instances.deposit_shape",
+            "Tauten.Instances.scale_ensures_iff",
+            "Tauten.Instances.scale_ok",
+            "Tauten.Instances.scale_overflow",
+            "Tauten.Instances.scale_requires_iff",
+            "Tauten.Instances.scale_shape",
+            "Tauten.Instances.withdraw_insufficient",
+            "Tauten.Instances.withdraw_never_ensures",
+            "Tauten.Instances.withdraw_ok",
+            "Tauten.Instances.withdraw_requires_iff",
+            "Tauten.Instances.withdraw_requires_keeps_balance",
+            "Tauten.Instances.withdraw_shape"
+          ]
+        },
+        {
+          "mutant": "ensures-reported-as-requires",
+          "status": "killed",
+          "broken": [
+            "Tauten.Instances.contract_examples",
+            "Tauten.Instances.deposit_never_ensures",
+            "Tauten.Instances.deposit_ok",
+            "Tauten.Instances.deposit_overflow",
+            "Tauten.Instances.deposit_requires_iff",
+            "Tauten.Instances.deposit_shape",
+            "Tauten.Instances.scale_ensures_iff",
+            "Tauten.Instances.scale_ok",
+            "Tauten.Instances.scale_overflow",
+            "Tauten.Instances.scale_requires_iff",
+            "Tauten.Instances.scale_shape",
+            "Tauten.Instances.withdraw_insufficient",
+            "Tauten.Instances.withdraw_never_ensures",
+            "Tauten.Instances.withdraw_ok",
+            "Tauten.Instances.withdraw_requires_iff",
+            "Tauten.Instances.withdraw_requires_keeps_balance",
+            "Tauten.Instances.withdraw_shape"
+          ]
+        }
+      ]
     },
     {
       "crate": "tauten-proof-instances",
@@ -625,7 +2153,159 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:67d65c9e53f07613"
+      "fingerprint": "fnv1a64:664e25a0d1397909",
+      "inputs": {
+        "lean:contracts.OpError": "fnv1a64:8f5997720f293e86",
+        "lean:contracts.OpError.Insts.CoreConvertFromContractViolation": "fnv1a64:9501a6c9c8b0074f",
+        "lean:contracts.OpError.Insts.CoreConvertFromContractViolation.from": "fnv1a64:7b635458718eb9d7",
+        "lean:contracts.scale": "fnv1a64:90ea5a96dea26ec7",
+        "lean:contracts.scale.closure": "fnv1a64:fd09d36278ed81fd",
+        "lean:contracts.scale.closure.Insts.CoreOpsFunctionFnTupleResultU32OpError.call": "fnv1a64:6a723affd5664d31",
+        "lean:contracts.scale.closure_1": "fnv1a64:e80880ff5078d34d",
+        "lean:contracts.scale.closure_1.Insts.CoreOpsFunctionFnOnceTupleShared1U32Bool": "fnv1a64:da4d12fd83c4776a",
+        "lean:tauten.contract.holds": "fnv1a64:694f437f8f26d73b",
+        "lean:tauten.contract.snapshot": "fnv1a64:9f8761fad48498c2",
+        "lean:tauten.error.ContractViolation": "fnv1a64:721c4b0489021342",
+        "lean:tauten.error.ContractViolation.ensures": "fnv1a64:d33252a91a8db09a",
+        "lean:tauten.error.ContractViolation.requires": "fnv1a64:1a02ce14eaa95b99",
+        "mutant:ensures-reported-as-requires": "fnv1a64:74880e77bf19c501",
+        "mutant:ensures-skipped": "fnv1a64:b19f6fb04b090d7a",
+        "mutant:requires-after-body": "fnv1a64:2ddb3da5f5c25d19",
+        "mutant:requires-dropped": "fnv1a64:056fa6ba2fd3e260",
+        "mutant:requires-inverted": "fnv1a64:dfa9eba21c0b3ddc",
+        "proof:Tauten/Contracts.lean": "fnv1a64:2cfba76bebc53039",
+        "proof:Tauten/MacroShapes.lean": "fnv1a64:0b4c9b9e89d4ca44",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "requires-inverted",
+          "status": "killed",
+          "broken": [
+            "Tauten.Instances.contract_examples",
+            "Tauten.Instances.deposit_never_ensures",
+            "Tauten.Instances.deposit_ok",
+            "Tauten.Instances.deposit_overflow",
+            "Tauten.Instances.deposit_requires_iff",
+            "Tauten.Instances.deposit_shape",
+            "Tauten.Instances.scale_ensures_iff",
+            "Tauten.Instances.scale_ok",
+            "Tauten.Instances.scale_overflow",
+            "Tauten.Instances.scale_requires_iff",
+            "Tauten.Instances.scale_shape",
+            "Tauten.Instances.share_ok",
+            "Tauten.Instances.share_requires_iff",
+            "Tauten.Instances.share_requires_skips_body",
+            "Tauten.Instances.share_shape",
+            "Tauten.Instances.withdraw_insufficient",
+            "Tauten.Instances.withdraw_never_ensures",
+            "Tauten.Instances.withdraw_ok",
+            "Tauten.Instances.withdraw_requires_iff",
+            "Tauten.Instances.withdraw_requires_keeps_balance",
+            "Tauten.Instances.withdraw_shape"
+          ]
+        },
+        {
+          "mutant": "requires-dropped",
+          "status": "killed",
+          "broken": [
+            "Tauten.Instances.contract_examples",
+            "Tauten.Instances.deposit_never_ensures",
+            "Tauten.Instances.deposit_ok",
+            "Tauten.Instances.deposit_overflow",
+            "Tauten.Instances.deposit_requires_iff",
+            "Tauten.Instances.deposit_shape",
+            "Tauten.Instances.scale_ensures_iff",
+            "Tauten.Instances.scale_ok",
+            "Tauten.Instances.scale_overflow",
+            "Tauten.Instances.scale_requires_iff",
+            "Tauten.Instances.scale_shape",
+            "Tauten.Instances.share_ok",
+            "Tauten.Instances.share_requires_iff",
+            "Tauten.Instances.share_requires_skips_body",
+            "Tauten.Instances.share_shape",
+            "Tauten.Instances.withdraw_insufficient",
+            "Tauten.Instances.withdraw_never_ensures",
+            "Tauten.Instances.withdraw_ok",
+            "Tauten.Instances.withdraw_requires_iff",
+            "Tauten.Instances.withdraw_requires_keeps_balance",
+            "Tauten.Instances.withdraw_shape"
+          ]
+        },
+        {
+          "mutant": "requires-after-body",
+          "status": "killed",
+          "broken": [
+            "Tauten.Instances.contract_examples",
+            "Tauten.Instances.deposit_never_ensures",
+            "Tauten.Instances.deposit_ok",
+            "Tauten.Instances.deposit_overflow",
+            "Tauten.Instances.deposit_requires_iff",
+            "Tauten.Instances.deposit_shape",
+            "Tauten.Instances.scale_ensures_iff",
+            "Tauten.Instances.scale_ok",
+            "Tauten.Instances.scale_overflow",
+            "Tauten.Instances.scale_requires_iff",
+            "Tauten.Instances.scale_shape",
+            "Tauten.Instances.share_ok",
+            "Tauten.Instances.share_requires_iff",
+            "Tauten.Instances.share_requires_skips_body",
+            "Tauten.Instances.share_shape",
+            "Tauten.Instances.withdraw_insufficient",
+            "Tauten.Instances.withdraw_never_ensures",
+            "Tauten.Instances.withdraw_ok",
+            "Tauten.Instances.withdraw_requires_iff",
+            "Tauten.Instances.withdraw_requires_keeps_balance",
+            "Tauten.Instances.withdraw_shape"
+          ]
+        },
+        {
+          "mutant": "ensures-skipped",
+          "status": "killed",
+          "broken": [
+            "Tauten.Instances.contract_examples",
+            "Tauten.Instances.deposit_never_ensures",
+            "Tauten.Instances.deposit_ok",
+            "Tauten.Instances.deposit_overflow",
+            "Tauten.Instances.deposit_requires_iff",
+            "Tauten.Instances.deposit_shape",
+            "Tauten.Instances.scale_ensures_iff",
+            "Tauten.Instances.scale_ok",
+            "Tauten.Instances.scale_overflow",
+            "Tauten.Instances.scale_requires_iff",
+            "Tauten.Instances.scale_shape",
+            "Tauten.Instances.withdraw_insufficient",
+            "Tauten.Instances.withdraw_never_ensures",
+            "Tauten.Instances.withdraw_ok",
+            "Tauten.Instances.withdraw_requires_iff",
+            "Tauten.Instances.withdraw_requires_keeps_balance",
+            "Tauten.Instances.withdraw_shape"
+          ]
+        },
+        {
+          "mutant": "ensures-reported-as-requires",
+          "status": "killed",
+          "broken": [
+            "Tauten.Instances.contract_examples",
+            "Tauten.Instances.deposit_never_ensures",
+            "Tauten.Instances.deposit_ok",
+            "Tauten.Instances.deposit_overflow",
+            "Tauten.Instances.deposit_requires_iff",
+            "Tauten.Instances.deposit_shape",
+            "Tauten.Instances.scale_ensures_iff",
+            "Tauten.Instances.scale_ok",
+            "Tauten.Instances.scale_overflow",
+            "Tauten.Instances.scale_requires_iff",
+            "Tauten.Instances.scale_shape",
+            "Tauten.Instances.withdraw_insufficient",
+            "Tauten.Instances.withdraw_never_ensures",
+            "Tauten.Instances.withdraw_ok",
+            "Tauten.Instances.withdraw_requires_iff",
+            "Tauten.Instances.withdraw_requires_keeps_balance",
+            "Tauten.Instances.withdraw_shape"
+          ]
+        }
+      ]
     },
     {
       "crate": "tauten-proof-instances",
@@ -647,7 +2327,106 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:67d65c9e53f07613"
+      "fingerprint": "fnv1a64:664e25a0d1397909",
+      "inputs": {
+        "lean:contracts.OpError": "fnv1a64:8f5997720f293e86",
+        "lean:contracts.OpError.Insts.CoreConvertFromContractViolation": "fnv1a64:9501a6c9c8b0074f",
+        "lean:contracts.OpError.Insts.CoreConvertFromContractViolation.from": "fnv1a64:7b635458718eb9d7",
+        "lean:contracts.share": "fnv1a64:dcb1a97457b6e399",
+        "lean:contracts.share.closure": "fnv1a64:daf771e424f5a635",
+        "lean:contracts.share.closure.Insts.CoreOpsFunctionFnTupleResultU32OpError.call": "fnv1a64:079586cea052d720",
+        "lean:tauten.error.ContractViolation": "fnv1a64:721c4b0489021342",
+        "lean:tauten.error.ContractViolation.requires": "fnv1a64:1a02ce14eaa95b99",
+        "mutant:requires-after-body": "fnv1a64:2ddb3da5f5c25d19",
+        "mutant:requires-dropped": "fnv1a64:056fa6ba2fd3e260",
+        "mutant:requires-inverted": "fnv1a64:dfa9eba21c0b3ddc",
+        "proof:Tauten/Contracts.lean": "fnv1a64:2cfba76bebc53039",
+        "proof:Tauten/MacroShapes.lean": "fnv1a64:0b4c9b9e89d4ca44",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "requires-inverted",
+          "status": "killed",
+          "broken": [
+            "Tauten.Instances.contract_examples",
+            "Tauten.Instances.deposit_never_ensures",
+            "Tauten.Instances.deposit_ok",
+            "Tauten.Instances.deposit_overflow",
+            "Tauten.Instances.deposit_requires_iff",
+            "Tauten.Instances.deposit_shape",
+            "Tauten.Instances.scale_ensures_iff",
+            "Tauten.Instances.scale_ok",
+            "Tauten.Instances.scale_overflow",
+            "Tauten.Instances.scale_requires_iff",
+            "Tauten.Instances.scale_shape",
+            "Tauten.Instances.share_ok",
+            "Tauten.Instances.share_requires_iff",
+            "Tauten.Instances.share_requires_skips_body",
+            "Tauten.Instances.share_shape",
+            "Tauten.Instances.withdraw_insufficient",
+            "Tauten.Instances.withdraw_never_ensures",
+            "Tauten.Instances.withdraw_ok",
+            "Tauten.Instances.withdraw_requires_iff",
+            "Tauten.Instances.withdraw_requires_keeps_balance",
+            "Tauten.Instances.withdraw_shape"
+          ]
+        },
+        {
+          "mutant": "requires-dropped",
+          "status": "killed",
+          "broken": [
+            "Tauten.Instances.contract_examples",
+            "Tauten.Instances.deposit_never_ensures",
+            "Tauten.Instances.deposit_ok",
+            "Tauten.Instances.deposit_overflow",
+            "Tauten.Instances.deposit_requires_iff",
+            "Tauten.Instances.deposit_shape",
+            "Tauten.Instances.scale_ensures_iff",
+            "Tauten.Instances.scale_ok",
+            "Tauten.Instances.scale_overflow",
+            "Tauten.Instances.scale_requires_iff",
+            "Tauten.Instances.scale_shape",
+            "Tauten.Instances.share_ok",
+            "Tauten.Instances.share_requires_iff",
+            "Tauten.Instances.share_requires_skips_body",
+            "Tauten.Instances.share_shape",
+            "Tauten.Instances.withdraw_insufficient",
+            "Tauten.Instances.withdraw_never_ensures",
+            "Tauten.Instances.withdraw_ok",
+            "Tauten.Instances.withdraw_requires_iff",
+            "Tauten.Instances.withdraw_requires_keeps_balance",
+            "Tauten.Instances.withdraw_shape"
+          ]
+        },
+        {
+          "mutant": "requires-after-body",
+          "status": "killed",
+          "broken": [
+            "Tauten.Instances.contract_examples",
+            "Tauten.Instances.deposit_never_ensures",
+            "Tauten.Instances.deposit_ok",
+            "Tauten.Instances.deposit_overflow",
+            "Tauten.Instances.deposit_requires_iff",
+            "Tauten.Instances.deposit_shape",
+            "Tauten.Instances.scale_ensures_iff",
+            "Tauten.Instances.scale_ok",
+            "Tauten.Instances.scale_overflow",
+            "Tauten.Instances.scale_requires_iff",
+            "Tauten.Instances.scale_shape",
+            "Tauten.Instances.share_ok",
+            "Tauten.Instances.share_requires_iff",
+            "Tauten.Instances.share_requires_skips_body",
+            "Tauten.Instances.share_shape",
+            "Tauten.Instances.withdraw_insufficient",
+            "Tauten.Instances.withdraw_never_ensures",
+            "Tauten.Instances.withdraw_ok",
+            "Tauten.Instances.withdraw_requires_iff",
+            "Tauten.Instances.withdraw_requires_keeps_balance",
+            "Tauten.Instances.withdraw_shape"
+          ]
+        }
+      ]
     },
     {
       "crate": "tauten-check-kernel",
@@ -672,7 +2451,105 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:44e1a95d1da44210"
+      "fingerprint": "fnv1a64:453ba4730cf3cd12",
+      "inputs": {
+        "lean:control.Control": "fnv1a64:772148c0216491b3",
+        "lean:control.Expect": "fnv1a64:d70096eae1969035",
+        "lean:control.Observation": "fnv1a64:84d90444ecca56ef",
+        "lean:control.Seen": "fnv1a64:158ab1bc923175b9",
+        "lean:control.admit": "fnv1a64:03ac032e2c9c885e",
+        "lean:control.control_ok": "fnv1a64:26939285225c9429",
+        "lean:control.controls_ok": "fnv1a64:9435ca9fc664163e",
+        "lean:control.controls_ok_loop": "fnv1a64:14bcbd20128c8e6c",
+        "lean:control.controls_ok_loop.body": "fnv1a64:a0b8b9c2ab1d7e2e",
+        "lean:control.count_id": "fnv1a64:66b6655cf983f7ff",
+        "lean:control.count_id_loop": "fnv1a64:30f8094b2df74c3c",
+        "lean:control.count_id_loop.body": "fnv1a64:d5434b2237349b68",
+        "lean:control.met": "fnv1a64:ffcc49fc8c7810b8",
+        "lean:control.met_loop": "fnv1a64:37fab0a8573404aa",
+        "lean:control.met_loop.body": "fnv1a64:5b965bf74449d917",
+        "lean:control.observations_ok": "fnv1a64:db0c02dabf76e357",
+        "lean:control.observations_ok_loop": "fnv1a64:1499139a53dda385",
+        "lean:control.observations_ok_loop.body": "fnv1a64:fe1225edd45d42c0",
+        "lean:control.required_id": "fnv1a64:02a85f5ce2d9bdfe",
+        "lean:control.required_id_loop": "fnv1a64:d97684498028bff3",
+        "lean:control.required_id_loop.body": "fnv1a64:df9bd432c41cefc9",
+        "mutant:duplicate-accepted": "fnv1a64:73ff58431be48359",
+        "mutant:empty-inventory-accepted": "fnv1a64:63b6adccdd0cd8cf",
+        "mutant:missing-observation-accepted": "fnv1a64:2714a2e1fa159f7e",
+        "mutant:timeout-counts-as-kill": "fnv1a64:5d79f75cdafaf708",
+        "mutant:unexpected-accepted": "fnv1a64:ab1c879aceb497fb",
+        "mutant:unnamed-failure-accepted": "fnv1a64:b0f5f89c66fd9f6f",
+        "proof:Tauten/Control.lean": "fnv1a64:15597dcfcbd4a7ae",
+        "proof:Tauten/Outcome.lean": "fnv1a64:9a1457f8e8fa48b8",
+        "proof:Tauten/Ratchet.lean": "fnv1a64:348d5f7de112f0f7",
+        "proof:Tauten/RatchetModel.lean": "fnv1a64:68e378121c48660e",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "timeout-counts-as-kill",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.admit_infrastructure_refused",
+            "Tauten.Kernel.admit_ok_iff",
+            "Tauten.Kernel.admit_spec",
+            "Tauten.Kernel.control_ok_spec",
+            "Tauten.Kernel.of_run_proved_iff"
+          ]
+        },
+        {
+          "mutant": "unnamed-failure-accepted",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.admit_infrastructure_refused",
+            "Tauten.Kernel.admit_ok_iff",
+            "Tauten.Kernel.admit_spec",
+            "Tauten.Kernel.control_ok_spec",
+            "Tauten.Kernel.of_run_proved_iff"
+          ]
+        },
+        {
+          "mutant": "duplicate-accepted",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.admit_infrastructure_refused",
+            "Tauten.Kernel.admit_ok_iff",
+            "Tauten.Kernel.admit_spec",
+            "Tauten.Kernel.of_run_proved_iff"
+          ]
+        },
+        {
+          "mutant": "empty-inventory-accepted",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.admit_infrastructure_refused",
+            "Tauten.Kernel.admit_ok_iff",
+            "Tauten.Kernel.admit_spec",
+            "Tauten.Kernel.of_run_proved_iff"
+          ]
+        },
+        {
+          "mutant": "missing-observation-accepted",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.admit_infrastructure_refused",
+            "Tauten.Kernel.admit_ok_iff",
+            "Tauten.Kernel.admit_spec",
+            "Tauten.Kernel.of_run_proved_iff"
+          ]
+        },
+        {
+          "mutant": "unexpected-accepted",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.admit_infrastructure_refused",
+            "Tauten.Kernel.admit_ok_iff",
+            "Tauten.Kernel.admit_spec",
+            "Tauten.Kernel.of_run_proved_iff"
+          ]
+        }
+      ]
     },
     {
       "crate": "tauten-check-kernel",
@@ -691,7 +2568,43 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:44e1a95d1da44210"
+      "fingerprint": "fnv1a64:453ba4730cf3cd12",
+      "inputs": {
+        "lean:control.Expect": "fnv1a64:d70096eae1969035",
+        "lean:control.Seen": "fnv1a64:158ab1bc923175b9",
+        "lean:control.control_ok": "fnv1a64:26939285225c9429",
+        "mutant:timeout-counts-as-kill": "fnv1a64:5d79f75cdafaf708",
+        "mutant:unnamed-failure-accepted": "fnv1a64:b0f5f89c66fd9f6f",
+        "proof:Tauten/Control.lean": "fnv1a64:15597dcfcbd4a7ae",
+        "proof:Tauten/Outcome.lean": "fnv1a64:9a1457f8e8fa48b8",
+        "proof:Tauten/Ratchet.lean": "fnv1a64:348d5f7de112f0f7",
+        "proof:Tauten/RatchetModel.lean": "fnv1a64:68e378121c48660e",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "timeout-counts-as-kill",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.admit_infrastructure_refused",
+            "Tauten.Kernel.admit_ok_iff",
+            "Tauten.Kernel.admit_spec",
+            "Tauten.Kernel.control_ok_spec",
+            "Tauten.Kernel.of_run_proved_iff"
+          ]
+        },
+        {
+          "mutant": "unnamed-failure-accepted",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.admit_infrastructure_refused",
+            "Tauten.Kernel.admit_ok_iff",
+            "Tauten.Kernel.admit_spec",
+            "Tauten.Kernel.control_ok_spec",
+            "Tauten.Kernel.of_run_proved_iff"
+          ]
+        }
+      ]
     },
     {
       "crate": "tauten-check-kernel",
@@ -708,7 +2621,30 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:44e1a95d1da44210"
+      "fingerprint": "fnv1a64:453ba4730cf3cd12",
+      "inputs": {
+        "lean:control.member": "fnv1a64:65485cfd8063f4d4",
+        "lean:control.member_loop": "fnv1a64:5229829739e63747",
+        "lean:control.member_loop.body": "fnv1a64:a546454e1f8d05d6",
+        "lean:control.named": "fnv1a64:2d085972a56eabf5",
+        "lean:control.named_loop": "fnv1a64:a4ca4bb5e3bd2194",
+        "lean:control.named_loop.body": "fnv1a64:bb9ec405da459483",
+        "mutant:named-any-broken": "fnv1a64:e2a103657aceb1f5",
+        "proof:Tauten/Control.lean": "fnv1a64:15597dcfcbd4a7ae",
+        "proof:Tauten/Outcome.lean": "fnv1a64:9a1457f8e8fa48b8",
+        "proof:Tauten/Ratchet.lean": "fnv1a64:348d5f7de112f0f7",
+        "proof:Tauten/RatchetModel.lean": "fnv1a64:68e378121c48660e",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "named-any-broken",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.named_iff"
+          ]
+        }
+      ]
     },
     {
       "crate": "tauten-check-kernel",
@@ -725,7 +2661,51 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:44e1a95d1da44210"
+      "fingerprint": "fnv1a64:453ba4730cf3cd12",
+      "inputs": {
+        "lean:control.Control": "fnv1a64:772148c0216491b3",
+        "lean:control.Expect": "fnv1a64:d70096eae1969035",
+        "lean:control.Observation": "fnv1a64:84d90444ecca56ef",
+        "lean:control.Seen": "fnv1a64:158ab1bc923175b9",
+        "lean:control.admit": "fnv1a64:03ac032e2c9c885e",
+        "lean:control.control_ok": "fnv1a64:26939285225c9429",
+        "lean:control.controls_ok": "fnv1a64:9435ca9fc664163e",
+        "lean:control.controls_ok_loop": "fnv1a64:14bcbd20128c8e6c",
+        "lean:control.controls_ok_loop.body": "fnv1a64:a0b8b9c2ab1d7e2e",
+        "lean:control.count_id": "fnv1a64:66b6655cf983f7ff",
+        "lean:control.count_id_loop": "fnv1a64:30f8094b2df74c3c",
+        "lean:control.count_id_loop.body": "fnv1a64:d5434b2237349b68",
+        "lean:control.met": "fnv1a64:ffcc49fc8c7810b8",
+        "lean:control.met_loop": "fnv1a64:37fab0a8573404aa",
+        "lean:control.met_loop.body": "fnv1a64:5b965bf74449d917",
+        "lean:control.observations_ok": "fnv1a64:db0c02dabf76e357",
+        "lean:control.observations_ok_loop": "fnv1a64:1499139a53dda385",
+        "lean:control.observations_ok_loop.body": "fnv1a64:fe1225edd45d42c0",
+        "lean:control.required_id": "fnv1a64:02a85f5ce2d9bdfe",
+        "lean:control.required_id_loop": "fnv1a64:d97684498028bff3",
+        "lean:control.required_id_loop.body": "fnv1a64:df9bd432c41cefc9",
+        "lean:outcome.Facts": "fnv1a64:2ca27bb2ed8b7f45",
+        "lean:outcome.Outcome": "fnv1a64:7bc6bdb4bda38b48",
+        "lean:outcome.Stage": "fnv1a64:88ac3738ff36ceba",
+        "lean:outcome.of_run": "fnv1a64:22c1d68612fd9140",
+        "lean:outcome.outcome": "fnv1a64:eb5192379d6fcfc1",
+        "lean:outcome.passed": "fnv1a64:06c6f52cd9cacc22",
+        "mutant:of-run-mutants-ignored": "fnv1a64:d192456ee6b3b1c5",
+        "proof:Tauten/Control.lean": "fnv1a64:15597dcfcbd4a7ae",
+        "proof:Tauten/Outcome.lean": "fnv1a64:9a1457f8e8fa48b8",
+        "proof:Tauten/Ratchet.lean": "fnv1a64:348d5f7de112f0f7",
+        "proof:Tauten/RatchetModel.lean": "fnv1a64:68e378121c48660e",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "of-run-mutants-ignored",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.of_run_proved_iff"
+          ]
+        }
+      ]
     },
     {
       "crate": "tauten-check-kernel",
@@ -749,7 +2729,91 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:44e1a95d1da44210"
+      "fingerprint": "fnv1a64:453ba4730cf3cd12",
+      "inputs": {
+        "lean:binding.Binding": "fnv1a64:2a91811d3cca45b4",
+        "lean:binding.agrees": "fnv1a64:335aa303de0fd004",
+        "lean:binding.agrees_loop": "fnv1a64:f704b4203b9348af",
+        "lean:binding.agrees_loop.body": "fnv1a64:3374025d6fb42c8e",
+        "lean:binding.covered": "fnv1a64:9a1dab4d45ee4884",
+        "lean:binding.covered_loop": "fnv1a64:9a414a9b504b5f43",
+        "lean:binding.covered_loop.body": "fnv1a64:ba68833fbae7675c",
+        "lean:binding.fresh": "fnv1a64:dac0a868cc6c88b5",
+        "lean:binding.has_key": "fnv1a64:c69d597d97d40893",
+        "lean:binding.has_key_loop": "fnv1a64:49fbcce819a39912",
+        "lean:binding.has_key_loop.body": "fnv1a64:dc46bcd0abda6ac9",
+        "lean:binding.present": "fnv1a64:850ba857cd07eced",
+        "lean:binding.present_loop": "fnv1a64:c8b0b56e44234a4e",
+        "lean:binding.present_loop.body": "fnv1a64:88d5183c2ea9dd7e",
+        "lean:binding.same_bytes": "fnv1a64:c4964ef56a050900",
+        "lean:binding.same_bytes_loop": "fnv1a64:145f0c6c42de34a9",
+        "lean:binding.same_bytes_loop.body": "fnv1a64:67d18192a623cc14",
+        "mutant:changed-accepted": "fnv1a64:765b6d7554f5c017",
+        "mutant:extra-key-accepted": "fnv1a64:7b1d13e3cae4e837",
+        "mutant:last-byte-ignored": "fnv1a64:e00444534ca2cfa7",
+        "mutant:length-ignored": "fnv1a64:0d9d3defa5350e85",
+        "mutant:missing-key-accepted": "fnv1a64:003675eb07ab8872",
+        "proof:Tauten/Binding.lean": "fnv1a64:98ba2b057f366961",
+        "proof:Tauten/Control.lean": "fnv1a64:15597dcfcbd4a7ae",
+        "proof:Tauten/Outcome.lean": "fnv1a64:9a1457f8e8fa48b8",
+        "proof:Tauten/Ratchet.lean": "fnv1a64:348d5f7de112f0f7",
+        "proof:Tauten/RatchetModel.lean": "fnv1a64:68e378121c48660e",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "last-byte-ignored",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.changed_never_fresh",
+            "Tauten.Kernel.extra_key_never_fresh",
+            "Tauten.Kernel.fresh_iff",
+            "Tauten.Kernel.missing_key_never_fresh",
+            "Tauten.Kernel.same_bytes_spec"
+          ]
+        },
+        {
+          "mutant": "length-ignored",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.changed_never_fresh",
+            "Tauten.Kernel.extra_key_never_fresh",
+            "Tauten.Kernel.fresh_iff",
+            "Tauten.Kernel.missing_key_never_fresh",
+            "Tauten.Kernel.same_bytes_spec"
+          ]
+        },
+        {
+          "mutant": "missing-key-accepted",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.changed_never_fresh",
+            "Tauten.Kernel.extra_key_never_fresh",
+            "Tauten.Kernel.fresh_iff",
+            "Tauten.Kernel.missing_key_never_fresh"
+          ]
+        },
+        {
+          "mutant": "extra-key-accepted",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.changed_never_fresh",
+            "Tauten.Kernel.extra_key_never_fresh",
+            "Tauten.Kernel.fresh_iff",
+            "Tauten.Kernel.missing_key_never_fresh"
+          ]
+        },
+        {
+          "mutant": "changed-accepted",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.changed_never_fresh",
+            "Tauten.Kernel.extra_key_never_fresh",
+            "Tauten.Kernel.fresh_iff",
+            "Tauten.Kernel.missing_key_never_fresh"
+          ]
+        }
+      ]
     },
     {
       "crate": "tauten-check-kernel",
@@ -767,7 +2831,44 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:44e1a95d1da44210"
+      "fingerprint": "fnv1a64:453ba4730cf3cd12",
+      "inputs": {
+        "lean:binding.same_bytes": "fnv1a64:c4964ef56a050900",
+        "lean:binding.same_bytes_loop": "fnv1a64:145f0c6c42de34a9",
+        "lean:binding.same_bytes_loop.body": "fnv1a64:67d18192a623cc14",
+        "mutant:last-byte-ignored": "fnv1a64:e00444534ca2cfa7",
+        "mutant:length-ignored": "fnv1a64:0d9d3defa5350e85",
+        "proof:Tauten/Binding.lean": "fnv1a64:98ba2b057f366961",
+        "proof:Tauten/Control.lean": "fnv1a64:15597dcfcbd4a7ae",
+        "proof:Tauten/Outcome.lean": "fnv1a64:9a1457f8e8fa48b8",
+        "proof:Tauten/Ratchet.lean": "fnv1a64:348d5f7de112f0f7",
+        "proof:Tauten/RatchetModel.lean": "fnv1a64:68e378121c48660e",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "last-byte-ignored",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.changed_never_fresh",
+            "Tauten.Kernel.extra_key_never_fresh",
+            "Tauten.Kernel.fresh_iff",
+            "Tauten.Kernel.missing_key_never_fresh",
+            "Tauten.Kernel.same_bytes_spec"
+          ]
+        },
+        {
+          "mutant": "length-ignored",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.changed_never_fresh",
+            "Tauten.Kernel.extra_key_never_fresh",
+            "Tauten.Kernel.fresh_iff",
+            "Tauten.Kernel.missing_key_never_fresh",
+            "Tauten.Kernel.same_bytes_spec"
+          ]
+        }
+      ]
     },
     {
       "crate": "tauten-check-kernel",
@@ -793,7 +2894,59 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:44e1a95d1da44210"
+      "fingerprint": "fnv1a64:453ba4730cf3cd12",
+      "inputs": {
+        "lean:badge.Badge": "fnv1a64:c9e59517420c5e9b",
+        "lean:badge.Method": "fnv1a64:fe310cca8171e7ac",
+        "lean:badge.Relation": "fnv1a64:f1e27b2a05a9e959",
+        "lean:badge.badge": "fnv1a64:aa4d8693aaae77dc",
+        "mutant:assumptions-ignored": "fnv1a64:685a175204c10aee",
+        "mutant:bounded-shows-proved": "fnv1a64:c431826fa3ac7bf4",
+        "mutant:model-shows-proved": "fnv1a64:48e1fb81a0b29ec4",
+        "mutant:stale-shows-proved": "fnv1a64:85f5ff949d763f10",
+        "proof:Tauten/Badge.lean": "fnv1a64:9face57081c79fb1",
+        "proof:Tauten/Ratchet.lean": "fnv1a64:348d5f7de112f0f7",
+        "proof:Tauten/RatchetModel.lean": "fnv1a64:68e378121c48660e",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "assumptions-ignored",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.badge_proved_iff",
+            "Tauten.Kernel.badge_proved_under_iff",
+            "Tauten.Kernel.badge_spec"
+          ]
+        },
+        {
+          "mutant": "stale-shows-proved",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.badge_proved_iff",
+            "Tauten.Kernel.badge_proved_under_iff",
+            "Tauten.Kernel.badge_spec"
+          ]
+        },
+        {
+          "mutant": "bounded-shows-proved",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.badge_proved_iff",
+            "Tauten.Kernel.badge_proved_under_iff",
+            "Tauten.Kernel.badge_spec"
+          ]
+        },
+        {
+          "mutant": "model-shows-proved",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.badge_proved_iff",
+            "Tauten.Kernel.badge_proved_under_iff",
+            "Tauten.Kernel.badge_spec"
+          ]
+        }
+      ]
     },
     {
       "crate": "tauten-check-kernel",
@@ -814,7 +2967,62 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:44e1a95d1da44210"
+      "fingerprint": "fnv1a64:453ba4730cf3cd12",
+      "inputs": {
+        "lean:control.member": "fnv1a64:65485cfd8063f4d4",
+        "lean:control.member_loop": "fnv1a64:5229829739e63747",
+        "lean:control.member_loop.body": "fnv1a64:a546454e1f8d05d6",
+        "lean:registry.Entry": "fnv1a64:afc8e2c870c3a9d6",
+        "lean:registry.conserves": "fnv1a64:50f7f33787ff94aa",
+        "lean:registry.conserves_loop": "fnv1a64:6e8de0073128e964",
+        "lean:registry.conserves_loop.body": "fnv1a64:be579405bfec47eb",
+        "lean:registry.kept": "fnv1a64:914d19e15565724f",
+        "lean:registry.kept_loop": "fnv1a64:1602d88d0e469f60",
+        "lean:registry.kept_loop.body": "fnv1a64:79f9324a57d639a1",
+        "mutant:amendment-not-required": "fnv1a64:d42f6f5aa278ad34",
+        "mutant:lowering-accepted": "fnv1a64:a2f88c143ecbd2b3",
+        "mutant:removal-accepted": "fnv1a64:e47c75fb18334f59",
+        "proof:Tauten/Control.lean": "fnv1a64:15597dcfcbd4a7ae",
+        "proof:Tauten/Outcome.lean": "fnv1a64:9a1457f8e8fa48b8",
+        "proof:Tauten/Ratchet.lean": "fnv1a64:348d5f7de112f0f7",
+        "proof:Tauten/RatchetModel.lean": "fnv1a64:68e378121c48660e",
+        "proof:Tauten/Registry.lean": "fnv1a64:95d6d8eae3563e38",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "removal-accepted",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.amendment_is_explicit",
+            "Tauten.Kernel.conserves_iff",
+            "Tauten.Kernel.conserves_refl",
+            "Tauten.Kernel.conserves_spec",
+            "Tauten.Kernel.kept_spec"
+          ]
+        },
+        {
+          "mutant": "lowering-accepted",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.amendment_is_explicit",
+            "Tauten.Kernel.conserves_iff",
+            "Tauten.Kernel.conserves_refl",
+            "Tauten.Kernel.conserves_spec",
+            "Tauten.Kernel.kept_spec"
+          ]
+        },
+        {
+          "mutant": "amendment-not-required",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.amendment_is_explicit",
+            "Tauten.Kernel.conserves_iff",
+            "Tauten.Kernel.conserves_refl",
+            "Tauten.Kernel.conserves_spec"
+          ]
+        }
+      ]
     },
     {
       "crate": "tauten-check-kernel",
@@ -832,7 +3040,45 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:44e1a95d1da44210"
+      "fingerprint": "fnv1a64:453ba4730cf3cd12",
+      "inputs": {
+        "lean:registry.Entry": "fnv1a64:afc8e2c870c3a9d6",
+        "lean:registry.kept": "fnv1a64:914d19e15565724f",
+        "lean:registry.kept_loop": "fnv1a64:1602d88d0e469f60",
+        "lean:registry.kept_loop.body": "fnv1a64:79f9324a57d639a1",
+        "mutant:lowering-accepted": "fnv1a64:a2f88c143ecbd2b3",
+        "mutant:removal-accepted": "fnv1a64:e47c75fb18334f59",
+        "proof:Tauten/Control.lean": "fnv1a64:15597dcfcbd4a7ae",
+        "proof:Tauten/Outcome.lean": "fnv1a64:9a1457f8e8fa48b8",
+        "proof:Tauten/Ratchet.lean": "fnv1a64:348d5f7de112f0f7",
+        "proof:Tauten/RatchetModel.lean": "fnv1a64:68e378121c48660e",
+        "proof:Tauten/Registry.lean": "fnv1a64:95d6d8eae3563e38",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "removal-accepted",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.amendment_is_explicit",
+            "Tauten.Kernel.conserves_iff",
+            "Tauten.Kernel.conserves_refl",
+            "Tauten.Kernel.conserves_spec",
+            "Tauten.Kernel.kept_spec"
+          ]
+        },
+        {
+          "mutant": "lowering-accepted",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.amendment_is_explicit",
+            "Tauten.Kernel.conserves_iff",
+            "Tauten.Kernel.conserves_refl",
+            "Tauten.Kernel.conserves_spec",
+            "Tauten.Kernel.kept_spec"
+          ]
+        }
+      ]
     },
     {
       "crate": "tauten-check-kernel",
@@ -854,7 +3100,62 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:44e1a95d1da44210"
+      "fingerprint": "fnv1a64:453ba4730cf3cd12",
+      "inputs": {
+        "lean:assumption.assumptions_ok": "fnv1a64:32f6090ac0e2c70b",
+        "lean:control.member": "fnv1a64:65485cfd8063f4d4",
+        "lean:control.member_loop": "fnv1a64:5229829739e63747",
+        "lean:control.member_loop.body": "fnv1a64:a546454e1f8d05d6",
+        "lean:registry.Entry": "fnv1a64:afc8e2c870c3a9d6",
+        "lean:registry.conserves": "fnv1a64:50f7f33787ff94aa",
+        "lean:registry.conserves_loop": "fnv1a64:6e8de0073128e964",
+        "lean:registry.conserves_loop.body": "fnv1a64:be579405bfec47eb",
+        "lean:registry.kept": "fnv1a64:914d19e15565724f",
+        "lean:registry.kept_loop": "fnv1a64:1602d88d0e469f60",
+        "lean:registry.kept_loop.body": "fnv1a64:79f9324a57d639a1",
+        "mutant:undeclared-accepted": "fnv1a64:f61ec6fc0402f4bf",
+        "mutant:unused-accepted": "fnv1a64:a46b23a6d722ed15",
+        "mutant:witness-not-required": "fnv1a64:74285d9744f440a6",
+        "proof:Tauten/Assumption.lean": "fnv1a64:ae9c88ebc8df25b7",
+        "proof:Tauten/Control.lean": "fnv1a64:15597dcfcbd4a7ae",
+        "proof:Tauten/Outcome.lean": "fnv1a64:9a1457f8e8fa48b8",
+        "proof:Tauten/Ratchet.lean": "fnv1a64:348d5f7de112f0f7",
+        "proof:Tauten/RatchetModel.lean": "fnv1a64:68e378121c48660e",
+        "proof:Tauten/Registry.lean": "fnv1a64:95d6d8eae3563e38",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "undeclared-accepted",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.assumptions_ok_iff",
+            "Tauten.Kernel.undeclared_assumption_refused",
+            "Tauten.Kernel.unused_assumption_refused",
+            "Tauten.Kernel.unwitnessed_refused"
+          ]
+        },
+        {
+          "mutant": "unused-accepted",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.assumptions_ok_iff",
+            "Tauten.Kernel.undeclared_assumption_refused",
+            "Tauten.Kernel.unused_assumption_refused",
+            "Tauten.Kernel.unwitnessed_refused"
+          ]
+        },
+        {
+          "mutant": "witness-not-required",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.assumptions_ok_iff",
+            "Tauten.Kernel.undeclared_assumption_refused",
+            "Tauten.Kernel.unused_assumption_refused",
+            "Tauten.Kernel.unwitnessed_refused"
+          ]
+        }
+      ]
     },
     {
       "crate": "tauten-check-kernel",
@@ -873,7 +3174,37 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:44e1a95d1da44210"
+      "fingerprint": "fnv1a64:453ba4730cf3cd12",
+      "inputs": {
+        "lean:manifest.Fact": "fnv1a64:0b6cdeed3410cd78",
+        "lean:manifest.hardening": "fnv1a64:f3abf31255873c75",
+        "mutant:not-required-still-fires": "fnv1a64:1a9904456cf1176d",
+        "mutant:unparsed-is-clean": "fnv1a64:3bc79f613dfa99cb",
+        "proof:Tauten/Control.lean": "fnv1a64:15597dcfcbd4a7ae",
+        "proof:Tauten/Manifest.lean": "fnv1a64:54b18b3957064e4d",
+        "proof:Tauten/Outcome.lean": "fnv1a64:9a1457f8e8fa48b8",
+        "proof:Tauten/Ratchet.lean": "fnv1a64:348d5f7de112f0f7",
+        "proof:Tauten/RatchetModel.lean": "fnv1a64:68e378121c48660e",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "unparsed-is-clean",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.hardening_iff",
+            "Tauten.Kernel.unparsed_never_clean"
+          ]
+        },
+        {
+          "mutant": "not-required-still-fires",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.hardening_iff",
+            "Tauten.Kernel.unparsed_never_clean"
+          ]
+        }
+      ]
     },
     {
       "crate": "tauten-check-kernel",
@@ -891,7 +3222,31 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:44e1a95d1da44210"
+      "fingerprint": "fnv1a64:453ba4730cf3cd12",
+      "inputs": {
+        "lean:rule.finding_severity": "fnv1a64:ab0da7ae4fdd2809",
+        "lean:severity.Level": "fnv1a64:7ced964c9470c680",
+        "lean:severity.Severity": "fnv1a64:f48fd026309c9331",
+        "lean:severity.is_blocking": "fnv1a64:efab3c370008275b",
+        "lean:severity.severity": "fnv1a64:d2622a3f5b41a887",
+        "mutant:incomplete-can-block": "fnv1a64:deca3ae064867c80",
+        "proof:Tauten/Control.lean": "fnv1a64:15597dcfcbd4a7ae",
+        "proof:Tauten/Outcome.lean": "fnv1a64:9a1457f8e8fa48b8",
+        "proof:Tauten/Ratchet.lean": "fnv1a64:348d5f7de112f0f7",
+        "proof:Tauten/RatchetModel.lean": "fnv1a64:68e378121c48660e",
+        "proof:Tauten/Rule.lean": "fnv1a64:e799007f9062597a",
+        "proof:Tauten/Severity.lean": "fnv1a64:d54becf1facd6edc",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "incomplete-can-block",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.incomplete_never_error"
+          ]
+        }
+      ]
     },
     {
       "crate": "tauten-check-kernel",
@@ -909,7 +3264,29 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:44e1a95d1da44210"
+      "fingerprint": "fnv1a64:453ba4730cf3cd12",
+      "inputs": {
+        "lean:rule.Input": "fnv1a64:62e84c13fbd46f1a",
+        "lean:rule.clean": "fnv1a64:d082e917c3e0d595",
+        "mutant:unparsed-input-is-clean": "fnv1a64:e4c69669f279c8e5",
+        "proof:Tauten/Control.lean": "fnv1a64:15597dcfcbd4a7ae",
+        "proof:Tauten/Outcome.lean": "fnv1a64:9a1457f8e8fa48b8",
+        "proof:Tauten/Ratchet.lean": "fnv1a64:348d5f7de112f0f7",
+        "proof:Tauten/RatchetModel.lean": "fnv1a64:68e378121c48660e",
+        "proof:Tauten/Rule.lean": "fnv1a64:e799007f9062597a",
+        "proof:Tauten/Severity.lean": "fnv1a64:d54becf1facd6edc",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "unparsed-input-is-clean",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.clean_spec",
+            "Tauten.Kernel.unparsed_not_clean"
+          ]
+        }
+      ]
     },
     {
       "crate": "tauten-check-kernel",
@@ -926,7 +3303,31 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:44e1a95d1da44210"
+      "fingerprint": "fnv1a64:453ba4730cf3cd12",
+      "inputs": {
+        "lean:rule.RuleFacts": "fnv1a64:66b54b1fe6565def",
+        "lean:rule.fixtures_ok": "fnv1a64:7fdfeb0385744851",
+        "lean:rule.fixtures_ok_loop": "fnv1a64:cc6b0bf14542ef10",
+        "lean:rule.fixtures_ok_loop.body": "fnv1a64:96b29631461d753d",
+        "mutant:fixtureless-rule-valid": "fnv1a64:a03640a5a1a806a6",
+        "proof:Tauten/Control.lean": "fnv1a64:15597dcfcbd4a7ae",
+        "proof:Tauten/Outcome.lean": "fnv1a64:9a1457f8e8fa48b8",
+        "proof:Tauten/Ratchet.lean": "fnv1a64:348d5f7de112f0f7",
+        "proof:Tauten/RatchetModel.lean": "fnv1a64:68e378121c48660e",
+        "proof:Tauten/Rule.lean": "fnv1a64:e799007f9062597a",
+        "proof:Tauten/Severity.lean": "fnv1a64:d54becf1facd6edc",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "fixtureless-rule-valid",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.fixtures_ok_iff",
+            "Tauten.Kernel.fixtures_ok_spec"
+          ]
+        }
+      ]
     },
     {
       "crate": "tauten-proof-instances",
@@ -949,7 +3350,81 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:67d65c9e53f07613"
+      "fingerprint": "fnv1a64:664e25a0d1397909",
+      "inputs": {
+        "lean:machines.publish_step": "fnv1a64:85cfeb6d5ebcf03b",
+        "lean:tauten.publish.Command": "fnv1a64:a1b2e70b5a9ea7f4",
+        "lean:tauten.publish.Event": "fnv1a64:ce476b788bc7634d",
+        "lean:tauten.publish.Phase": "fnv1a64:215496e080bfee67",
+        "lean:tauten.publish.step": "fnv1a64:bd84cb3bec3eb3db",
+        "mutant:cleanup-skipped": "fnv1a64:b413b9b23c70495a",
+        "mutant:failure-ignored": "fnv1a64:5dc0057add556962",
+        "mutant:rename-before-sync": "fnv1a64:a1bf5dea8ee0bd09",
+        "proof:Tauten/Durable.lean": "fnv1a64:9faba4eccd33dfc3",
+        "proof:Tauten/Machine.lean": "fnv1a64:73138c8097fa5b04",
+        "proof:Tauten/Publish.lean": "fnv1a64:b63ece1994a38d92",
+        "proof:Tauten/TautenAssumption.lean": "fnv1a64:682b860e720dde5c",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "cleanup-skipped",
+          "status": "killed",
+          "broken": [
+            "Tauten.Durable.create_new_never_replaces",
+            "Tauten.Durable.durable_needs_sync_dir",
+            "Tauten.Durable.old_or_new_needs_rename_atomic",
+            "Tauten.Durable.old_or_new_needs_sync_file",
+            "Tauten.Durable.posix_done_reachable",
+            "Tauten.Durable.publish_create_step_model",
+            "Tauten.Durable.publish_durable_on_done",
+            "Tauten.Durable.publish_frame",
+            "Tauten.Durable.publish_old_or_new",
+            "Tauten.Durable.publish_step_model",
+            "Tauten.Durable.publish_stops_on_failure",
+            "Tauten.Instances.publish_reachable_model",
+            "Tauten.Instances.publish_step_model"
+          ]
+        },
+        {
+          "mutant": "rename-before-sync",
+          "status": "killed",
+          "broken": [
+            "Tauten.Durable.create_new_never_replaces",
+            "Tauten.Durable.durable_needs_sync_dir",
+            "Tauten.Durable.old_or_new_needs_rename_atomic",
+            "Tauten.Durable.old_or_new_needs_sync_file",
+            "Tauten.Durable.posix_done_reachable",
+            "Tauten.Durable.publish_create_step_model",
+            "Tauten.Durable.publish_durable_on_done",
+            "Tauten.Durable.publish_frame",
+            "Tauten.Durable.publish_old_or_new",
+            "Tauten.Durable.publish_step_model",
+            "Tauten.Durable.publish_stops_on_failure",
+            "Tauten.Instances.publish_reachable_model",
+            "Tauten.Instances.publish_step_model"
+          ]
+        },
+        {
+          "mutant": "failure-ignored",
+          "status": "killed",
+          "broken": [
+            "Tauten.Durable.create_new_never_replaces",
+            "Tauten.Durable.durable_needs_sync_dir",
+            "Tauten.Durable.old_or_new_needs_rename_atomic",
+            "Tauten.Durable.old_or_new_needs_sync_file",
+            "Tauten.Durable.posix_done_reachable",
+            "Tauten.Durable.publish_create_step_model",
+            "Tauten.Durable.publish_durable_on_done",
+            "Tauten.Durable.publish_frame",
+            "Tauten.Durable.publish_old_or_new",
+            "Tauten.Durable.publish_step_model",
+            "Tauten.Durable.publish_stops_on_failure",
+            "Tauten.Instances.publish_reachable_model",
+            "Tauten.Instances.publish_step_model"
+          ]
+        }
+      ]
     },
     {
       "crate": "tauten-check-kernel",
@@ -966,7 +3441,28 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:44e1a95d1da44210"
+      "fingerprint": "fnv1a64:453ba4730cf3cd12",
+      "inputs": {
+        "lean:layout.Declared": "fnv1a64:d6d7def83ac30b00",
+        "lean:layout.t001": "fnv1a64:7d1a9b6b2841c6e4",
+        "lean:tiers.Tier": "fnv1a64:53087a40e6ca99b4",
+        "mutant:unknown-tier-accepted": "fnv1a64:83e25c775cff8875",
+        "proof:Tauten/Control.lean": "fnv1a64:15597dcfcbd4a7ae",
+        "proof:Tauten/Layout.lean": "fnv1a64:5fb104a3786702ac",
+        "proof:Tauten/Outcome.lean": "fnv1a64:9a1457f8e8fa48b8",
+        "proof:Tauten/Ratchet.lean": "fnv1a64:348d5f7de112f0f7",
+        "proof:Tauten/RatchetModel.lean": "fnv1a64:68e378121c48660e",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "unknown-tier-accepted",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.t001_iff"
+          ]
+        }
+      ]
     },
     {
       "crate": "tauten-check-kernel",
@@ -983,7 +3479,30 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:44e1a95d1da44210"
+      "fingerprint": "fnv1a64:453ba4730cf3cd12",
+      "inputs": {
+        "lean:control.member": "fnv1a64:65485cfd8063f4d4",
+        "lean:control.member_loop": "fnv1a64:5229829739e63747",
+        "lean:control.member_loop.body": "fnv1a64:a546454e1f8d05d6",
+        "lean:layout.t003": "fnv1a64:f79b83d7de660730",
+        "lean:tiers.Tier": "fnv1a64:53087a40e6ca99b4",
+        "mutant:allowlist-inverted": "fnv1a64:b670d6dbe0efe80c",
+        "proof:Tauten/Control.lean": "fnv1a64:15597dcfcbd4a7ae",
+        "proof:Tauten/Layout.lean": "fnv1a64:5fb104a3786702ac",
+        "proof:Tauten/Outcome.lean": "fnv1a64:9a1457f8e8fa48b8",
+        "proof:Tauten/Ratchet.lean": "fnv1a64:348d5f7de112f0f7",
+        "proof:Tauten/RatchetModel.lean": "fnv1a64:68e378121c48660e",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "allowlist-inverted",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.t003_iff"
+          ]
+        }
+      ]
     },
     {
       "crate": "tauten-check-kernel",
@@ -1003,7 +3522,38 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:44e1a95d1da44210"
+      "fingerprint": "fnv1a64:453ba4730cf3cd12",
+      "inputs": {
+        "lean:layout.NoStd": "fnv1a64:267885b5ec022ab2",
+        "lean:layout.k003": "fnv1a64:3387bff42125a9ff",
+        "lean:tiers.Tier": "fnv1a64:53087a40e6ca99b4",
+        "mutant:conditional-counts-as-no-std": "fnv1a64:f4b00c1185d7943b",
+        "mutant:unparsed-root-clean": "fnv1a64:45884279319c5761",
+        "proof:Tauten/Control.lean": "fnv1a64:15597dcfcbd4a7ae",
+        "proof:Tauten/Layout.lean": "fnv1a64:5fb104a3786702ac",
+        "proof:Tauten/Outcome.lean": "fnv1a64:9a1457f8e8fa48b8",
+        "proof:Tauten/Ratchet.lean": "fnv1a64:348d5f7de112f0f7",
+        "proof:Tauten/RatchetModel.lean": "fnv1a64:68e378121c48660e",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "conditional-counts-as-no-std",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.conditional_no_std_is_finding",
+            "Tauten.Kernel.k003_iff"
+          ]
+        },
+        {
+          "mutant": "unparsed-root-clean",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.k003_iff",
+            "Tauten.Kernel.unparsed_root_is_finding"
+          ]
+        }
+      ]
     },
     {
       "crate": "tauten-check-kernel",
@@ -1021,7 +3571,36 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:44e1a95d1da44210"
+      "fingerprint": "fnv1a64:453ba4730cf3cd12",
+      "inputs": {
+        "lean:compiler.MsgLevel": "fnv1a64:6104d3501e88745f",
+        "lean:compiler.kept": "fnv1a64:885f5d3a939a58e2",
+        "lean:severity.Severity": "fnv1a64:f48fd026309c9331",
+        "mutant:summary-kept": "fnv1a64:0e60957a4407652a",
+        "mutant:untiered-warning-kept": "fnv1a64:502c284df9602adb",
+        "proof:Tauten/Compiler.lean": "fnv1a64:a9110762391d8a57",
+        "proof:Tauten/Control.lean": "fnv1a64:15597dcfcbd4a7ae",
+        "proof:Tauten/Outcome.lean": "fnv1a64:9a1457f8e8fa48b8",
+        "proof:Tauten/Ratchet.lean": "fnv1a64:348d5f7de112f0f7",
+        "proof:Tauten/RatchetModel.lean": "fnv1a64:68e378121c48660e",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "summary-kept",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.kept_iff"
+          ]
+        },
+        {
+          "mutant": "untiered-warning-kept",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.kept_iff"
+          ]
+        }
+      ]
     },
     {
       "crate": "tauten-check-kernel",
@@ -1038,7 +3617,27 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:44e1a95d1da44210"
+      "fingerprint": "fnv1a64:453ba4730cf3cd12",
+      "inputs": {
+        "lean:compiler.applies": "fnv1a64:bbbb4af082bda505",
+        "lean:severity.Level": "fnv1a64:7ced964c9470c680",
+        "mutant:test-flag-inverted": "fnv1a64:a6c6d4890c98ce43",
+        "proof:Tauten/Compiler.lean": "fnv1a64:a9110762391d8a57",
+        "proof:Tauten/Control.lean": "fnv1a64:15597dcfcbd4a7ae",
+        "proof:Tauten/Outcome.lean": "fnv1a64:9a1457f8e8fa48b8",
+        "proof:Tauten/Ratchet.lean": "fnv1a64:348d5f7de112f0f7",
+        "proof:Tauten/RatchetModel.lean": "fnv1a64:68e378121c48660e",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "test-flag-inverted",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.applies_spec"
+          ]
+        }
+      ]
     },
     {
       "crate": "tauten-check-kernel",
@@ -1057,7 +3656,31 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:44e1a95d1da44210"
+      "fingerprint": "fnv1a64:453ba4730cf3cd12",
+      "inputs": {
+        "lean:compiler.passes": "fnv1a64:f90f779656e98f64",
+        "lean:compiler.passes_loop": "fnv1a64:b8a19b137a80eda3",
+        "lean:compiler.passes_loop.body": "fnv1a64:05c8b6ce5dc31ad1",
+        "lean:severity.Severity": "fnv1a64:f48fd026309c9331",
+        "mutant:warning-fails": "fnv1a64:c95ca178a991063a",
+        "proof:Tauten/Compiler.lean": "fnv1a64:a9110762391d8a57",
+        "proof:Tauten/Control.lean": "fnv1a64:15597dcfcbd4a7ae",
+        "proof:Tauten/Outcome.lean": "fnv1a64:9a1457f8e8fa48b8",
+        "proof:Tauten/Ratchet.lean": "fnv1a64:348d5f7de112f0f7",
+        "proof:Tauten/RatchetModel.lean": "fnv1a64:68e378121c48660e",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "warning-fails",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.check_passes_iff",
+            "Tauten.Kernel.passes_spec",
+            "Tauten.Kernel.warnings_never_fail"
+          ]
+        }
+      ]
     },
     {
       "crate": "tauten",
@@ -1085,7 +3708,79 @@
       ],
       "outcome": "proved",
       "badge": "proved-under",
-      "fingerprint": "fnv1a64:3765a9d228f80086"
+      "fingerprint": "fnv1a64:3acbfacf801ad84e",
+      "inputs": {
+        "lean:tauten.publish.Command": "fnv1a64:a1b2e70b5a9ea7f4",
+        "lean:tauten.publish.Event": "fnv1a64:ce476b788bc7634d",
+        "lean:tauten.publish.Phase": "fnv1a64:215496e080bfee67",
+        "lean:tauten.publish.step": "fnv1a64:bd84cb3bec3eb3db",
+        "mutant:failure-ignored": "fnv1a64:5dc0057add556962",
+        "mutant:rename-before-sync": "fnv1a64:a1bf5dea8ee0bd09",
+        "mutant:skip-sync": "fnv1a64:e03083e7017a761d",
+        "proof:Tauten/Durable.lean": "fnv1a64:9faba4eccd33dfc3",
+        "proof:Tauten/Machine.lean": "fnv1a64:73138c8097fa5b04",
+        "proof:Tauten/TautenAssumption.lean": "fnv1a64:682b860e720dde5c",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "rename-before-sync",
+          "status": "killed",
+          "broken": [
+            "Tauten.Durable.create_new_never_replaces",
+            "Tauten.Durable.durable_needs_sync_dir",
+            "Tauten.Durable.old_or_new_needs_rename_atomic",
+            "Tauten.Durable.old_or_new_needs_sync_file",
+            "Tauten.Durable.posix_done_reachable",
+            "Tauten.Durable.publish_create_step_model",
+            "Tauten.Durable.publish_durable_on_done",
+            "Tauten.Durable.publish_frame",
+            "Tauten.Durable.publish_old_or_new",
+            "Tauten.Durable.publish_step_model",
+            "Tauten.Durable.publish_stops_on_failure",
+            "Tauten.Instances.publish_reachable_model",
+            "Tauten.Instances.publish_step_model"
+          ]
+        },
+        {
+          "mutant": "skip-sync",
+          "status": "killed",
+          "broken": [
+            "Tauten.Durable.create_new_never_replaces",
+            "Tauten.Durable.durable_needs_sync_dir",
+            "Tauten.Durable.old_or_new_needs_rename_atomic",
+            "Tauten.Durable.old_or_new_needs_sync_file",
+            "Tauten.Durable.posix_done_reachable",
+            "Tauten.Durable.publish_create_step_model",
+            "Tauten.Durable.publish_durable_on_done",
+            "Tauten.Durable.publish_frame",
+            "Tauten.Durable.publish_old_or_new",
+            "Tauten.Durable.publish_step_model",
+            "Tauten.Durable.publish_stops_on_failure",
+            "Tauten.Instances.publish_reachable_model",
+            "Tauten.Instances.publish_step_model"
+          ]
+        },
+        {
+          "mutant": "failure-ignored",
+          "status": "killed",
+          "broken": [
+            "Tauten.Durable.create_new_never_replaces",
+            "Tauten.Durable.durable_needs_sync_dir",
+            "Tauten.Durable.old_or_new_needs_rename_atomic",
+            "Tauten.Durable.old_or_new_needs_sync_file",
+            "Tauten.Durable.posix_done_reachable",
+            "Tauten.Durable.publish_create_step_model",
+            "Tauten.Durable.publish_durable_on_done",
+            "Tauten.Durable.publish_frame",
+            "Tauten.Durable.publish_old_or_new",
+            "Tauten.Durable.publish_step_model",
+            "Tauten.Durable.publish_stops_on_failure",
+            "Tauten.Instances.publish_reachable_model",
+            "Tauten.Instances.publish_step_model"
+          ]
+        }
+      ]
     },
     {
       "crate": "tauten",
@@ -1114,7 +3809,47 @@
       ],
       "outcome": "proved",
       "badge": "proved-under",
-      "fingerprint": "fnv1a64:3765a9d228f80086"
+      "fingerprint": "fnv1a64:3acbfacf801ad84e",
+      "inputs": {
+        "lean:tauten.publish.Phase": "fnv1a64:215496e080bfee67",
+        "lean:tauten.publish.durable": "fnv1a64:bc1a089ebffc99a8",
+        "mutant:durable-too-early": "fnv1a64:95f9adb0b614b54d",
+        "mutant:skip-sync": "fnv1a64:e03083e7017a761d",
+        "proof:Tauten/Durable.lean": "fnv1a64:9faba4eccd33dfc3",
+        "proof:Tauten/Machine.lean": "fnv1a64:73138c8097fa5b04",
+        "proof:Tauten/TautenAssumption.lean": "fnv1a64:682b860e720dde5c",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "skip-sync",
+          "status": "killed",
+          "broken": [
+            "Tauten.Durable.create_new_never_replaces",
+            "Tauten.Durable.durable_needs_sync_dir",
+            "Tauten.Durable.old_or_new_needs_rename_atomic",
+            "Tauten.Durable.old_or_new_needs_sync_file",
+            "Tauten.Durable.posix_done_reachable",
+            "Tauten.Durable.publish_create_step_model",
+            "Tauten.Durable.publish_durable_on_done",
+            "Tauten.Durable.publish_frame",
+            "Tauten.Durable.publish_old_or_new",
+            "Tauten.Durable.publish_step_model",
+            "Tauten.Durable.publish_stops_on_failure",
+            "Tauten.Instances.publish_reachable_model",
+            "Tauten.Instances.publish_step_model"
+          ]
+        },
+        {
+          "mutant": "durable-too-early",
+          "status": "killed",
+          "broken": [
+            "Tauten.Durable.durable_model",
+            "Tauten.Durable.durable_needs_sync_dir",
+            "Tauten.Durable.publish_durable_on_done"
+          ]
+        }
+      ]
     },
     {
       "crate": "tauten",
@@ -1136,7 +3871,29 @@
       "witness": "Tauten.Durable.posix_satisfies",
       "outcome": "proved",
       "badge": "proved-under",
-      "fingerprint": "fnv1a64:3765a9d228f80086"
+      "fingerprint": "fnv1a64:3acbfacf801ad84e",
+      "inputs": {
+        "lean:tauten.publish.Command": "fnv1a64:a1b2e70b5a9ea7f4",
+        "lean:tauten.publish.Event": "fnv1a64:ce476b788bc7634d",
+        "lean:tauten.publish.Phase": "fnv1a64:215496e080bfee67",
+        "lean:tauten.publish.create_step": "fnv1a64:a8f1003d5868badd",
+        "lean:tauten.publish.step": "fnv1a64:bd84cb3bec3eb3db",
+        "mutant:replace-under-create-new": "fnv1a64:57eb636d174804f3",
+        "proof:Tauten/Durable.lean": "fnv1a64:9faba4eccd33dfc3",
+        "proof:Tauten/Machine.lean": "fnv1a64:73138c8097fa5b04",
+        "proof:Tauten/TautenAssumption.lean": "fnv1a64:682b860e720dde5c",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "replace-under-create-new",
+          "status": "killed",
+          "broken": [
+            "Tauten.Durable.create_new_never_replaces",
+            "Tauten.Durable.publish_create_step_model"
+          ]
+        }
+      ]
     },
     {
       "crate": "tauten-proof-instances",
@@ -1155,7 +3912,44 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:67d65c9e53f07613"
+      "fingerprint": "fnv1a64:664e25a0d1397909",
+      "inputs": {
+        "lean:stamped.Counter": "fnv1a64:dba680b33d83a609",
+        "lean:stamped.Counter.Insts.TautenOriginVersioned": "fnv1a64:3e434e24aa4f6285",
+        "lean:stamped.Counter.Insts.TautenOriginVersioned.version": "fnv1a64:ff5ce3bd7b903ed6",
+        "lean:stamped.__tauten_evidence_belowlimit.BelowLimit": "fnv1a64:6b444380c4963932",
+        "lean:stamped.__tauten_evidence_belowlimit.BelowLimit.impl.value": "fnv1a64:9324276e2bd7a1e2",
+        "lean:stamped.bump": "fnv1a64:f929a87747359d62",
+        "lean:tauten.origin.Evidence": "fnv1a64:af8d36cd25092ca7",
+        "lean:tauten.origin.Evidence.__mint": "fnv1a64:f3ef6936e27dfdd3",
+        "lean:tauten.origin.Evidence.redeem": "fnv1a64:cae50b8da35b5afe",
+        "lean:tauten.origin.Proposition": "fnv1a64:0827d90cdfa2da4e",
+        "lean:tauten.origin.Stale": "fnv1a64:377c7b2b3d4d5929",
+        "lean:tauten.origin.Stamped": "fnv1a64:0e62b7d058beb4ef",
+        "lean:tauten.origin.Stamped.verify": "fnv1a64:0aad9b7c77577770",
+        "lean:tauten.origin.Versioned": "fnv1a64:e96ac8d557342a88",
+        "mutant:stale-accepted": "fnv1a64:920799709805c2bc",
+        "mutant:stamp-ignored": "fnv1a64:1bb9038dd01bd825",
+        "proof:Tauten/Stamped.lean": "fnv1a64:99d7b645540d4ada",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "stamp-ignored",
+          "status": "killed",
+          "broken": [
+            "Tauten.Instances.stale_refused"
+          ]
+        },
+        {
+          "mutant": "stale-accepted",
+          "status": "killed",
+          "broken": [
+            "Tauten.Instances.fresh_accepted",
+            "Tauten.Instances.stale_refused"
+          ]
+        }
+      ]
     },
     {
       "crate": "tauten-check-kernel",
@@ -1176,7 +3970,25 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:44e1a95d1da44210"
+      "fingerprint": "fnv1a64:453ba4730cf3cd12",
+      "inputs": {
+        "lean:layer.may_use": "fnv1a64:b6cba5e7b7776d27",
+        "mutant:layer-strict": "fnv1a64:3e77ebb103a8546c",
+        "proof:Tauten/Layer.lean": "fnv1a64:83fd76621fc61433",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "layer-strict",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.layer_finding_iff",
+            "Tauten.Kernel.may_use_refl",
+            "Tauten.Kernel.may_use_spec",
+            "Tauten.Kernel.may_use_total"
+          ]
+        }
+      ]
     },
     {
       "crate": "tauten-check-kernel",
@@ -1195,8 +4007,83 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:44e1a95d1da44210"
+      "fingerprint": "fnv1a64:453ba4730cf3cd12",
+      "inputs": {
+        "lean:layer.Layer": "fnv1a64:faa7aee45c2cc31f",
+        "lean:layer.finding": "fnv1a64:7e5c1105796a1fdd",
+        "lean:layer.may_use": "fnv1a64:b6cba5e7b7776d27",
+        "mutant:layer-inverted": "fnv1a64:99a4fa4af61b0ead",
+        "mutant:unknown-layer-clean": "fnv1a64:279882125d5f47b9",
+        "proof:Tauten/Layer.lean": "fnv1a64:83fd76621fc61433",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "layer-inverted",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.layer_finding_iff"
+          ]
+        },
+        {
+          "mutant": "unknown-layer-clean",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.layer_finding_iff",
+            "Tauten.Kernel.unknown_layer_is_finding"
+          ]
+        }
+      ]
+    },
+    {
+      "crate": "tauten-check-kernel",
+      "file": "crates/tauten-check-kernel/src/badge.rs",
+      "function": "inherit",
+      "lean": "tauten_check_kernel.badge.inherit",
+      "theorems": [
+        "Tauten.Kernel.inherit_spec",
+        "Tauten.Kernel.inherited_badge_le",
+        "Tauten.Kernel.inherit_needs_version_and_record"
+      ],
+      "total": null,
+      "subsumes": [],
+      "mutants": [
+        "inherit-ignores-version",
+        "inherit-strengthens"
+      ],
+      "outcome": "proved",
+      "badge": "proved",
+      "fingerprint": "fnv1a64:453ba4730cf3cd12",
+      "inputs": {
+        "lean:badge.Badge": "fnv1a64:c9e59517420c5e9b",
+        "lean:badge.inherit": "fnv1a64:ce468e61adad4a57",
+        "mutant:inherit-ignores-version": "fnv1a64:9bce518cfa7a39fd",
+        "mutant:inherit-strengthens": "fnv1a64:51d77583c8f3e474",
+        "proof:Tauten/Badge.lean": "fnv1a64:9face57081c79fb1",
+        "proof:Tauten/Ratchet.lean": "fnv1a64:348d5f7de112f0f7",
+        "proof:Tauten/RatchetModel.lean": "fnv1a64:68e378121c48660e",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "inherit-ignores-version",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.inherit_needs_version_and_record",
+            "Tauten.Kernel.inherit_spec",
+            "Tauten.Kernel.inherited_badge_le"
+          ]
+        },
+        {
+          "mutant": "inherit-strengthens",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.inherit_spec",
+            "Tauten.Kernel.inherited_badge_le"
+          ]
+        }
+      ]
     }
   ],
-  "commit": "dee8b19063d0904dcb2c0b90120f4545519263df"
+  "commit": "6d5012d82eb488b0739ef5fab8bde17bf02e7ce8"
 }
