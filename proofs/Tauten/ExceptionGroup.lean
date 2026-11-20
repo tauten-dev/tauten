@@ -39,13 +39,13 @@ def excuseN (allows : Bool) (t : tiers.Tier) (level : Option severity.Level) (cw
   else if cw = true ∧ level = some .Deny then .CrateWide
   else .Allowed
 
-def rankN : exception.Excuse → Nat
+def excuseRank : exception.Excuse → Nat
   | .Allowed => 0
   | .CrateWide => 1
   | .Forbidden => 2
 
 def worseN (a b : exception.Excuse) : exception.Excuse :=
-  if rankN a < rankN b then b else a
+  if excuseRank a < excuseRank b then b else a
 
 def worstN (cs : List exception.Covered) (t : tiers.Tier) (cw : Bool) : exception.Excuse :=
   cs.foldl (fun a c => worseN a (excuseN c.allows t c.level cw)) .Allowed
@@ -61,7 +61,7 @@ theorem excuse_eq (allows : Bool) (t : tiers.Tier) (level : Option severity.Leve
   rw [exception_spec]; rfl
 
 theorem worse_spec (a b : exception.Excuse) : exception.worse a b = ok (worseN a b) := by
-  cases a <;> cases b <;> simp [exception.worse, exception.rank, worseN, rankN] <;> decide
+  cases a <;> cases b <;> simp [exception.worse, exception.rank, worseN, excuseRank] <;> decide
 
 theorem worst_spec (cs : Slice exception.Covered) (t : tiers.Tier) (cw : Bool) :
     exception.worst cs t cw ⦃ r => r = worstN cs.val t cw ⦄ := by
@@ -100,25 +100,25 @@ theorem conditional_never_allowed_in_kernel (f : exception.Form) (cs : Slice exc
     exception.decide f cs .Kernel = ok .Forbidden := by
   simp [exception.decide, hc]
 
-theorem rank_worse_left (a b : exception.Excuse) : rankN a ≤ rankN (worseN a b) := by
+theorem rank_worse_left (a b : exception.Excuse) : excuseRank a ≤ excuseRank (worseN a b) := by
   unfold worseN; split <;> omega
 
-theorem rank_worse_right (a b : exception.Excuse) : rankN b ≤ rankN (worseN a b) := by
+theorem rank_worse_right (a b : exception.Excuse) : excuseRank b ≤ excuseRank (worseN a b) := by
   unfold worseN; split
   · omega
-  · cases a <;> cases b <;> simp_all [rankN]
+  · cases a <;> cases b <;> simp_all [excuseRank]
 
 theorem foldl_worse_ge (cs : List exception.Covered) (t : tiers.Tier) (cw : Bool)
     (a : exception.Excuse) :
-    rankN a ≤ rankN (cs.foldl (fun a c => worseN a (excuseN c.allows t c.level cw)) a) := by
+    excuseRank a ≤ excuseRank (cs.foldl (fun a c => worseN a (excuseN c.allows t c.level cw)) a) := by
   induction cs generalizing a with
   | nil => simp
   | cons c rest ih => exact le_trans (rank_worse_left _ _) (ih _)
 
 theorem foldl_worse_mem (cs : List exception.Covered) (t : tiers.Tier) (cw : Bool)
     (a : exception.Excuse) (c : exception.Covered) (hc : c ∈ cs) :
-    rankN (excuseN c.allows t c.level cw) ≤
-      rankN (cs.foldl (fun a c => worseN a (excuseN c.allows t c.level cw)) a) := by
+    excuseRank (excuseN c.allows t c.level cw) ≤
+      excuseRank (cs.foldl (fun a c => worseN a (excuseN c.allows t c.level cw)) a) := by
   induction cs generalizing a with
   | nil => simp at hc
   | cons d rest ih =>
@@ -130,13 +130,13 @@ theorem foldl_worse_mem (cs : List exception.Covered) (t : tiers.Tier) (cw : Boo
 least as bad as the decision for each covered rule on its own. -/
 theorem group_never_weaker (f : exception.Form) (cs : Slice exception.Covered) (t : tiers.Tier)
     (c : exception.Covered) (hc : c ∈ cs.val) :
-    exception.decide f cs t ⦃ r => rankN (excuseN c.allows t c.level f.crate_wide) ≤ rankN r ⦄ := by
+    exception.decide f cs t ⦃ r => excuseRank (excuseN c.allows t c.level f.crate_wide) ≤ excuseRank r ⦄ := by
   apply WP.spec_mono (decide_spec f cs t)
   intro r hr
   rw [hr]
   split
   · cases c.allows <;> cases t <;> rcases c.level with _ | (_ | _) <;> cases f.crate_wide <;>
-      simp [excuseN, rankN]
+      simp [excuseN, excuseRank]
   · exact foldl_worse_mem _ _ _ _ _ hc
 
 /-- For one unconditional lint the decision is the single-rule `excuse`. -/
@@ -151,7 +151,7 @@ theorem decide_single (cw : Bool) (c : exception.Covered) (t : tiers.Tier) (cs :
   split
   · rfl
   · rename_i hn
-    cases e : excuseN c.allows t c.level cw <;> simp_all [rankN]
+    cases e : excuseN c.allows t c.level cw <;> simp_all [excuseRank]
 
 /-! ## TAU-X003 -/
 
