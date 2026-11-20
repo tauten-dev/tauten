@@ -22,7 +22,7 @@ fs = ["std", "dep:cap-std"]
 
 [dependencies]
 cap-std = { version = "4.0.3", optional = true }
-tauten-macros = { path = "../tauten-macros", version = "0.0.3" }
+tauten-macros = { path = "../tauten-macros", version = "0.0.4" }
 
 [dev-dependencies]
 trybuild = "1.0.125"

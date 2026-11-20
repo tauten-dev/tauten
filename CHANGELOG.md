@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.0.4 (2026-11-20)
+
 - `cargo tauten proofs try --theorems T… | --mutants M…`: the developer
   loop. Runs extract, drift, build and audit, then only the mutants of the
   claims stating those theorems (or the named mutants), in parallel; prints
