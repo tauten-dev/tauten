@@ -13,7 +13,7 @@ command = ["sh", "proofs/run.sh"]
 # translates, without building the proofs.
 extract = ["sh", "proofs/run.sh", "python3", "proofs/gate.py", "--extract-only"]
 # Crate directories the gate translates with Charon/Aeneas.
-crates = ["acc-cast", "acc-derive", "acc-shapes", "rej-dyn", "rej-early-loops", "rej-float", "rej-iterator", "rej-match-get-loop", "rej-nested-borrow"]
+crates = ["rej-lean-keyword", "rej-name-clash", "acc-cast", "acc-derive", "acc-shapes", "rej-dyn", "rej-early-loops", "rej-float", "rej-iterator", "rej-match-get-loop", "rej-nested-borrow"]
 
 # One [[claim]] per proved Rust function:
 #

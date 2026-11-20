@@ -26,6 +26,8 @@ never read as a pass.
     python3 proofs/gate.py                 # the gate
     python3 proofs/gate.py --extract-only [--crate DIR]
                                            # tools and extract stages only
+    python3 proofs/gate.py --only-mutants A,B
+                                           # every stage, only these mutants (partial)
     python3 proofs/gate.py --extract-tar   # a fresh extraction as a tar on stdout
 """
 from pathlib import Path
@@ -117,7 +119,7 @@ def extract_only(only: str | None) -> int:
             emit(stage="extract", status="fail", detail=f"{only} is not in [gate] crates")
             return 1
         crates = [only]
-    missing = [tool for tool in ("charon", "aeneas") if shutil.which(tool) is None]
+    missing = [tool for tool in ("charon", "aeneas", "lake") if shutil.which(tool) is None]
     if missing:
         emit(stage="tools", status="missing", detail=f"not on PATH: {', '.join(missing)}")
         return 3
@@ -126,23 +128,66 @@ def extract_only(only: str | None) -> int:
     for crate in crates:
         log(f"extract: {crate}")
         with tempfile.TemporaryDirectory() as part:
-            result = extract(crate, Path(part) / "out")
-            opaque = sorted({m.group(1) for lean in (Path(part) / "out").glob("*.lean")
+            out = Path(part) / "out"
+            result = extract(crate, out)
+            opaque = sorted({m.group(1) for lean in out.glob("*.lean")
                              for m in AXIOM.finditer(lean.read_text())})
-        if result.returncode != 0:
-            print(result.stdout, file=sys.stderr)
-            emit(stage="extract", status="fail", crate=crate, detail=first_located(result.stdout))
-            failed += 1
-        elif opaque:
-            # Translated, but calls library functions Aeneas models as
-            # axioms: the axiom audit refuses every theorem that uses them.
-            emit(stage="extract", status="fail", crate=crate,
-                 detail=f"{crate} translates only with opaque library functions (axioms), "
-                        f"so no theorem over it passes the audit: {', '.join(opaque)}")
-            failed += 1
-        else:
-            emit(stage="extract", status="ok", crate=crate)
+            if result.returncode != 0:
+                print(result.stdout, file=sys.stderr)
+                emit(stage="extract", status="fail", crate=crate, detail=first_located(result.stdout))
+                failed += 1
+            elif opaque:
+                # Translated, but calls library functions Aeneas models as
+                # axioms: the axiom audit refuses every theorem that uses them.
+                emit(stage="extract", status="fail", crate=crate,
+                     detail=f"{crate} translates only with opaque library functions (axioms), "
+                            f"so no theorem over it passes the audit: {', '.join(opaque)}")
+                failed += 1
+            elif (located := lean_failure(out)) is not None:
+                # Translated, but the Lean it produced does not compile (a
+                # name Lean reserves, a clash between generated names).
+                emit(stage="extract", status="fail", crate=crate, detail=located)
+                failed += 1
+            else:
+                emit(stage="extract", status="ok", crate=crate)
     return 1 if failed else 0
+
+
+SOURCE = re.compile(r"Source: '(?P<file>[^']+)', lines (?P<line>\d+):\d+")
+
+
+def lean_failure(out: Path) -> str | None:
+    """Build the fresh translation in Lean (without the proofs). `None` when
+    it compiles; otherwise the first Lean error, located at the Rust source
+    the failing definition was translated from. Lean decides, not a list of
+    identifiers that might clash."""
+    with tempfile.TemporaryDirectory(prefix="extract-build-") as directory:
+        project = Path(directory) / "proofs"
+        project.mkdir()
+        for name in ("lakefile.toml", "lean-toolchain", "lake-manifest.json"):
+            shutil.copy2(PROOFS / name, project / name)
+        shutil.copytree(out, project / "Extracted")
+        (project / ".lake").mkdir()
+        os.symlink(PROOFS / ".lake" / "packages", project / ".lake" / "packages")
+        modules = sorted(f"Extracted.{p.stem}" for p in out.glob("*.lean"))
+        build = run(["lake", "build", *modules], project)
+        if build.returncode == 0:
+            return None
+        print(build.stdout, file=sys.stderr)
+        text = ANSI.sub("", build.stdout)
+        match = ERROR.search(text)
+        if match is None:
+            return "the translation does not compile in Lean (no error line found; see the log)"
+        message = text[match.end():].splitlines()[0].strip() if text[match.end():] else ""
+        lean = project / match.group("file")
+        where = f"{match.group('file')}:{match.group('line')}"
+        if lean.is_file():
+            lines = lean.read_text().splitlines()
+            for i in range(min(int(match.group("line")), len(lines)) - 1, -1, -1):
+                if source := SOURCE.search(lines[i]):
+                    where = f"{source.group('file')}:{source.group('line')}"
+                    break
+        return f"{where}: the translation does not compile in Lean: {message}"
 
 
 def same_tree(a: Path, b: Path) -> list[str]:
@@ -267,7 +312,7 @@ def mutant(spec: dict, crates: list[str], theorems: set[str]) -> dict:
         return {"status": "killed" if broken else "survived", "broken": broken}
 
 
-def gate() -> int:
+def gate(only: set[str] | None = None) -> int:
     config = claims()
     crates = config.get("gate", {}).get("crates", [])
     missing = [tool for tool in TOOLS if shutil.which(tool) is None]
@@ -322,10 +367,25 @@ def gate() -> int:
     emit(stage="audit", status="ok")
 
     named = {t for claim in config.get("claim", []) for t in claim.get("theorems", [])}
+    specs = [m for m in config.get("mutant", []) if only is None or m["name"] in only]
+    if only is not None and len(specs) != len(only):
+        unknown = sorted(only - {m["name"] for m in specs})
+        emit(stage="mutants", status="fail", detail=f"unknown mutant(s): {', '.join(unknown)}")
+        return 1
     survivors = 0
-    for spec in config.get("mutant", []):
+
+    def one(spec: dict) -> dict:
         log(f"mutant {spec['name']}")
-        result = mutant(spec, crates, named)
+        return mutant(spec, crates, named)
+
+    if only is None:
+        results = [one(spec) for spec in specs]
+    else:
+        # `--only-mutants` (cargo tauten proofs try): in parallel.
+        from concurrent.futures import ThreadPoolExecutor
+        with ThreadPoolExecutor(max_workers=max(1, min(len(specs), (os.cpu_count() or 2) // 2))) as pool:
+            results = list(pool.map(one, specs))
+    for spec, result in zip(specs, results):
         if result["status"] != "killed":
             survivors += 1
         emit(mutant=spec["name"], **result)
@@ -355,6 +415,11 @@ def main(args: list[str]) -> int:
             print("usage: gate.py --extract-only [--crate DIR]", file=sys.stderr)
             return 2
         return extract_only(rest[1] if rest else None)
+    if args[:1] == ["--only-mutants"]:
+        if len(args) != 2:
+            print("usage: gate.py --only-mutants NAME[,NAME...]", file=sys.stderr)
+            return 2
+        return gate({n for n in args[1].split(",") if n})
     return gate()
 
 

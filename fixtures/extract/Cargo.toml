@@ -4,7 +4,7 @@
 # message. Checked by scripts/extract-fixtures.
 [workspace]
 resolver = "3"
-members = ["acc-cast", "acc-derive", "acc-shapes", "rej-dyn", "rej-early-loops", "rej-float", "rej-iterator", "rej-match-get-loop", "rej-nested-borrow"]
+members = ["rej-lean-keyword", "rej-name-clash", "acc-cast", "acc-derive", "acc-shapes", "rej-dyn", "rej-early-loops", "rej-float", "rej-iterator", "rej-match-get-loop", "rej-nested-borrow"]
 
 [profile.release]
 overflow-checks = true

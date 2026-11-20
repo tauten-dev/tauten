@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- The fast extract stage builds the translation in Lean (#46):
+  `cargo tauten proofs extract` and `check --extract` now also compile the
+  fresh Lean (without the proofs), so a name Lean reserves (a parameter
+  `given`) or a generated-name clash (a parameter named like its module)
+  fails at extract speed, located at the Rust line, instead of one full
+  gate round later. Lean decides; there is no keyword list. About 10-15 s
+  more per crate. Fixtures `rej-lean-keyword`, `rej-name-clash`.
+
 - Declared layers inside a tier (B6, #21): `[workspace.metadata.tauten]
   layers = [...]` orders a workspace's crates; each member names its
   `layer` and may depend only on the same or an earlier one. New rule

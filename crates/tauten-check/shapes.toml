@@ -12,6 +12,14 @@ fixture = "rej-dyn"
 note = "No trait objects (`dyn Trait`, `&dyn Fn`): use an enum or a generic."
 
 [[limit]]
+fixture = "rej-lean-keyword"
+note = "No names Lean reserves (`given`, `set`, `at`, `fun`, `have`, `show`, ...) for parameters, locals or fields; the extract stage builds the translation, so Lean reports any such name."
+
+[[limit]]
+fixture = "rej-name-clash"
+note = "Do not name a parameter like its own module (`fn width(span: Span)` in `mod span`): in Lean it shadows the module's types."
+
+[[limit]]
 fixture = "rej-float"
 note = "No floating point: use integers or fixed point."
 

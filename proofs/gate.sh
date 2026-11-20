@@ -31,8 +31,17 @@ sh proofs/extract-all.sh /tmp/gate-extract
 report extract ok
 if [ "${1:-}" = "--extract-only" ]; then
     # `cargo tauten proofs extract`: one result per proved crate.
-    for crate in tauten-check-kernel tauten-proof-instances; do
-        printf 'TAUTEN-PROOFS {"stage":"extract","status":"ok","crate":"crates/%s"}\n' "$crate"
+    # Build the fresh translation in Lean (without the proofs): Lean decides
+    # whether the generated names compile (#46).
+    rm -rf proofs/Extracted && cp -r /tmp/gate-extract proofs/Extracted
+    for pair in tauten-check-kernel:TautenCheckKernel tauten-proof-instances:TautenProofInstances; do
+        crate="${pair%%:*}"
+        if (cd proofs && lake build "Extracted.${pair#*:}") > /tmp/gate-extract-build.log 2>&1; then
+            printf 'TAUTEN-PROOFS {"stage":"extract","status":"ok","crate":"crates/%s"}\n' "$crate"
+        else
+            cat /tmp/gate-extract-build.log >&2
+            printf 'TAUTEN-PROOFS {"stage":"extract","status":"fail","crate":"crates/%s","detail":"the translation does not compile in Lean; see the log"}\n' "$crate"
+        fi
     done
     stage=""
     exit 0
