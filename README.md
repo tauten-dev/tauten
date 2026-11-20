@@ -79,6 +79,7 @@ The same setup is a template for your own kernel crates:
 $ cargo tauten init --proofs my-kernel --write   # writes proofs/ (claims.toml, gate, Lean project)
 $ sh proofs/refresh.sh                           # translate the crate (Docker, pinned image)
 $ cargo tauten proofs                            # run the gate; one JSON outcome per claim
+$ cargo tauten obligations                       # kernel arithmetic/indexing findings: proved, baselined, open
 {"crate":"my-kernel","function":"apply","theorems":["Proofs.MyKernel.apply_spec"],…,"outcome":"proved",…}
 ```
 

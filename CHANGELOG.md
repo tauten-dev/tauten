@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- `cargo tauten obligations [--list]` (D3, #37): in kernel crates,
+  arithmetic and indexing findings (TAU-N001, TAU-N002, TAU-P003) are
+  listed as proof obligations: proved (subsumed by a recorded proof that the
+  function never fails), open and baselined, or open. The counts are the
+  ones `check` decides (proved = subsumed, open and baselined = accepted by
+  the baseline); it fails when an obligation is open. The rules' fix texts
+  say so.
+
 - `cargo tauten generated [--only NAME…]`: the generated-file stage (A11,
   #15). Each `[[workspace.metadata.tauten.generated]]` entry names a
   command and either the committed file its standard output must equal

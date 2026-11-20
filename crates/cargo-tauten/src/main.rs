@@ -4,6 +4,7 @@ mod baseline_file;
 mod clippy;
 mod generated;
 mod init;
+mod obligations;
 mod output;
 mod proofs;
 mod workspace;
@@ -112,6 +113,16 @@ enum Command {
         /// located translation error per crate.
         #[command(subcommand)]
         action: Option<ProofsAction>,
+    },
+    /// In kernel crates, list arithmetic and indexing findings (TAU-N001,
+    /// TAU-N002, TAU-P003) as proof obligations: proved (subsumed by a
+    /// recorded proof), open and baselined, or open.
+    Obligations {
+        #[command(flatten)]
+        target: Target,
+        /// List every obligation, not only the counts.
+        #[arg(long)]
+        list: bool,
     },
     /// Regenerate every `[[workspace.metadata.tauten.generated]]` file and
     /// compare it byte for byte with the committed one: `ok`, `drift` or
@@ -294,6 +305,10 @@ fn run(cli: Cli) -> Result<ExitCode> {
                 }
                 None => proofs::run(&ws, !no_write, live),
             }
+        }
+        Command::Obligations { target, list } => {
+            let (root, diags, _) = collect(&profile, &target)?;
+            obligations::run(&profile, &root, diags, list)
         }
         Command::Generated {
             manifest_path,

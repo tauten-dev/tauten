@@ -434,4 +434,31 @@ open({lib:?}, "a").write("// edited during the run\n")
             before_record
         );
     }
+
+    /// D3: the obligations reproduce `check`'s counts: proved = subsumed,
+    /// open and baselined = accepted by the ratchet, open = failing.
+    #[test]
+    fn obligations_reproduce_the_check_counts() {
+        let root = scratch("obligations");
+        let out = tauten(&["obligations"], &root);
+        let text = String::from_utf8_lossy(&out.stdout);
+        assert!(!out.status.success());
+        assert!(
+            text.contains("sub-kernel: 5 obligation(s): 3 proved, 0 open and baselined, 2 open"),
+            "{text}"
+        );
+        let base = tauten(&["baseline"], &root);
+        assert!(
+            base.status.success(),
+            "{}",
+            String::from_utf8_lossy(&base.stderr)
+        );
+        let out = tauten(&["obligations"], &root);
+        let text = String::from_utf8_lossy(&out.stdout);
+        assert!(out.status.success(), "{text}");
+        assert!(
+            text.contains("sub-kernel: 5 obligation(s): 3 proved, 2 open and baselined, 0 open"),
+            "{text}"
+        );
+    }
 }

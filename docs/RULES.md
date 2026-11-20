@@ -90,7 +90,7 @@ Lints: `clippy::panic`, `clippy::unreachable`
 
 `v[i]` and `&s[a..b]` panic on out-of-range or non-char-boundary input; off-by-one errors become crashes.
 
-**Fix:** Use `.get(i)` / `.get(a..b)` and handle None, iterate instead of indexing, or use `split_at_checked`.
+**Fix:** Use `.get(i)` / `.get(a..b)` and handle None, iterate instead of indexing, or use `split_at_checked`. In a kernel crate this is a proof obligation: a recorded proof that the function never fails discharges it (`cargo tauten obligations`).
 
 **Decides:** No panicking index or string slice in linted code.
 
@@ -146,7 +146,7 @@ Banned in kernel, core (process termination): `std::process::exit`, `std::proces
 
 Integer overflow and division by zero either panic or wrap silently depending on build profile; both are logic errors agents rarely test.
 
-**Fix:** Use `checked_*` and return an error on None, or `saturating_*`/`wrapping_*` when that behaviour is the specification. Say which in a comment.
+**Fix:** Use `checked_*` and return an error on None, or `saturating_*`/`wrapping_*` when that behaviour is the specification. Say which in a comment. In a kernel crate this is a proof obligation: a recorded proof that the function never fails discharges it (`cargo tauten obligations`).
 
 **Decides:** No arithmetic that can overflow, divide by zero or truncate silently in linted code.
 
@@ -164,7 +164,7 @@ Lints: `clippy::arithmetic_side_effects`, `clippy::integer_division`
 
 `as` silently truncates, wraps and changes sign.
 
-**Fix:** Use `From`/`TryFrom` (`u32::try_from(x)?`) so out-of-range values become errors.
+**Fix:** Use `From`/`TryFrom` (`u32::try_from(x)?`) so out-of-range values become errors. In a kernel crate this is a proof obligation: a recorded proof that the function never fails discharges it (`cargo tauten obligations`).
 
 **Decides:** No `as` conversion that can lose information in linted code.
 
