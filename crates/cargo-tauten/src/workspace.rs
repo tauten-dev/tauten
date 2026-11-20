@@ -51,6 +51,7 @@ pub fn load(manifest_path: Option<&Path>, assume_tier: &[String]) -> Result<Load
             .map(|p| member(&root, p, &names, &workspace_lints))
             .collect::<Result<_>>()?,
         overflow_checks: Some(overflow_checks(&root)?),
+        layers: workspace_layers(&metadata.workspace_metadata),
     };
     for m in &mut model.members {
         let named = assumed.iter().find(|(name, _)| name == &m.name);
@@ -63,6 +64,19 @@ pub fn load(manifest_path: Option<&Path>, assume_tier: &[String]) -> Result<Load
         }
     }
     Ok(Loaded { metadata, model })
+}
+
+/// `[workspace.metadata.tauten] layers`: the declared layer names, in
+/// order. A value that is not a list of strings declares no usable layer,
+/// so every crate's declaration is then unknown: never silently clean.
+fn workspace_layers(meta: &serde_json::Value) -> Option<Vec<String>> {
+    let value = meta.get("tauten")?.get("layers")?;
+    let names = value.as_array().and_then(|list| {
+        list.iter()
+            .map(|v| v.as_str().map(str::to_owned))
+            .collect::<Option<Vec<_>>>()
+    });
+    Some(names.unwrap_or_default())
 }
 
 fn member(
@@ -85,6 +99,10 @@ fn member(
                 .collect()
         })
         .unwrap_or_default();
+    let layer_raw = meta
+        .and_then(|m| m.get("layer"))
+        .and_then(|l| l.as_str())
+        .map(str::to_owned);
     let effects_required =
         meta.and_then(|m| m.get("effects")).and_then(|e| e.as_str()) == Some("required");
     let normal = package
@@ -145,6 +163,7 @@ fn member(
         manifest_lints,
         sources,
         effects_required,
+        layer_raw,
     })
 }
 

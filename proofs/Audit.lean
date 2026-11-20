@@ -157,6 +157,14 @@ def claims : List Name := [
   ``Tauten.Kernel.passes_spec,
   ``Tauten.Kernel.check_passes_iff,
   ``Tauten.Kernel.warnings_never_fail,
+  -- declared layers (B6)
+  ``Tauten.Kernel.may_use_spec,
+  ``Tauten.Kernel.may_use_refl,
+  ``Tauten.Kernel.may_use_trans,
+  ``Tauten.Kernel.may_use_antisymm,
+  ``Tauten.Kernel.may_use_total,
+  ``Tauten.Kernel.layer_finding_iff,
+  ``Tauten.Kernel.unknown_layer_is_finding,
   -- the machine library (A6) and its worked instance
   ``Tauten.Machine.inv_of_step,
   ``Tauten.Machine.inv_run,
@@ -280,6 +288,8 @@ def reviewedFunctions : List Name := [
   ``tauten_check_kernel.compiler.passes_loop.body,
   ``tauten_check_kernel.compiler.passes_loop,
   ``tauten_check_kernel.compiler.passes,
+  ``tauten_check_kernel.layer.may_use,
+  ``tauten_check_kernel.layer.finding,
   ``tauten_check_kernel.ratchet.count_at,
   ``tauten_check_kernel.ratchet.take,
   ``tauten_check_kernel.ratchet.take_at,

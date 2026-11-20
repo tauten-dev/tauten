@@ -632,6 +632,21 @@ complete = true
 fixtures = ["rej-kernel-dep"]
 
 [[rule]]
+id = "TAU-T004"
+title = "Declared layers point backwards"
+lints = []
+levels = { kernel = "deny", core = "deny", edge = "deny" }
+enforced_by = "tauten"
+why = "Inside a tier, a workspace may order its crates in named layers (`[workspace.metadata.tauten] layers`); a crate that uses a later layer turns the intended dependency order into a cycle waiting to happen."
+fix = "Move the shared code into the same or an earlier layer, or declare the crate in a later layer. Give every crate a `layer` from the workspace's list."
+family = "obligation"
+invariant = "When the workspace declares layers, every member names one of them and depends only on members of the same or an earlier layer."
+sees = "manifest"
+dominion = "Dev- and build-dependencies. Workspaces that declare no `layers` are not checked."
+complete = true
+fixtures = ["layers"]
+
+[[rule]]
 id = "TAU-D001"
 in_tests = false
 title = "Documented public API"

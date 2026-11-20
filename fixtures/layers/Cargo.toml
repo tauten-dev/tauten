@@ -1,0 +1,12 @@
+# TAU-T004: declared layers. `model` <- `store` <- `service` is the
+# accepted order; `bad` (layer model) uses `service`, `stray` declares no
+# layer and `typo` names a layer that is not in the list.
+[workspace]
+resolver = "3"
+members = ["model", "store", "service", "bad", "stray", "typo"]
+
+[workspace.metadata.tauten]
+layers = ["model", "store", "service"]
+
+[profile.release]
+overflow-checks = true

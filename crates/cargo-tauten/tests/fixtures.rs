@@ -124,3 +124,45 @@ mod hardening {
         assert_eq!(output.status.code(), Some(1));
     }
 }
+
+/// TAU-T004 on `fixtures/layers`: the crates in the declared order are
+/// clean; a use of a later layer, a missing layer and an unknown layer are
+/// findings, each on its own crate.
+#[cfg(test)]
+mod layers {
+    use std::path::Path;
+    use std::process::Command;
+
+    #[test]
+    fn declared_layers_point_backwards() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/layers");
+        let output = Command::new(env!("CARGO_BIN_EXE_cargo-tauten"))
+            .args(["tauten", "check", "--format", "json", "--manifest-path"])
+            .arg(root.join("Cargo.toml"))
+            .output()
+            .expect("run cargo-tauten");
+        let mut found: Vec<(String, String)> = String::from_utf8_lossy(&output.stdout)
+            .lines()
+            .filter_map(|l| serde_json::from_str::<serde_json::Value>(l).ok())
+            .filter(|d| d["severity"] == "error")
+            .map(|d| {
+                (
+                    d["crate"].as_str().unwrap_or_default().to_owned(),
+                    d["id"].as_str().unwrap_or_default().to_owned(),
+                )
+            })
+            .collect();
+        found.sort();
+        let expected: Vec<(String, String)> = ["bad", "stray", "typo"]
+            .iter()
+            .map(|c| ((*c).to_owned(), "TAU-T004".to_owned()))
+            .collect();
+        assert_eq!(
+            found,
+            expected,
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        assert_eq!(output.status.code(), Some(1));
+    }
+}

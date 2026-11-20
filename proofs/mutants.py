@@ -537,6 +537,21 @@ MUTANTS = (
            "                    Severity::Warning => true,",
            "                    Severity::Warning => false,",
            (T + "passes_spec", T + "check_passes_iff", T + "warnings_never_fail")),
+    # layers: a crate may not use its own layer
+    Mutant("layer-strict", "layer.rs",
+           "    dep <= of",
+           "    dep < of",
+           (T + "may_use_spec", T + "may_use_refl", T + "may_use_total", T + "layer_finding_iff")),
+    # layers: the order inverted
+    Mutant("layer-inverted", "layer.rs",
+           "        (Layer::Known(a), Layer::Known(b)) => !may_use(a, b),",
+           "        (Layer::Known(a), Layer::Known(b)) => may_use(a, b),",
+           (T + "layer_finding_iff",)),
+    # layers: an unknown declaration is clean
+    Mutant("unknown-layer-clean", "layer.rs",
+           "        (Layer::Unknown | Layer::Missing, _) | (_, Layer::Unknown | Layer::Missing) => true,",
+           "        (Layer::Unknown | Layer::Missing, _) | (_, Layer::Unknown | Layer::Missing) => false,",
+           (T + "layer_finding_iff", T + "unknown_layer_is_finding")),
 ) + RATCHET_MUTANTS + TABLE_MUTANTS + SUBSUME_MUTANTS + EFFECTS_MUTANTS + OUTCOME_MUTANTS + SPAN_MUTANTS + CONTROL_MUTANTS + BINDING_MUTANTS + BADGE_MUTANTS + REGISTRY_MUTANTS + ASSUMPTION_MUTANTS + HARDENING_MUTANTS + RULE_MUTANTS
 
 I = "Tauten.Instances."

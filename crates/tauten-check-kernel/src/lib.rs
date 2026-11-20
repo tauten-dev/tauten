@@ -23,6 +23,7 @@ pub mod compiler;
 pub mod control;
 pub mod effects;
 pub mod exception;
+pub mod layer;
 pub mod layout;
 pub mod manifest;
 pub mod outcome;

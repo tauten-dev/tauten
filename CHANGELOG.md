@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- Declared layers inside a tier (B6, #21): `[workspace.metadata.tauten]
+  layers = [...]` orders a workspace's crates; each member names its
+  `layer` and may depend only on the same or an earlier one. New rule
+  TAU-T004, decided by the proved `layer::finding` (`layer_finding_iff`,
+  `unknown_layer_is_finding`) over an order proved reflexive, transitive,
+  antisymmetric and total; mutants `layer-strict`, `layer-inverted`,
+  `unknown-layer-clean`. A missing, unknown or malformed declaration is a
+  finding. Fixture workspace `fixtures/layers`; `docs/LAYERS.md` writes
+  writfold's crate graph as layers and states what layers cannot express
+  (edge allowlists).
+
 - Scanner mutation gate and a rewritten `proofs/TRUST.md` (T7, #34). The CI
   gate runs `cargo-mutants` over the fact extraction (`scan.rs`,
   `effects.rs`, `manifest.rs`) and requires zero survivors: 147 mutants,

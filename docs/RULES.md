@@ -42,6 +42,7 @@
 | [TAU-T001](#tau-t001) | Every workspace crate declares a tier | deny | deny | deny | yes | never | Tauten | yes |
 | [TAU-T002](#tau-t002) | Tier dependency direction | deny | deny | deny | yes | never | Tauten | yes |
 | [TAU-T003](#tau-t003) | Kernel dependencies are allowlisted | deny | - | - | yes | never | Tauten | yes |
+| [TAU-T004](#tau-t004) | Declared layers point backwards | deny | deny | deny | yes | never | Tauten | yes |
 | [TAU-D001](#tau-d001) | Documented public API | warn | warn | - | no | `#[expect]` + reason | Rustc | yes |
 | [TAU-R001](#tau-r001) | Baseline must be tight | deny | deny | deny | yes | never | Tauten | yes |
 | [TAU-R002](#tau-r002) | Recorded proof claims are not weakened | deny | deny | deny | yes | never | Tauten | yes |
@@ -723,6 +724,22 @@ Family: obligation. Sees: manifest. Complete: yes.
 **Does not see:** Dev- and build-dependencies.
 
 Reject fixtures: `rej-kernel-dep`
+
+## TAU-T004
+
+**Declared layers point backwards**
+
+Inside a tier, a workspace may order its crates in named layers (`[workspace.metadata.tauten] layers`); a crate that uses a later layer turns the intended dependency order into a cycle waiting to happen.
+
+**Fix:** Move the shared code into the same or an earlier layer, or declare the crate in a later layer. Give every crate a `layer` from the workspace's list.
+
+**Decides:** When the workspace declares layers, every member names one of them and depends only on members of the same or an earlier layer.
+
+Family: obligation. Sees: manifest. Complete: yes.
+
+**Does not see:** Dev- and build-dependencies. Workspaces that declare no `layers` are not checked.
+
+Reject fixtures: `layers`
 
 ## TAU-D001
 

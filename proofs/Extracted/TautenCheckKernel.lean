@@ -1532,6 +1532,35 @@ def exception.loosens
   then exception.loosens_loop levels false 0#usize
   else ok false
 
+/-- [tauten_check_kernel::layer::Layer]
+    Source: 'crates/tauten-check-kernel/src/layer.rs', lines 18:0-25:1
+    Visibility: public -/
+@[discriminant isize]
+inductive layer.Layer where
+| Known : Std.Usize → layer.Layer
+| Unknown : layer.Layer
+| Missing : layer.Layer
+
+/-- [tauten_check_kernel::layer::may_use]:
+    Source: 'crates/tauten-check-kernel/src/layer.rs', lines 29:0-31:1
+    Visibility: public -/
+def layer.may_use (of : Std.Usize) (dep : Std.Usize) : Result Bool := do
+  ok (dep <= of)
+
+/-- [tauten_check_kernel::layer::finding]:
+    Source: 'crates/tauten-check-kernel/src/layer.rs', lines 36:0-41:1
+    Visibility: public -/
+def layer.finding (of : layer.Layer) (dep : layer.Layer) : Result Bool := do
+  match of with
+  | layer.Layer.Known a =>
+    match dep with
+    | layer.Layer.Known b => let b1 ← layer.may_use a b
+                             ok (¬ b1)
+    | layer.Layer.Unknown => ok true
+    | layer.Layer.Missing => ok true
+  | layer.Layer.Unknown => ok true
+  | layer.Layer.Missing => ok true
+
 /-- [tauten_check_kernel::layout::Declared]
     Source: 'crates/tauten-check-kernel/src/layout.rs', lines 19:0-26:1
     Visibility: public -/

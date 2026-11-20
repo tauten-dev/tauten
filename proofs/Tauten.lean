@@ -26,3 +26,4 @@ import Tauten.Compiler
 import Tauten.TautenAssumption
 import Tauten.Durable
 import Tauten.Stamped
+import Tauten.Layer

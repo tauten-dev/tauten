@@ -1,0 +1,12 @@
+[package]
+name = "bad"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[package.metadata.tauten]
+tier = "core"
+layer = "model"
+
+[dependencies]
+service = { path = "../service" }

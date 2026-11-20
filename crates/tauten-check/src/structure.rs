@@ -78,6 +78,8 @@ pub struct Member {
     /// `[package.metadata.tauten] effects = "required"`: every `pub fn`
     /// declares `#[effects(..)]`, and mismatches are errors (TAU-F001).
     pub effects_required: bool,
+    /// `[package.metadata.tauten] layer`, if present (TAU-T004).
+    pub layer_raw: Option<String>,
 }
 
 impl Member {
@@ -98,6 +100,9 @@ pub struct Workspace {
     /// ([`crate::manifest::overflow_checks`]). `None` when the caller did
     /// not read them; the check is then skipped.
     pub overflow_checks: Option<tauten_check_kernel::manifest::Fact>,
+    /// `[workspace.metadata.tauten] layers`, in order, if the workspace
+    /// declares layers (TAU-T004).
+    pub layers: Option<Vec<String>>,
 }
 
 /// Run every structural check.
@@ -126,6 +131,73 @@ pub fn check(profile: &Profile, workspace: &Workspace) -> Vec<Diagnostic> {
         ctx.effects(tier);
     }
     out.extend(hardening(profile, workspace));
+    out.extend(layers(profile, workspace));
+    out
+}
+
+/// TAU-T004: declared layers, decided by the proved
+/// [`tauten_check_kernel::layer::finding`]. A crate's own declaration is
+/// checked as an edge to itself (unknown or missing is a finding; a known
+/// layer may use itself); every dependency between members is an edge.
+fn layers(profile: &Profile, workspace: &Workspace) -> Vec<Diagnostic> {
+    use tauten_check_kernel::layer::{self, Layer};
+    let Some(order) = &workspace.layers else {
+        return Vec::new();
+    };
+    let Some(rule) = profile.rule("TAU-T004") else {
+        return Vec::new();
+    };
+    let of = |m: &Member| match &m.layer_raw {
+        None => Layer::Missing,
+        Some(name) => order
+            .iter()
+            .position(|l| l == name)
+            .map_or(Layer::Unknown, Layer::Known),
+    };
+    let mut out = Vec::new();
+    for member in &workspace.members {
+        let tier = member.tier();
+        let mine = of(member);
+        let emit = |message: String| {
+            Diagnostic::for_rule(
+                rule,
+                Severity::of_rule(rule, tier.and_then(|t| rule.level(t)), Severity::Error),
+                &member.name,
+                tier,
+                message,
+            )
+            .at(Some(member.manifest.clone()), None, None)
+        };
+        if layer::finding(mine, mine) {
+            out.push(emit(match &member.layer_raw {
+                None => format!(
+                    "crate `{}` declares no layer; the workspace declares layers {}",
+                    member.name,
+                    order.join(", ")
+                ),
+                Some(name) => format!(
+                    "crate `{}` declares layer `{name}`, which is not one of {}",
+                    member.name,
+                    order.join(", ")
+                ),
+            }));
+            continue;
+        }
+        for dep in &member.workspace_deps {
+            let Some(target) = workspace.members.iter().find(|m| &m.name == dep) else {
+                continue;
+            };
+            let theirs = of(target);
+            if matches!(theirs, Layer::Known(_)) && layer::finding(mine, theirs) {
+                out.push(emit(format!(
+                    "crate `{}` (layer `{}`) depends on `{dep}` (layer `{}`), a later layer",
+                    member.name,
+                    member.layer_raw.as_deref().unwrap_or_default(),
+                    target.layer_raw.as_deref().unwrap_or_default()
+                )));
+            }
+        }
+    }
     out
 }
 
@@ -550,6 +622,7 @@ mod tests {
             manifest_lints: Vec::new(),
             sources: Vec::new(),
             effects_required: false,
+            layer_raw: None,
         }
     }
 
@@ -564,6 +637,8 @@ mod tests {
             &Workspace {
                 members,
                 overflow_checks: None,
+                layers: None,
+                layers: None,
             },
         )
     }
@@ -777,6 +852,7 @@ mod hardening_tests {
             manifest_lints: Vec::new(),
             sources: Vec::new(),
             effects_required: false,
+            layer_raw: None,
         }
     }
 
@@ -785,6 +861,7 @@ mod hardening_tests {
         let ws = Workspace {
             members: vec![member(tier)],
             overflow_checks: fact,
+            layers: None,
         };
         check(&profile, &ws)
             .into_iter()
@@ -826,10 +903,12 @@ mod unparsed_tests {
                 kind: SourceKind::Src,
             }],
             effects_required: false,
+            layer_raw: None,
         };
         let ws = Workspace {
             members: vec![member],
             overflow_checks: None,
+            layers: None,
         };
         let found: Vec<(String, Severity)> = check(&profile, &ws)
             .into_iter()

@@ -1,0 +1,12 @@
+[package]
+name = "store"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[package.metadata.tauten]
+tier = "core"
+layer = "store"
+
+[dependencies]
+model = { path = "../model" }
