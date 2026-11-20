@@ -50,6 +50,7 @@ pub fn load(manifest_path: Option<&Path>, assume_tier: &[String]) -> Result<Load
             .iter()
             .map(|p| member(&root, p, &names, &workspace_lints))
             .collect::<Result<_>>()?,
+        overflow_checks: Some(overflow_checks(&root)?),
     };
     for m in &mut model.members {
         let named = assumed.iter().find(|(name, _)| name == &m.name);
@@ -160,6 +161,25 @@ fn read_toml(path: &Path) -> Result<toml::Table> {
     let text = fs::read_to_string(path).with_context(|| format!("reading {}", path.display()))?;
     text.parse()
         .with_context(|| format!("parsing {}", path.display()))
+}
+
+/// TAU-H001's fact: the root manifest and the workspace's
+/// `.cargo/config.toml` (or `.cargo/config`), if any.
+fn overflow_checks(root: &Path) -> Result<tauten_check::manifest::Fact> {
+    let manifest = toml::Value::Table(read_toml(&root.join("Cargo.toml"))?);
+    let config_path = [".cargo/config.toml", ".cargo/config"]
+        .into_iter()
+        .map(|p| root.join(p))
+        .find(|p| p.is_file());
+    let config = config_path.map(|p| {
+        fs::read_to_string(&p)
+            .ok()
+            .and_then(|text| toml::from_str::<toml::Value>(&text).ok())
+    });
+    let config_ref = config.as_ref().map(|c| c.as_ref().ok_or(()));
+    Ok(tauten_check::manifest::overflow_checks(
+        &manifest, config_ref,
+    ))
 }
 
 fn read_workspace_lints(root: &Path) -> Result<Vec<ManifestLint>> {

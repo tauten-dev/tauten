@@ -371,6 +371,19 @@ ASSUMPTION_MUTANTS = (
            ASSUMPTION),
 )
 
+HARDENING_MUTANTS = (
+    # manifest: a setting tauten could not read counts as set
+    Mutant("unparsed-is-clean", "manifest.rs",
+           "        Fact::Yes => false,\n        Fact::No | Fact::Unparsed => required,",
+           "        Fact::Yes | Fact::Unparsed => false,\n        Fact::No => required,",
+           (T + "hardening_iff", T + "unparsed_never_clean")),
+    # manifest: a rule that is not required still reports
+    Mutant("not-required-still-fires", "manifest.rs",
+           "        Fact::No | Fact::Unparsed => required,",
+           "        Fact::No | Fact::Unparsed => true,",
+           (T + "hardening_iff", T + "unparsed_never_clean")),
+)
+
 BADGE_MUTANTS = (
     # badge: a claim with assumptions shows as proved outright
     Mutant("assumptions-ignored", "badge.rs",
@@ -445,7 +458,7 @@ MUTANTS = (
            "    if crate_wide && blocking {",
            "    if crate_wide || blocking {",
            (T + "exception_spec",)),
-) + RATCHET_MUTANTS + TABLE_MUTANTS + SUBSUME_MUTANTS + EFFECTS_MUTANTS + OUTCOME_MUTANTS + SPAN_MUTANTS + CONTROL_MUTANTS + BINDING_MUTANTS + BADGE_MUTANTS + REGISTRY_MUTANTS + ASSUMPTION_MUTANTS
+) + RATCHET_MUTANTS + TABLE_MUTANTS + SUBSUME_MUTANTS + EFFECTS_MUTANTS + OUTCOME_MUTANTS + SPAN_MUTANTS + CONTROL_MUTANTS + BINDING_MUTANTS + BADGE_MUTANTS + REGISTRY_MUTANTS + ASSUMPTION_MUTANTS + HARDENING_MUTANTS
 
 I = "Tauten.Instances."
 REFINED_TYPES = ("percent", "port", "offset", "count")

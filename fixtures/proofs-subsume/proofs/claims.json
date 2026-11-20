@@ -19,7 +19,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:bd91192c39605bf9"
+      "fingerprint": "fnv1a64:fc542e1ad5edeeda"
     },
     {
       "crate": "sub-kernel",
@@ -38,7 +38,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:bd91192c39605bf9"
+      "fingerprint": "fnv1a64:fc542e1ad5edeeda"
     },
     {
       "crate": "sub-kernel",
@@ -58,7 +58,7 @@
       "outcome": "audit-failed",
       "badge": "not-established",
       "detail": "Proofs.SubKernel.double_spec does not state that sub_kernel.double never fails for every input",
-      "fingerprint": "fnv1a64:bd91192c39605bf9"
+      "fingerprint": "fnv1a64:fc542e1ad5edeeda"
     },
     {
       "crate": "sub-kernel",
@@ -79,7 +79,7 @@
       "witness": "Proofs.SubKernel.constant_counter_is_monotone",
       "outcome": "proved",
       "badge": "proved-under",
-      "fingerprint": "fnv1a64:bd91192c39605bf9"
+      "fingerprint": "fnv1a64:fc542e1ad5edeeda"
     }
   ]
 }

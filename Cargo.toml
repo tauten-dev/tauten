@@ -14,3 +14,7 @@ homepage = "https://tauten.dev"
 [workspace.dependencies]
 tauten-check-kernel = { path = "crates/tauten-check-kernel", version = "0.0.3" }
 tauten-check = { path = "crates/tauten-check", version = "0.0.3" }
+
+# TAU-H001: release builds check integer overflow.
+[profile.release]
+overflow-checks = true

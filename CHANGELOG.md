@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- TAU-H001: release builds must check integer overflow
+  (`overflow-checks = true` under `[profile.release]` in the workspace
+  Cargo.toml, with no per-package or `.cargo/config.toml` override turning it
+  off). A value tauten cannot read is never clean. Decided by the proved
+  `tauten_check_kernel::manifest::hardening`; `cargo tauten init --write`
+  adds the setting.
+
 - Named assumptions are derived, not just declared. Tag a Lean proposition
   `@[tauten_assumption "ID"]` (template file `Proofs/TautenAssumption.lean`);
   the audit derives which assumptions each theorem's hypotheses use, and a

@@ -101,3 +101,21 @@ levels = { core = "deny" }
 enforced_by = "tauten"
 why = "w"
 fix = "f"
+
+[[rule]]
+id = "TAU-R002"
+title = "t"
+lints = []
+levels = { core = "deny" }
+enforced_by = "tauten"
+why = "w"
+fix = "f"
+
+[[rule]]
+id = "TAU-H001"
+title = "t"
+lints = []
+levels = { core = "deny" }
+enforced_by = "tauten"
+why = "w"
+fix = "f"

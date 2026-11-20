@@ -1,0 +1,11 @@
+# TAU-H001 reject case: overflow checks are on for release builds, but a
+# per-package override turns them off again for one crate.
+[workspace]
+resolver = "3"
+members = ["core-crate"]
+
+[profile.release]
+overflow-checks = true
+
+[profile.release.package.core-crate]
+overflow-checks = false

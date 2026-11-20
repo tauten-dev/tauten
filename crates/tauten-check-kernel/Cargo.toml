@@ -72,6 +72,7 @@ start_from = [
     "tauten_check_kernel::registry::kept",
     "tauten_check_kernel::registry::conserves",
     "tauten_check_kernel::assumption::assumptions_ok",
+    "tauten_check_kernel::manifest::hardening",
     "tauten_check_kernel::span::covers",
     "tauten_check_kernel::span::width",
     "tauten_check_kernel::span::consider",

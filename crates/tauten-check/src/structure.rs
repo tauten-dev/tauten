@@ -68,6 +68,11 @@ impl Member {
 pub struct Workspace {
     /// Members being checked.
     pub members: Vec<Member>,
+    /// Whether release builds check integer overflow (TAU-H001), as read
+    /// from the root manifest and `.cargo/config.toml`
+    /// ([`crate::manifest::overflow_checks`]). `None` when the caller did
+    /// not read them; the check is then skipped.
+    pub overflow_checks: Option<tauten_check_kernel::manifest::Fact>,
 }
 
 /// Run every structural check.
@@ -95,7 +100,42 @@ pub fn check(profile: &Profile, workspace: &Workspace) -> Vec<Diagnostic> {
         ctx.sources(tier);
         ctx.effects(tier);
     }
+    out.extend(hardening(profile, workspace));
     out
+}
+
+/// TAU-H001: release builds must check integer overflow. Required when the
+/// rule has a level in some member's tier; the decision is the proved
+/// [`tauten_check_kernel::manifest::hardening`].
+fn hardening(profile: &Profile, workspace: &Workspace) -> Option<Diagnostic> {
+    use tauten_check_kernel::manifest::{self, Fact};
+    let fact = workspace.overflow_checks?;
+    let rule = profile.rule("TAU-H001")?;
+    let levels: Vec<Level> = workspace
+        .members
+        .iter()
+        .filter_map(|m| m.tier().and_then(|t| rule.level(t)))
+        .collect();
+    let level = levels
+        .iter()
+        .copied()
+        .find(|l| l.is_blocking())
+        .or_else(|| levels.first().copied());
+    if !manifest::hardening(level.is_some(), fact) {
+        return None;
+    }
+    let message = match fact {
+        Fact::Unparsed => "`overflow-checks` in `[profile.release]` (Cargo.toml or .cargo/config.toml) is not a boolean tauten can read".to_owned(),
+        Fact::No | Fact::Yes => "release builds do not check integer overflow: set `overflow-checks = true` under `[profile.release]` in the workspace Cargo.toml, with no override setting it to false".to_owned(),
+    };
+    let severity = Severity::decide(level, Severity::Error);
+    Some(
+        Diagnostic::for_rule(rule, severity, "workspace", None, message).at(
+            Some("Cargo.toml".to_owned()),
+            None,
+            None,
+        ),
+    )
 }
 
 struct Ctx<'a> {
@@ -373,7 +413,13 @@ mod tests {
 
     fn run(members: Vec<Member>) -> Vec<Diagnostic> {
         let profile = Profile::embedded().expect("profile");
-        check(&profile, &Workspace { members })
+        check(
+            &profile,
+            &Workspace {
+                members,
+                overflow_checks: None,
+            },
+        )
     }
 
     /// The exception decision before it moved to the kernel, kept as the
@@ -557,5 +603,48 @@ mod tests {
         let s002 = found.last().expect("present");
         assert_eq!(s002.severity, Severity::Warning);
         assert_eq!(s002.line, Some(2));
+    }
+}
+
+#[cfg(test)]
+mod hardening_tests {
+    use super::*;
+    use tauten_check_kernel::manifest::Fact;
+
+    fn member(tier: Option<&str>) -> Member {
+        Member {
+            name: "m".to_owned(),
+            tier_raw: tier.map(str::to_owned),
+            manifest: "m/Cargo.toml".to_owned(),
+            workspace_deps: Vec::new(),
+            external_deps: Vec::new(),
+            kernel_dep_allowlist: Vec::new(),
+            manifest_lints: Vec::new(),
+            sources: Vec::new(),
+            effects_required: false,
+        }
+    }
+
+    fn h001(tier: Option<&str>, fact: Option<Fact>) -> Vec<Severity> {
+        let profile = Profile::embedded().expect("profile");
+        let ws = Workspace {
+            members: vec![member(tier)],
+            overflow_checks: fact,
+        };
+        check(&profile, &ws)
+            .into_iter()
+            .filter(|d| d.id == "TAU-H001")
+            .map(|d| d.severity)
+            .collect()
+    }
+
+    #[test]
+    fn release_overflow_checks_are_required() {
+        assert_eq!(h001(Some("core"), Some(Fact::No)), [Severity::Error]);
+        assert_eq!(h001(Some("core"), Some(Fact::Unparsed)), [Severity::Error]);
+        assert!(h001(Some("core"), Some(Fact::Yes)).is_empty());
+        // Not required without a tiered member; not read, not checked.
+        assert!(h001(None, Some(Fact::No)).is_empty());
+        assert!(h001(Some("core"), None).is_empty());
     }
 }

@@ -328,6 +328,15 @@ fix = "Bound the loop, return a value from it, or move the event loop to the edg
 # --------------------------------------------------------------- kernel ---
 
 [[rule]]
+id = "TAU-H001"
+title = "Release builds check integer overflow"
+lints = []
+levels = { kernel = "deny", core = "deny", edge = "deny" }
+enforced_by = "tauten"
+why = "Integer overflow panics in debug builds but silently wraps in release builds unless `overflow-checks` is on. The arithmetic lints cover the source tauten scans; this setting covers everything compiled in the workspace, dependencies included. The decision is proved (tauten_check_kernel::manifest::hardening): a setting tauten cannot read is never clean. Limits: it covers binaries built from this workspace, not downstream users of a library crate (their own profile decides), and an environment override (`CARGO_PROFILE_RELEASE_OVERFLOW_CHECKS`) or a Cargo config outside the workspace (for example `~/.cargo/config.toml`) at build time is not seen."
+fix = "Add `overflow-checks = true` under `[profile.release]` in the workspace Cargo.toml (`cargo tauten init --write` does), and remove any `[profile.release.package.<name>]` or `.cargo/config.toml` entry that sets it to false."
+
+[[rule]]
 id = "TAU-K001"
 in_tests = false
 title = "Kernel determinism and purity"

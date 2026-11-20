@@ -34,6 +34,7 @@
 | [TAU-C002](#tau-c002) | Async hazards | deny | deny | deny | yes | `#[expect]` + reason | Clippy |
 | [TAU-O001](#tau-o001) | No direct console output outside the edge | deny | deny | - | no | `#[expect]` + reason | Clippy |
 | [TAU-L001](#tau-l001) | No unbounded loops outside the edge | deny | deny | - | no | `#[expect]` + reason | Clippy |
+| [TAU-H001](#tau-h001) | Release builds check integer overflow | deny | deny | deny | yes | never | Tauten |
 | [TAU-K001](#tau-k001) | Kernel determinism and purity | deny | - | - | no | `#[expect]` + reason | Clippy |
 | [TAU-K002](#tau-k002) | Kernel uses core/alloc paths | deny | - | - | no | `#[expect]` + reason | Clippy |
 | [TAU-K003](#tau-k003) | Kernel crate attributes | deny | - | - | yes | never | Tauten |
@@ -351,6 +352,14 @@ A loop with no exit cannot be reasoned about or terminated by the caller.
 **Fix:** Bound the loop, return a value from it, or move the event loop to the edge.
 
 Lints: `clippy::infinite_loop`
+
+## TAU-H001
+
+**Release builds check integer overflow**
+
+Integer overflow panics in debug builds but silently wraps in release builds unless `overflow-checks` is on. The arithmetic lints cover the source tauten scans; this setting covers everything compiled in the workspace, dependencies included. The decision is proved (tauten_check_kernel::manifest::hardening): a setting tauten cannot read is never clean. Limits: it covers binaries built from this workspace, not downstream users of a library crate (their own profile decides), and an environment override (`CARGO_PROFILE_RELEASE_OVERFLOW_CHECKS`) or a Cargo config outside the workspace (for example `~/.cargo/config.toml`) at build time is not seen.
+
+**Fix:** Add `overflow-checks = true` under `[profile.release]` in the workspace Cargo.toml (`cargo tauten init --write` does), and remove any `[profile.release.package.<name>]` or `.cargo/config.toml` entry that sets it to false.
 
 ## TAU-K001
 

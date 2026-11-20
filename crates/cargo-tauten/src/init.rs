@@ -67,6 +67,7 @@ pub fn run(ws: &Loaded, write: bool) -> Result<()> {
             fs::write(&path, text).with_context(|| format!("writing {}", path.display()))?;
         }
     }
+    hardening(ws, write)?;
     let agents = ws.root().join(AGENTS_FILE);
     let note = if agents.is_file() {
         "exists; left unchanged"
@@ -158,6 +159,41 @@ const PROOFS_TEMPLATE: &[(&str, &str)] = &[
         include_str!("../templates/proofs/gitignore"),
     ),
 ];
+
+/// TAU-H001: turn on release overflow checks in the workspace manifest,
+/// unless they are already on. An existing `[profile.release]` table is
+/// left for the user to edit (appending a second table would be invalid).
+fn hardening(ws: &Loaded, write: bool) -> Result<()> {
+    use tauten_check::manifest::Fact;
+    if ws.model.overflow_checks == Some(Fact::Yes) {
+        println!("{:<28} overflow-checks already on", "Cargo.toml");
+        return Ok(());
+    }
+    let path = ws.root().join("Cargo.toml");
+    let mut text =
+        fs::read_to_string(&path).with_context(|| format!("reading {}", path.display()))?;
+    if text.contains("[profile.release") {
+        println!(
+            "{:<28} set `overflow-checks = true` under [profile.release] by hand (TAU-H001)",
+            "Cargo.toml"
+        );
+        return Ok(());
+    }
+    println!(
+        "{:<28} [profile.release] overflow-checks = true",
+        "Cargo.toml"
+    );
+    if write {
+        if !text.ends_with('\n') {
+            text.push('\n');
+        }
+        text.push_str(
+            "\n# TAU-H001: release builds check integer overflow.\n[profile.release]\noverflow-checks = true\n",
+        );
+        fs::write(&path, text).with_context(|| format!("writing {}", path.display()))?;
+    }
+    Ok(())
+}
 
 /// `LedgerKernel` for `ledger-kernel`: the name Aeneas gives the
 /// translation file, and the theorem module.

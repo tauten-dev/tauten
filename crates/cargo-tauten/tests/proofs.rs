@@ -256,4 +256,29 @@ mod proofs {
         let out = tauten(&["check", "--format", "json"], &edited);
         assert!(findings(&out).iter().all(|f| f.1 != "TAU-R002"));
     }
+    #[test]
+    fn init_turns_on_release_overflow_checks() {
+        let root = scratch("init-hardening");
+        let manifest = root.join("Cargo.toml");
+        let text = fs::read_to_string(&manifest).expect("read");
+        let start = text.find("\n# TAU-H001").expect("the fixture sets it");
+        fs::write(&manifest, &text[..start]).expect("write");
+        let before = tauten(&["check", "--format", "json"], &root);
+        assert!(findings(&before).iter().any(|f| f.1 == "TAU-H001"));
+        let plan = tauten(&["init"], &root);
+        assert!(String::from_utf8_lossy(&plan.stdout).contains("overflow-checks = true"));
+        assert!(
+            !fs::read_to_string(&manifest)
+                .expect("read")
+                .contains("overflow-checks")
+        );
+        tauten(&["init", "--write"], &root);
+        assert!(
+            fs::read_to_string(&manifest)
+                .expect("read")
+                .contains("overflow-checks = true")
+        );
+        let after = tauten(&["check", "--format", "json"], &root);
+        assert!(findings(&after).iter().all(|f| f.1 != "TAU-H001"));
+    }
 }

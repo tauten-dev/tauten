@@ -92,3 +92,35 @@ mod fixtures {
         );
     }
 }
+
+/// TAU-H001 on a workspace of its own: a per-package override that turns
+/// release overflow checks off is a finding (the accept case is the
+/// `fixtures/cases` workspace, which turns them on).
+#[cfg(test)]
+mod hardening {
+    use std::path::Path;
+    use std::process::Command;
+
+    #[test]
+    fn an_override_that_disables_overflow_checks_is_refused() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/rej-overflow");
+        let output = Command::new(env!("CARGO_BIN_EXE_cargo-tauten"))
+            .args(["tauten", "check", "--format", "json", "--manifest-path"])
+            .arg(root.join("Cargo.toml"))
+            .output()
+            .expect("run cargo-tauten");
+        let ids: Vec<String> = String::from_utf8_lossy(&output.stdout)
+            .lines()
+            .filter_map(|l| serde_json::from_str::<serde_json::Value>(l).ok())
+            .filter(|d| d["severity"] == "error")
+            .filter_map(|d| d["id"].as_str().map(str::to_owned))
+            .collect();
+        assert_eq!(
+            ids,
+            ["TAU-H001"],
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        assert_eq!(output.status.code(), Some(1));
+    }
+}

@@ -128,6 +128,8 @@ def claims : List Name := [
   ``Tauten.Kernel.undeclared_assumption_refused,
   ``Tauten.Kernel.unused_assumption_refused,
   ``Tauten.Kernel.unwitnessed_refused,
+  ``Tauten.Kernel.hardening_iff,
+  ``Tauten.Kernel.unparsed_never_clean,
   -- the macros' generated code, per instance (P3)
   ``Tauten.Instances.percent_try_new_shape,
   ``Tauten.Instances.percent_try_new_ok_iff,
@@ -290,6 +292,7 @@ def reviewedFunctions : List Name := [
   ``tauten_check_kernel.registry.conserves_loop,
   ``tauten_check_kernel.registry.conserves,
   ``tauten_check_kernel.assumption.assumptions_ok,
+  ``tauten_check_kernel.manifest.hardening,
   ``tauten_check_kernel.table.is_at,
   ``tauten_check_kernel.table.find_before,
   ``tauten_check_kernel.table.find_before_loop,

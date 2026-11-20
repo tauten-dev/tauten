@@ -1,3 +1,7 @@
 [workspace]
 resolver = "3"
 members = ["acc-effects", "rej-effects", "rej-file-allow", "rej-authority-alias", "rej-test-hygiene", "rej-dependent", "acc-core", "acc-edge", "acc-kernel", "rej-allow", "rej-ambient-clock", "rej-contract-overflow", "rej-crate-wide", "rej-detached-thread", "rej-forged-capability", "rej-global-state", "rej-hidden-authority", "rej-ignored-result", "rej-index", "rej-infinite-loop", "rej-kernel-exception", "rej-kernel-impure", "rej-kernel-up", "rej-lossy-cast", "rej-no-tier", "rej-placeholder", "rej-print", "rej-stub", "rej-stub-excused", "rej-unit-error", "rej-unsafe", "rej-unwrap", "rej-wildcard"]
+
+# TAU-H001 accept case: release builds check integer overflow.
+[profile.release]
+overflow-checks = true

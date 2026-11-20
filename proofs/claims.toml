@@ -306,3 +306,11 @@ function = "assumptions_ok"
 lean = "tauten_check_kernel.assumption.assumptions_ok"
 theorems = ["Tauten.Kernel.assumptions_ok_iff", "Tauten.Kernel.undeclared_assumption_refused", "Tauten.Kernel.unused_assumption_refused", "Tauten.Kernel.unwitnessed_refused"]
 mutants = ["undeclared-accepted", "unused-accepted", "witness-not-required"]
+
+[[claim]]
+crate = "tauten-check-kernel"
+file = "crates/tauten-check-kernel/src/manifest.rs"
+function = "hardening"
+lean = "tauten_check_kernel.manifest.hardening"
+theorems = ["Tauten.Kernel.hardening_iff", "Tauten.Kernel.unparsed_never_clean"]
+mutants = ["unparsed-is-clean", "not-required-still-fires"]

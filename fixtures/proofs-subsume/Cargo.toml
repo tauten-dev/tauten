@@ -10,3 +10,7 @@ members = ["sub-kernel"]
 version = "0.0.0"
 edition = "2024"
 publish = false
+
+# TAU-H001: release builds check integer overflow.
+[profile.release]
+overflow-checks = true

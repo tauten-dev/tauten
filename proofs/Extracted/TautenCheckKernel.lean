@@ -1256,6 +1256,25 @@ def exception.excuse
     else ok exception.Excuse.Allowed
   else ok exception.Excuse.Forbidden
 
+/-- [tauten_check_kernel::manifest::Fact]
+    Source: 'crates/tauten-check-kernel/src/manifest.rs', lines 13:0-20:1
+    Visibility: public -/
+@[discriminant isize]
+inductive manifest.Fact where
+| Yes : manifest.Fact
+| No : manifest.Fact
+| Unparsed : manifest.Fact
+
+/-- [tauten_check_kernel::manifest::hardening]:
+    Source: 'crates/tauten-check-kernel/src/manifest.rs', lines 24:0-29:1
+    Visibility: public -/
+def manifest.hardening
+  (required : Bool) (fact : manifest.Fact) : Result Bool := do
+  match fact with
+  | manifest.Fact.Yes => ok false
+  | manifest.Fact.No => ok required
+  | manifest.Fact.Unparsed => ok required
+
 /-- [tauten_check_kernel::outcome::Stage]
     Source: 'crates/tauten-check-kernel/src/outcome.rs', lines 13:0-20:1
     Visibility: public -/
