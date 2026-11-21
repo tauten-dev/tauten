@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- TAU-N002 no longer promises a proof discharge (#57): its repair text said a
+  recorded never-fails proof discharges a lossy cast, but only TAU-N001 and
+  TAU-P003 are subsumable (a cast never fails, it changes the value). The text
+  now points to a lossless or checked conversion, `cargo tauten obligations
+  --list` labels TAU-N002 entries as not dischargeable by a proof, and a test
+  ties every repair text that promises a discharge to the subsumable rules. No
+  verdict changes.
+
 - `cargo tauten proofs reconcile` (#50): in a two-parent merge whose
   human-authored conflicts are resolved, checks the resolved `claims.toml`
   against both parents' recorded claims (TAU-R002 twice, decided together by

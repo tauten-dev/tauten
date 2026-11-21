@@ -165,7 +165,7 @@ Lints: `clippy::arithmetic_side_effects`, `clippy::integer_division`
 
 `as` silently truncates, wraps and changes sign.
 
-**Fix:** Use `From`/`TryFrom` (`u32::try_from(x)?`) so out-of-range values become errors. In a kernel crate this is a proof obligation: a recorded proof that the function never fails discharges it (`cargo tauten obligations`).
+**Fix:** Use `From`/`TryFrom` (`u32::try_from(x)?`) so out-of-range values become errors. In a kernel crate `cargo tauten obligations` lists it, but a recorded proof that the function never fails does not discharge it: an `as` cast never fails, it changes the value. Only a lossless or checked conversion does.
 
 **Decides:** No `as` conversion that can lose information in linted code.
 

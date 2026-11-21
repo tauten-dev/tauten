@@ -5,6 +5,11 @@
 //! never fails, `proofs/claims.json`), `open, baselined` (accepted by the
 //! ratchet) or `open` (new: it fails `check`). The counts are the ones
 //! `check` already decides; nothing new is judged here.
+//!
+//! Only TAU-N001 and TAU-P003 can be proved (`proofs::SUBSUMABLE`). A lossy
+//! cast (TAU-N002) never fails, it changes the value, so a never-fails proof
+//! says nothing about it: it is discharged only by a lossless or checked
+//! conversion, and is listed as such.
 
 use std::collections::BTreeMap;
 use std::path::Path;
@@ -12,6 +17,7 @@ use std::process::ExitCode;
 
 use anyhow::Result;
 use tauten_check::baseline;
+use tauten_check::proofs::SUBSUMABLE;
 use tauten_check::{Diagnostic, Profile, Tier};
 
 use crate::baseline_file;
@@ -121,8 +127,13 @@ pub fn run(profile: &Profile, root: &Path, diags: Vec<Diagnostic>, list: bool) -
 }
 
 fn print_one(d: &Diagnostic, state: &str) {
+    let only = if SUBSUMABLE.contains(&d.id.as_str()) {
+        ""
+    } else {
+        " (a proof cannot discharge this; use a lossless or checked conversion)"
+    };
     println!(
-        "{}:{}:{}: {} ({}): {state}",
+        "{}:{}:{}: {} ({}): {state}{only}",
         d.file.as_deref().unwrap_or(&d.krate),
         d.line.unwrap_or(0),
         d.column.unwrap_or(0),

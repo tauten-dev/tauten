@@ -153,8 +153,9 @@ enum Command {
         action: Option<ProofsAction>,
     },
     /// In kernel crates, list arithmetic and indexing findings (TAU-N001,
-    /// TAU-N002, TAU-P003) as proof obligations: proved (subsumed by a
-    /// recorded proof), open and baselined, or open.
+    /// TAU-N002, TAU-P003) as obligations: proved (subsumed by a recorded
+    /// proof), open and baselined, or open. A lossy cast (TAU-N002) is
+    /// never proved: only a lossless or checked conversion discharges it.
     Obligations {
         #[command(flatten)]
         target: Target,

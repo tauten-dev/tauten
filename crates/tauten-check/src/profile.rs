@@ -567,6 +567,19 @@ mod tests {
         }
     }
 
+    /// #57: a repair text promises that a never-fails proof discharges a
+    /// finding exactly when the checker lets a proof subsume that rule.
+    #[test]
+    fn only_subsumable_rules_promise_a_proof_discharge() {
+        let profile = Profile::embedded().expect("embedded profile parses");
+        let promise = "a recorded proof that the function never fails discharges it";
+        for rule in profile.rules() {
+            let promises = rule.fix.contains(promise);
+            let subsumable = crate::proofs::SUBSUMABLE.contains(&rule.id.as_str());
+            assert_eq!(promises, subsumable, "{}: {}", rule.id, rule.fix);
+        }
+    }
+
     #[test]
     fn kernel_is_strictest() {
         let profile = Profile::embedded().expect("embedded profile parses");
