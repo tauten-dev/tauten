@@ -282,7 +282,7 @@ invariant = "Every lint exception is `#[expect]` with a reason."
 sees = "resolved"
 dominion = "Code expanded from macros defined in other crates (clippy skips it). Inner attributes and `allow` inside `cfg_attr` are read by tauten itself, in `src/`, `tests/`, `benches/`, `examples/` and the build script."
 complete = true
-fixtures = ["rej-allow", "rej-file-allow", "rej-cfg-attr-allow", "rej-shared-test-allow", "acc-shared-test-module"]
+fixtures = ["rej-allow", "rej-file-allow", "rej-cfg-attr-allow", "rej-shared-test-allow"]
 
 [[rule]]
 id = "TAU-X002"

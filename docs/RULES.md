@@ -335,7 +335,7 @@ Family: obligation. Sees: resolved. Complete: yes.
 
 **Does not see:** Code expanded from macros defined in other crates (clippy skips it). Inner attributes and `allow` inside `cfg_attr` are read by tauten itself, in `src/`, `tests/`, `benches/`, `examples/` and the build script.
 
-Reject fixtures: `rej-allow`, `rej-file-allow`, `rej-cfg-attr-allow`, `rej-shared-test-allow`, `acc-shared-test-module`
+Reject fixtures: `rej-allow`, `rej-file-allow`, `rej-cfg-attr-allow`, `rej-shared-test-allow`
 
 Lints: `clippy::allow_attributes`, `clippy::allow_attributes_without_reason`, `unfulfilled_lint_expectations`
 
