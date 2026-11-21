@@ -1232,6 +1232,7 @@ impl Report {
                 | Event::Total { .. }
                 | Event::Premises { .. }
                 | Event::Establishes { .. }
+                | Event::Subject { .. }
                 | Event::Mutant { .. } => true,
             })
     }
