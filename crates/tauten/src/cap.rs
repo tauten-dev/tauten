@@ -496,8 +496,8 @@ fn utf8(bytes: std::vec::Vec<u8>) -> Result<String, ReadError> {
 #[cfg(all(test, feature = "fs"))]
 mod tests {
     use super::*;
-    use std::io::{self, Read};
     use std::format;
+    use std::io::{self, Read};
     use std::string::ToString;
     use std::vec::Vec;
 
