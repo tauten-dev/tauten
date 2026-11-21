@@ -40,14 +40,14 @@ dependencies = [
 
 [[package]]
 name = "tauten"
-version = "0.0.5"
+version = "0.0.6"
 dependencies = [
  "tauten-macros",
 ]
 
 [[package]]
 name = "tauten-macros"
-version = "0.0.5"
+version = "0.0.6"
 dependencies = [
  "proc-macro2",
  "quote",

@@ -3,9 +3,20 @@
 Updated 2026-11-21. Name final: tauten; license MIT; code at github.com/tauten-dev/tauten (public). Every line says how far an item got:
 **specified → implemented → exercised**. "Exercised" means it ran against
 real input in this repository, and the evidence is named. Versions 0.0.1
-0.0.2, 0.0.3, 0.0.4 and 0.0.5 are on crates.io; the site is at tauten.dev. Benchmark: no
+0.0.2, 0.0.3, 0.0.4 and 0.0.5 are on crates.io (0.0.6 prepared); the site is at tauten.dev. Benchmark: no
 defect-reduction benefit established (ceiling; held-out run stopped by its
 go/no-go rule; audited findings were not defects).
+
+## 0.0.6 (prepared 2026-11-21)
+
+Milestone 0.0.6 closed: #49, #50, #51, #52, #53, #57, #59 (see
+`docs/ROADMAP.md` and `CHANGELOG.md`). Exercised: the release workflow
+skipped publishing when proofs failed on a drifted commit, and rehearsed a
+publish after the gate (24 min) and full proofs (65 min) passed on main;
+`proofs draft` re-drafted a removed claim on a real proof gate, which then
+proved it; `proofs reconcile` on an adopter-shaped two-parent fixture with
+a stand-in generator. Not exercised: `proofs draft --inventory` on a real
+custom gate (#61), and `reconcile` with a real Charon/Aeneas translation.
 
 ## 0.0.5 (2026-11-21)
 

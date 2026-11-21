@@ -18,6 +18,26 @@ The roadmap reduces about sixty proposals (a durability plan, a survey of seven 
 | **Registry** | that nothing may be quietly removed or weakened | the baseline ratchet, theorems and mutants per claim, assumptions that may not grow |
 | **Effect row** | that a signature's capabilities match its declared effects | TAU-F001, later a declared label table |
 
+## 0.0.6 (prepared 2026-11-21)
+
+Proof records an adopter can recover, and advice that works. Triaged
+2026-11-21 (Fable plan; #57 and #59 admitted from adopter reports, #58
+deferred to 0.1.0).
+
+| Issue | Item | State |
+|---|---|---|
+| [#51](https://github.com/tauten-dev/tauten/issues/51) | An empty claim inventory never passes | closed |
+| [#52](https://github.com/tauten-dev/tauten/issues/52) | A missing proof tool leaves the record untouched, so a retry works | closed |
+| [#50](https://github.com/tauten-dev/tauten/issues/50) | `proofs reconcile`: a two-parent merge is pending until its merge commit is proved | closed |
+| [#53](https://github.com/tauten-dev/tauten/issues/53) | Release publishes only after the gate and the full proofs pass on the tagged commit | closed |
+| [#49](https://github.com/tauten-dev/tauten/issues/49) | `proofs draft`: reviewable claim entries | closed; `--inventory` on a real custom gate follows in [#61](https://github.com/tauten-dev/tauten/issues/61) |
+| [#57](https://github.com/tauten-dev/tauten/issues/57) | TAU-N002 no longer promises a proof discharge | closed |
+| [#59](https://github.com/tauten-dev/tauten/issues/59) | TAU-X001: shared test modules (advice, and the accepted `allow(dead_code)` exemption) | closed |
+
+Release criteria: the CI gate and the full proofs gate pass on the tagged
+commit, which `release.yml` now enforces before publishing (#53). The owner
+dropped the writfold comparison for #49 as a release gate (#61).
+
 ## 0.0.5 (released 2026-11-21)
 
 A proof loop an adopter can live with: a mutant verdict says exactly what

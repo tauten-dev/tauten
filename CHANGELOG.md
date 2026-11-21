@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.0.6 (2026-11-21)
+
 - TAU-X001 advice for modules shared by several targets (#59): an inner
   `#![expect]` in a module compiled into several targets (helpers under
   `tests/` declared with `mod support;` by several test files) is unfulfilled
