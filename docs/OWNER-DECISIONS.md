@@ -26,7 +26,7 @@ Updated 2026-11-21. Settled items are kept at the bottom for the record.
 | Crate publishing | 0.0.1 with a token, 0.0.2 with trusted publishing; "require trusted publishing" on; the original token revoked (2026-11-18) |
 | Repo visibility | tauten-dev/tauten public (2026-11-18) |
 | Pilot budget | 36 trials on one model; run 2026-11-18 for $6.29 |
-| Proof toolchain image | ghcr.io/tauten-dev/proofs-toolchain, private, readable by the tauten repo's Actions (2026-11-18) |
+| Proof toolchain image | ghcr.io/tauten-dev/proofs-toolchain; private at first (2026-11-18), public since 2026-11-21 (owner changed the org package policy and the package visibility; anonymous pull verified) |
 | Proof tier | Ship, then prove one slice at a time; proofs never block unrelated work (2026-11-18) |
 | Held-out benchmark | Approved 2026-11-19: calibration, then Sonnet 5.5 primary and Haiku 5.5 replication (about $400). Calibration round 3 was no-go by the preregistered rule; the held-out run was not started and its budget not spent |
 | Container credentials | Long-lived `claude setup-token` token, stored outside the repo (2026-11-19) |

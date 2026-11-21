@@ -3,9 +3,23 @@
 Updated 2026-11-21. Name final: tauten; license MIT; code at github.com/tauten-dev/tauten (public). Every line says how far an item got:
 **specified → implemented → exercised**. "Exercised" means it ran against
 real input in this repository, and the evidence is named. Versions 0.0.1
-0.0.2, 0.0.3, 0.0.4, 0.0.5 and 0.0.6 are on crates.io; the site is at tauten.dev. Benchmark: no
+0.0.2, 0.0.3, 0.0.4, 0.0.5, 0.0.6 and 0.1.0 are on crates.io; the site is at tauten.dev. Benchmark: no
 defect-reduction benefit established (ceiling; held-out run stopped by its
 go/no-go rule; audited findings were not defects).
+
+## 0.1.0 (2026-11-21)
+
+Milestone 0.1.0 closed: #54, #55, #58, #14, #38; #13 (A9) and #35 (D1)
+moved to 0.2 by the owner (see `docs/ROADMAP.md` and `CHANGELOG.md`).
+Exercised: the full proof gate on 95676aa proved 62 of 62 claims (3 under
+named assumptions) and calibrated 109 mutants, each breaking exactly its
+expected theorems (4612 s); publication to a previously absent target is
+proved old-or-new under SyncFile and durable under all three named laws,
+with a necessity theorem for each; the fixtures/inherit consumer inherits
+`tauten-check-kernel@0.1.0:charge` from the shipped kernel `claims.json`;
+`init --write` and custom target roots by integration tests on real
+`cargo metadata`. Not exercised: the helpers in an adopter crate; bounded
+reads (#64) and rustdoc warnings (#65) are in 0.2.
 
 ## 0.0.6 (2026-11-21)
 

@@ -2,7 +2,7 @@
 rfc: "2026-11-21-publish-absent-target"
 title: "Atomic publish to an absent target: companion theorems"
 status: accepted
-implementation: in-progress
+implementation: complete
 authors:
   - astra
 created: 2026-11-21

@@ -8,7 +8,8 @@
       "function": "step",
       "lean": "tauten_proof_instances.tauten.publish.step",
       "theorems": [
-        "Tauten.Durable.publish_old_or_new"
+        "Tauten.Durable.publish_old_or_new",
+        "Tauten.Durable.publish_absent_or_new"
       ],
       "total": null,
       "subsumes": [],
@@ -24,11 +25,12 @@
       "witness": "Tauten.Durable.posix_satisfies",
       "necessity": [
         "Tauten.Durable.old_or_new_needs_rename_atomic",
-        "Tauten.Durable.old_or_new_needs_sync_file"
+        "Tauten.Durable.old_or_new_needs_sync_file",
+        "Tauten.Durable.absent_or_new_needs_sync_file"
       ],
       "outcome": "proved",
       "badge": "proved-under",
-      "fingerprint": "fnv1a64:e61e330d636c4f67"
+      "fingerprint": "fnv1a64:919c57db91052395"
     },
     {
       "crate": "tauten",
@@ -37,13 +39,15 @@
       "lean": "tauten_proof_instances.tauten.publish.durable",
       "theorems": [
         "Tauten.Durable.publish_durable_on_done",
-        "Tauten.Durable.durable_model"
+        "Tauten.Durable.durable_model",
+        "Tauten.Durable.publish_absent_durable_on_done"
       ],
       "total": null,
       "subsumes": [],
       "mutants": [
         "durable-too-early",
-        "skip-sync"
+        "skip-sync",
+        "skip-dir-sync"
       ],
       "assumes": [
         "FS.rename-atomic",
@@ -53,11 +57,14 @@
       "witness": "Tauten.Durable.posix_satisfies",
       "necessity": [
         "Tauten.Durable.durable_needs_sync_dir",
-        "Tauten.Durable.posix_done_reachable"
+        "Tauten.Durable.posix_done_reachable",
+        "Tauten.Durable.absent_durable_needs_sync_dir",
+        "Tauten.Durable.absent_durable_needs_rename_atomic",
+        "Tauten.Durable.posix_absent_done_reachable"
       ],
       "outcome": "proved",
       "badge": "proved-under",
-      "fingerprint": "fnv1a64:e61e330d636c4f67"
+      "fingerprint": "fnv1a64:919c57db91052395"
     },
     {
       "crate": "tauten",
@@ -79,8 +86,8 @@
       "witness": "Tauten.Durable.posix_satisfies",
       "outcome": "proved",
       "badge": "proved-under",
-      "fingerprint": "fnv1a64:e61e330d636c4f67"
+      "fingerprint": "fnv1a64:919c57db91052395"
     }
   ],
-  "commit": "53d8a3cb1739eb996dae560cee01439c0ebb72af"
+  "commit": "95676aa27b78b805d36044d6b1305f18a84f82aa"
 }

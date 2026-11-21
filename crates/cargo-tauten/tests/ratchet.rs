@@ -75,8 +75,13 @@ mod ratchet {
             Path::new(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/cases/Cargo.toml");
         let file = Path::new(env!("CARGO_TARGET_TMPDIR")).join("fixtures-baseline-newer.json");
         let file = file.to_str().expect("utf-8 path");
+        let _ = std::fs::remove_file(file);
         let recorded = tauten(&["baseline", "--output", file], &manifest);
-        assert!(recorded.status.success());
+        assert!(
+            recorded.status.success(),
+            "{}",
+            String::from_utf8_lossy(&recorded.stderr)
+        );
         let mut doc: serde_json::Value =
             serde_json::from_str(&std::fs::read_to_string(file).expect("read")).expect("json");
         doc["version"] = serde_json::json!(99);

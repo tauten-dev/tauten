@@ -6,7 +6,7 @@ Designs behind items, and any new proposal that is costly to reverse or changes 
 
 Order within a milestone is by return on investment: projects helped × strength of the guarantee ÷ cost. Sizes are estimates in agent-days.
 
-**Next release:** [0.1.0 — open issues](https://github.com/tauten-dev/tauten/milestone/2).
+**Next release:** [0.2 — open issues](https://github.com/tauten-dev/tauten/milestone/3).
 
 ## Five primitives
 
@@ -73,15 +73,16 @@ T4–T7, #41, #44.
 
 ## 0.1.0
 
-Rescoped on 2026-11-21 (owner, on a Fable review): the release ships what
-tauten itself implements and proves. Remaining, in order: [#58](https://github.com/tauten-dev/tauten/issues/58)
-(publication to a previously absent target, proved), [#14](https://github.com/tauten-dev/tauten/issues/14)
-(shared proved helpers, a module of `tauten-check-kernel`; bounded reads may
-slip to 0.2), then [#38](https://github.com/tauten-dev/tauten/issues/38) (docs, version bump, release
-rehearsal, tag, then the site). [#13](https://github.com/tauten-dev/tauten/issues/13) (A9, driver) and
+Released 2026-11-21. Rescoped the same day (owner, on a Fable review): the
+release ships what tauten itself implements and proves. Done:
+[#54](https://github.com/tauten-dev/tauten/issues/54), [#55](https://github.com/tauten-dev/tauten/issues/55),
+[#58](https://github.com/tauten-dev/tauten/issues/58) (publication to a previously absent target, proved),
+[#14](https://github.com/tauten-dev/tauten/issues/14) (shared proved helpers in `tauten-check-kernel`;
+bounded reads moved to [#64](https://github.com/tauten-dev/tauten/issues/64)) and
+[#38](https://github.com/tauten-dev/tauten/issues/38) (docs, version bump, tag, site).
+[#13](https://github.com/tauten-dev/tauten/issues/13) (A9, driver) and
 [#35](https://github.com/tauten-dev/tauten/issues/35) (D1, shared gate) moved to 0.2: both depend on adopter
-evidence, which does not gate a release. [#54](https://github.com/tauten-dev/tauten/issues/54) and [#55](https://github.com/tauten-dev/tauten/issues/55)
-are done. [#60](https://github.com/tauten-dev/tauten/issues/60), [#61](https://github.com/tauten-dev/tauten/issues/61) and [#62](https://github.com/tauten-dev/tauten/issues/62) are in later.
+evidence, which does not gate a release. [#60](https://github.com/tauten-dev/tauten/issues/60), [#61](https://github.com/tauten-dev/tauten/issues/61) and [#62](https://github.com/tauten-dev/tauten/issues/62) are in later.
 
 | Issue | ID | Item | Days | Depends on |
 |---|---|---|---|---|

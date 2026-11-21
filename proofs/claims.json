@@ -18,7 +18,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:ec20d703dfddbe48",
+      "fingerprint": "fnv1a64:011d7ff3f540d7ef",
       "inputs": {
         "lean:tiers.Tier": "fnv1a64:53087a40e6ca99b4",
         "lean:tiers.rank": "fnv1a64:c38e3761a3f05342",
@@ -71,7 +71,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:ec20d703dfddbe48",
+      "fingerprint": "fnv1a64:011d7ff3f540d7ef",
       "inputs": {
         "lean:tiers.Tier": "fnv1a64:53087a40e6ca99b4",
         "lean:tiers.may_depend_on": "fnv1a64:65ce64445e3a06f1",
@@ -84,24 +84,6 @@
         "toolchain": "fnv1a64:5b6ce949a7a318dc"
       },
       "mutant_results": [
-        {
-          "mutant": "core-edge-swapped",
-          "status": "killed",
-          "broken": [
-            "Tauten.Kernel.may_depend_on_spec",
-            "Tauten.Kernel.rank_spec"
-          ]
-        },
-        {
-          "mutant": "kernel-ranks-as-core",
-          "status": "killed",
-          "broken": [
-            "Tauten.Kernel.kernel_depends_only_on_kernel",
-            "Tauten.Kernel.may_depend_on_antisymm",
-            "Tauten.Kernel.may_depend_on_spec",
-            "Tauten.Kernel.rank_spec"
-          ]
-        },
         {
           "mutant": "same-tier-refused",
           "status": "killed",
@@ -121,6 +103,24 @@
             "Tauten.Kernel.may_depend_on_spec",
             "Tauten.Kernel.may_depend_on_trans"
           ]
+        },
+        {
+          "mutant": "core-edge-swapped",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.may_depend_on_spec",
+            "Tauten.Kernel.rank_spec"
+          ]
+        },
+        {
+          "mutant": "kernel-ranks-as-core",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.kernel_depends_only_on_kernel",
+            "Tauten.Kernel.may_depend_on_antisymm",
+            "Tauten.Kernel.may_depend_on_spec",
+            "Tauten.Kernel.rank_spec"
+          ]
         }
       ]
     },
@@ -139,7 +139,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:ec20d703dfddbe48",
+      "fingerprint": "fnv1a64:011d7ff3f540d7ef",
       "inputs": {
         "lean:severity.Level": "fnv1a64:7ced964c9470c680",
         "lean:severity.is_blocking": "fnv1a64:efab3c370008275b",
@@ -175,7 +175,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:ec20d703dfddbe48",
+      "fingerprint": "fnv1a64:011d7ff3f540d7ef",
       "inputs": {
         "lean:severity.Level": "fnv1a64:7ced964c9470c680",
         "lean:severity.Severity": "fnv1a64:f48fd026309c9331",
@@ -221,7 +221,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:ec20d703dfddbe48",
+      "fingerprint": "fnv1a64:011d7ff3f540d7ef",
       "inputs": {
         "lean:exception.permitted": "fnv1a64:b2f17637245bc2d7",
         "lean:severity.Level": "fnv1a64:7ced964c9470c680",
@@ -272,7 +272,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:ec20d703dfddbe48",
+      "fingerprint": "fnv1a64:011d7ff3f540d7ef",
       "inputs": {
         "lean:exception.Excuse": "fnv1a64:6cd5bc494218d3ca",
         "lean:exception.excuse": "fnv1a64:3c31183737f414f2",
@@ -339,7 +339,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:ec20d703dfddbe48",
+      "fingerprint": "fnv1a64:011d7ff3f540d7ef",
       "inputs": {
         "lean:exception.Covered": "fnv1a64:6256def05c33b893",
         "lean:exception.Excuse": "fnv1a64:6cd5bc494218d3ca",
@@ -394,7 +394,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:ec20d703dfddbe48",
+      "fingerprint": "fnv1a64:011d7ff3f540d7ef",
       "inputs": {
         "lean:exception.Covered": "fnv1a64:6256def05c33b893",
         "lean:exception.Excuse": "fnv1a64:6cd5bc494218d3ca",
@@ -422,16 +422,6 @@
       },
       "mutant_results": [
         {
-          "mutant": "group-allowed",
-          "status": "killed",
-          "broken": [
-            "Tauten.Kernel.decide_single",
-            "Tauten.Kernel.decide_spec",
-            "Tauten.Kernel.group_never_weaker",
-            "Tauten.Kernel.worst_spec"
-          ]
-        },
-        {
           "mutant": "conditional-allowed",
           "status": "killed",
           "broken": [
@@ -439,6 +429,16 @@
             "Tauten.Kernel.decide_single",
             "Tauten.Kernel.decide_spec",
             "Tauten.Kernel.group_never_weaker"
+          ]
+        },
+        {
+          "mutant": "group-allowed",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.decide_single",
+            "Tauten.Kernel.decide_spec",
+            "Tauten.Kernel.group_never_weaker",
+            "Tauten.Kernel.worst_spec"
           ]
         }
       ]
@@ -461,7 +461,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:ec20d703dfddbe48",
+      "fingerprint": "fnv1a64:011d7ff3f540d7ef",
       "inputs": {
         "lean:exception.Setting": "fnv1a64:d6e6a79d3cf0ecd4",
         "lean:exception.loosens": "fnv1a64:ea888ccc2332fd08",
@@ -526,7 +526,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:ec20d703dfddbe48",
+      "fingerprint": "fnv1a64:011d7ff3f540d7ef",
       "inputs": {
         "lean:ratchet.Finding": "fnv1a64:139b49fafdac8820",
         "lean:ratchet.apply": "fnv1a64:a286ee6709f5237f",
@@ -647,7 +647,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:ec20d703dfddbe48",
+      "fingerprint": "fnv1a64:011d7ff3f540d7ef",
       "inputs": {
         "lean:ratchet.count_at": "fnv1a64:ea37c22ffa1db03b",
         "lean:ratchet.stale": "fnv1a64:8242ff5513b287bf",
@@ -760,7 +760,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:ec20d703dfddbe48",
+      "fingerprint": "fnv1a64:011d7ff3f540d7ef",
       "inputs": {
         "lean:ratchet.Finding": "fnv1a64:139b49fafdac8820",
         "lean:ratchet.add_error": "fnv1a64:024a48d6bd496f1f",
@@ -807,7 +807,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:ec20d703dfddbe48",
+      "fingerprint": "fnv1a64:011d7ff3f540d7ef",
       "inputs": {
         "lean:ratchet.Entry": "fnv1a64:e25af805b313068f",
         "lean:ratchet.count_at": "fnv1a64:ea37c22ffa1db03b",
@@ -824,19 +824,6 @@
       },
       "mutant_results": [
         {
-          "mutant": "missing-key-accepts-one",
-          "status": "killed",
-          "broken": [
-            "Tauten.Kernel.increase_example",
-            "Tauten.Kernel.increases_flags",
-            "Tauten.Kernel.increases_none_iff",
-            "Tauten.Kernel.ratchet_example",
-            "Tauten.Kernel.ratchet_passes_iff",
-            "Tauten.Kernel.ratchet_stale_iff",
-            "Tauten.Kernel.regenerated_baseline_never_grows"
-          ]
-        },
-        {
           "mutant": "warnings-counted",
           "status": "killed",
           "broken": [
@@ -851,6 +838,19 @@
             "Tauten.Kernel.increase_example",
             "Tauten.Kernel.increases_flags",
             "Tauten.Kernel.increases_none_iff",
+            "Tauten.Kernel.regenerated_baseline_never_grows"
+          ]
+        },
+        {
+          "mutant": "missing-key-accepts-one",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.increase_example",
+            "Tauten.Kernel.increases_flags",
+            "Tauten.Kernel.increases_none_iff",
+            "Tauten.Kernel.ratchet_example",
+            "Tauten.Kernel.ratchet_passes_iff",
+            "Tauten.Kernel.ratchet_stale_iff",
             "Tauten.Kernel.regenerated_baseline_never_grows"
           ]
         }
@@ -876,7 +876,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:ec20d703dfddbe48",
+      "fingerprint": "fnv1a64:011d7ff3f540d7ef",
       "inputs": {
         "lean:table.Invalid": "fnv1a64:813b4d30c23a02ca",
         "lean:table.absent": "fnv1a64:f0f57ef6fdf41f9e",
@@ -968,7 +968,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:ec20d703dfddbe48",
+      "fingerprint": "fnv1a64:011d7ff3f540d7ef",
       "inputs": {
         "lean:subsume.Finding": "fnv1a64:74ab1027ef0373f8",
         "lean:subsume.subsumes": "fnv1a64:c6dad2197f5b34a7",
@@ -1032,7 +1032,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:ec20d703dfddbe48",
+      "fingerprint": "fnv1a64:011d7ff3f540d7ef",
       "inputs": {
         "lean:effects.Row": "fnv1a64:9e5110f75fc06247",
         "lean:effects.Source": "fnv1a64:750c520b04825fec",
@@ -1092,7 +1092,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:ec20d703dfddbe48",
+      "fingerprint": "fnv1a64:011d7ff3f540d7ef",
       "inputs": {
         "lean:effects.Row": "fnv1a64:9e5110f75fc06247",
         "lean:effects.missing": "fnv1a64:52f170f3140f6baf",
@@ -1134,7 +1134,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:ec20d703dfddbe48",
+      "fingerprint": "fnv1a64:011d7ff3f540d7ef",
       "inputs": {
         "lean:effects.Row": "fnv1a64:9e5110f75fc06247",
         "lean:effects.extra": "fnv1a64:10a7109af951ea02",
@@ -1180,7 +1180,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:ec20d703dfddbe48",
+      "fingerprint": "fnv1a64:011d7ff3f540d7ef",
       "inputs": {
         "lean:effects.Row": "fnv1a64:9e5110f75fc06247",
         "lean:effects.agrees": "fnv1a64:88b48fabe093169b",
@@ -1196,6 +1196,18 @@
       },
       "mutant_results": [
         {
+          "mutant": "agrees-ignores-extra",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.agrees_spec",
+            "Tauten.Kernel.f001_decision",
+            "Tauten.Kernel.f001_error_iff",
+            "Tauten.Kernel.f001_examples",
+            "Tauten.Kernel.f001_silent_iff",
+            "Tauten.Kernel.verdict_spec"
+          ]
+        },
+        {
           "mutant": "missing-net-swapped",
           "status": "killed",
           "broken": [
@@ -1206,18 +1218,6 @@
             "Tauten.Kernel.f001_examples",
             "Tauten.Kernel.f001_silent_iff",
             "Tauten.Kernel.missing_spec",
-            "Tauten.Kernel.verdict_spec"
-          ]
-        },
-        {
-          "mutant": "agrees-ignores-extra",
-          "status": "killed",
-          "broken": [
-            "Tauten.Kernel.agrees_spec",
-            "Tauten.Kernel.f001_decision",
-            "Tauten.Kernel.f001_error_iff",
-            "Tauten.Kernel.f001_examples",
-            "Tauten.Kernel.f001_silent_iff",
             "Tauten.Kernel.verdict_spec"
           ]
         }
@@ -1241,7 +1241,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:ec20d703dfddbe48",
+      "fingerprint": "fnv1a64:011d7ff3f540d7ef",
       "inputs": {
         "lean:effects.Row": "fnv1a64:9e5110f75fc06247",
         "lean:effects.Verdict": "fnv1a64:7106ce8032b32ba0",
@@ -1298,7 +1298,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:ec20d703dfddbe48",
+      "fingerprint": "fnv1a64:011d7ff3f540d7ef",
       "inputs": {
         "lean:outcome.Facts": "fnv1a64:2ca27bb2ed8b7f45",
         "lean:outcome.Outcome": "fnv1a64:7bc6bdb4bda38b48",
@@ -1361,7 +1361,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:ec20d703dfddbe48",
+      "fingerprint": "fnv1a64:011d7ff3f540d7ef",
       "inputs": {
         "lean:span.consider": "fnv1a64:1faf81d7fddee09b",
         "lean:span.covers": "fnv1a64:c876e64678308752",
@@ -1432,7 +1432,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:c05b6b57bdd83ff8",
+      "fingerprint": "fnv1a64:daea082a36b004ea",
       "inputs": {
         "lean:refined.__tauten_percent.Percent": "fnv1a64:54a1807425470fda",
         "lean:refined.__tauten_percent.Percent.try_new": "fnv1a64:a6897baa1a6e8159",
@@ -1520,7 +1520,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:c05b6b57bdd83ff8",
+      "fingerprint": "fnv1a64:daea082a36b004ea",
       "inputs": {
         "lean:refined.__tauten_port.Port": "fnv1a64:8e80ce710ed0461e",
         "lean:refined.__tauten_port.Port.try_new": "fnv1a64:f6fecdf4605f02ec",
@@ -1608,7 +1608,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:c05b6b57bdd83ff8",
+      "fingerprint": "fnv1a64:daea082a36b004ea",
       "inputs": {
         "lean:refined.__tauten_offset.Offset": "fnv1a64:5a326687630fe204",
         "lean:refined.__tauten_offset.Offset.try_new": "fnv1a64:2b4bd85b5616e074",
@@ -1696,7 +1696,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:c05b6b57bdd83ff8",
+      "fingerprint": "fnv1a64:daea082a36b004ea",
       "inputs": {
         "lean:refined.__tauten_count.Count": "fnv1a64:034ec399bde8f40b",
         "lean:refined.__tauten_count.Count.try_new": "fnv1a64:bb192e699cc186bf",
@@ -1784,7 +1784,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:c05b6b57bdd83ff8",
+      "fingerprint": "fnv1a64:daea082a36b004ea",
       "inputs": {
         "lean:contracts.OpError": "fnv1a64:8f5997720f293e86",
         "lean:contracts.OpError.Insts.CoreConvertFromContractViolation": "fnv1a64:9501a6c9c8b0074f",
@@ -1799,7 +1799,7 @@
         "lean:tauten.error.ContractViolation": "fnv1a64:721c4b0489021342",
         "lean:tauten.error.ContractViolation.ensures": "fnv1a64:d33252a91a8db09a",
         "lean:tauten.error.ContractViolation.requires": "fnv1a64:1a02ce14eaa95b99",
-        "mutant:ensures-reported-as-requires": "fnv1a64:74880e77bf19c501",
+        "mutant:ensures-reported-as-requires": "fnv1a64:22ceb4cce07089ee",
         "mutant:ensures-skipped": "fnv1a64:b19f6fb04b090d7a",
         "mutant:requires-after-body": "fnv1a64:2ddb3da5f5c25d19",
         "mutant:requires-dropped": "fnv1a64:056fa6ba2fd3e260",
@@ -1963,7 +1963,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:c05b6b57bdd83ff8",
+      "fingerprint": "fnv1a64:daea082a36b004ea",
       "inputs": {
         "lean:contracts.OpError": "fnv1a64:8f5997720f293e86",
         "lean:contracts.OpError.Insts.CoreConvertFromContractViolation": "fnv1a64:9501a6c9c8b0074f",
@@ -1977,7 +1977,7 @@
         "lean:tauten.error.ContractViolation": "fnv1a64:721c4b0489021342",
         "lean:tauten.error.ContractViolation.ensures": "fnv1a64:d33252a91a8db09a",
         "lean:tauten.error.ContractViolation.requires": "fnv1a64:1a02ce14eaa95b99",
-        "mutant:ensures-reported-as-requires": "fnv1a64:74880e77bf19c501",
+        "mutant:ensures-reported-as-requires": "fnv1a64:22ceb4cce07089ee",
         "mutant:ensures-skipped": "fnv1a64:b19f6fb04b090d7a",
         "mutant:requires-after-body": "fnv1a64:2ddb3da5f5c25d19",
         "mutant:requires-dropped": "fnv1a64:056fa6ba2fd3e260",
@@ -2070,6 +2070,19 @@
           ]
         },
         {
+          "mutant": "snapshot-after-body",
+          "status": "killed",
+          "broken": [
+            "Tauten.Instances.contract_examples",
+            "Tauten.Instances.withdraw_insufficient",
+            "Tauten.Instances.withdraw_never_ensures",
+            "Tauten.Instances.withdraw_ok",
+            "Tauten.Instances.withdraw_requires_iff",
+            "Tauten.Instances.withdraw_requires_keeps_balance",
+            "Tauten.Instances.withdraw_shape"
+          ]
+        },
+        {
           "mutant": "ensures-skipped",
           "status": "killed",
           "broken": [
@@ -2114,19 +2127,6 @@
             "Tauten.Instances.withdraw_requires_keeps_balance",
             "Tauten.Instances.withdraw_shape"
           ]
-        },
-        {
-          "mutant": "snapshot-after-body",
-          "status": "killed",
-          "broken": [
-            "Tauten.Instances.contract_examples",
-            "Tauten.Instances.withdraw_insufficient",
-            "Tauten.Instances.withdraw_never_ensures",
-            "Tauten.Instances.withdraw_ok",
-            "Tauten.Instances.withdraw_requires_iff",
-            "Tauten.Instances.withdraw_requires_keeps_balance",
-            "Tauten.Instances.withdraw_shape"
-          ]
         }
       ]
     },
@@ -2153,7 +2153,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:c05b6b57bdd83ff8",
+      "fingerprint": "fnv1a64:daea082a36b004ea",
       "inputs": {
         "lean:contracts.OpError": "fnv1a64:8f5997720f293e86",
         "lean:contracts.OpError.Insts.CoreConvertFromContractViolation": "fnv1a64:9501a6c9c8b0074f",
@@ -2168,7 +2168,7 @@
         "lean:tauten.error.ContractViolation": "fnv1a64:721c4b0489021342",
         "lean:tauten.error.ContractViolation.ensures": "fnv1a64:d33252a91a8db09a",
         "lean:tauten.error.ContractViolation.requires": "fnv1a64:1a02ce14eaa95b99",
-        "mutant:ensures-reported-as-requires": "fnv1a64:74880e77bf19c501",
+        "mutant:ensures-reported-as-requires": "fnv1a64:22ceb4cce07089ee",
         "mutant:ensures-skipped": "fnv1a64:b19f6fb04b090d7a",
         "mutant:requires-after-body": "fnv1a64:2ddb3da5f5c25d19",
         "mutant:requires-dropped": "fnv1a64:056fa6ba2fd3e260",
@@ -2327,7 +2327,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:c05b6b57bdd83ff8",
+      "fingerprint": "fnv1a64:daea082a36b004ea",
       "inputs": {
         "lean:contracts.OpError": "fnv1a64:8f5997720f293e86",
         "lean:contracts.OpError.Insts.CoreConvertFromContractViolation": "fnv1a64:9501a6c9c8b0074f",
@@ -2451,7 +2451,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:ec20d703dfddbe48",
+      "fingerprint": "fnv1a64:011d7ff3f540d7ef",
       "inputs": {
         "lean:control.Control": "fnv1a64:772148c0216491b3",
         "lean:control.Expect": "fnv1a64:d70096eae1969035",
@@ -2568,7 +2568,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:ec20d703dfddbe48",
+      "fingerprint": "fnv1a64:011d7ff3f540d7ef",
       "inputs": {
         "lean:control.Expect": "fnv1a64:d70096eae1969035",
         "lean:control.Seen": "fnv1a64:158ab1bc923175b9",
@@ -2621,7 +2621,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:ec20d703dfddbe48",
+      "fingerprint": "fnv1a64:011d7ff3f540d7ef",
       "inputs": {
         "lean:control.member": "fnv1a64:65485cfd8063f4d4",
         "lean:control.member_loop": "fnv1a64:5229829739e63747",
@@ -2661,7 +2661,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:ec20d703dfddbe48",
+      "fingerprint": "fnv1a64:011d7ff3f540d7ef",
       "inputs": {
         "lean:control.Control": "fnv1a64:772148c0216491b3",
         "lean:control.Expect": "fnv1a64:d70096eae1969035",
@@ -2729,7 +2729,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:ec20d703dfddbe48",
+      "fingerprint": "fnv1a64:011d7ff3f540d7ef",
       "inputs": {
         "lean:binding.Binding": "fnv1a64:2a91811d3cca45b4",
         "lean:binding.agrees": "fnv1a64:335aa303de0fd004",
@@ -2748,12 +2748,12 @@
         "lean:binding.same_bytes": "fnv1a64:c4964ef56a050900",
         "lean:binding.same_bytes_loop": "fnv1a64:145f0c6c42de34a9",
         "lean:binding.same_bytes_loop.body": "fnv1a64:67d18192a623cc14",
-        "mutant:changed-accepted": "fnv1a64:765b6d7554f5c017",
+        "mutant:changed-accepted": "fnv1a64:5b7316171abd2b41",
         "mutant:extra-key-accepted": "fnv1a64:7b1d13e3cae4e837",
-        "mutant:last-byte-ignored": "fnv1a64:e00444534ca2cfa7",
-        "mutant:length-ignored": "fnv1a64:0d9d3defa5350e85",
+        "mutant:last-byte-ignored": "fnv1a64:fcada8dc1492402f",
+        "mutant:length-ignored": "fnv1a64:391eccce5fe052a5",
         "mutant:missing-key-accepted": "fnv1a64:003675eb07ab8872",
-        "proof:Tauten/Binding.lean": "fnv1a64:98ba2b057f366961",
+        "proof:Tauten/Binding.lean": "fnv1a64:cde1328a26f74e28",
         "proof:Tauten/Control.lean": "fnv1a64:15597dcfcbd4a7ae",
         "proof:Tauten/Outcome.lean": "fnv1a64:9a1457f8e8fa48b8",
         "proof:Tauten/Ratchet.lean": "fnv1a64:348d5f7de112f0f7",
@@ -2766,6 +2766,7 @@
           "status": "killed",
           "broken": [
             "Tauten.Kernel.changed_never_fresh",
+            "Tauten.Kernel.contains_bytes_spec",
             "Tauten.Kernel.extra_key_never_fresh",
             "Tauten.Kernel.fresh_iff",
             "Tauten.Kernel.missing_key_never_fresh",
@@ -2777,6 +2778,7 @@
           "status": "killed",
           "broken": [
             "Tauten.Kernel.changed_never_fresh",
+            "Tauten.Kernel.contains_bytes_spec",
             "Tauten.Kernel.extra_key_never_fresh",
             "Tauten.Kernel.fresh_iff",
             "Tauten.Kernel.missing_key_never_fresh",
@@ -2831,14 +2833,14 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:ec20d703dfddbe48",
+      "fingerprint": "fnv1a64:011d7ff3f540d7ef",
       "inputs": {
         "lean:binding.same_bytes": "fnv1a64:c4964ef56a050900",
         "lean:binding.same_bytes_loop": "fnv1a64:145f0c6c42de34a9",
         "lean:binding.same_bytes_loop.body": "fnv1a64:67d18192a623cc14",
-        "mutant:last-byte-ignored": "fnv1a64:e00444534ca2cfa7",
-        "mutant:length-ignored": "fnv1a64:0d9d3defa5350e85",
-        "proof:Tauten/Binding.lean": "fnv1a64:98ba2b057f366961",
+        "mutant:last-byte-ignored": "fnv1a64:fcada8dc1492402f",
+        "mutant:length-ignored": "fnv1a64:391eccce5fe052a5",
+        "proof:Tauten/Binding.lean": "fnv1a64:cde1328a26f74e28",
         "proof:Tauten/Control.lean": "fnv1a64:15597dcfcbd4a7ae",
         "proof:Tauten/Outcome.lean": "fnv1a64:9a1457f8e8fa48b8",
         "proof:Tauten/Ratchet.lean": "fnv1a64:348d5f7de112f0f7",
@@ -2851,6 +2853,7 @@
           "status": "killed",
           "broken": [
             "Tauten.Kernel.changed_never_fresh",
+            "Tauten.Kernel.contains_bytes_spec",
             "Tauten.Kernel.extra_key_never_fresh",
             "Tauten.Kernel.fresh_iff",
             "Tauten.Kernel.missing_key_never_fresh",
@@ -2862,10 +2865,166 @@
           "status": "killed",
           "broken": [
             "Tauten.Kernel.changed_never_fresh",
+            "Tauten.Kernel.contains_bytes_spec",
             "Tauten.Kernel.extra_key_never_fresh",
             "Tauten.Kernel.fresh_iff",
             "Tauten.Kernel.missing_key_never_fresh",
             "Tauten.Kernel.same_bytes_spec"
+          ]
+        }
+      ]
+    },
+    {
+      "crate": "tauten-check-kernel",
+      "file": "crates/tauten-check-kernel/src/binding.rs",
+      "function": "contains_bytes",
+      "lean": "tauten_check_kernel.binding.contains_bytes",
+      "theorems": [
+        "Tauten.Kernel.contains_bytes_spec"
+      ],
+      "total": null,
+      "subsumes": [],
+      "mutants": [
+        "contains-last-only"
+      ],
+      "outcome": "proved",
+      "badge": "proved",
+      "fingerprint": "fnv1a64:011d7ff3f540d7ef",
+      "inputs": {
+        "lean:binding.contains_bytes": "fnv1a64:bf8d9afc88a6f975",
+        "lean:binding.contains_bytes_loop": "fnv1a64:9d1bfb58b25f4a86",
+        "lean:binding.contains_bytes_loop.body": "fnv1a64:8a38f381ccb37e9b",
+        "lean:binding.same_bytes": "fnv1a64:c4964ef56a050900",
+        "lean:binding.same_bytes_loop": "fnv1a64:145f0c6c42de34a9",
+        "lean:binding.same_bytes_loop.body": "fnv1a64:67d18192a623cc14",
+        "mutant:contains-last-only": "fnv1a64:e900a29bcc3e9eb1",
+        "proof:Tauten/Binding.lean": "fnv1a64:cde1328a26f74e28",
+        "proof:Tauten/Control.lean": "fnv1a64:15597dcfcbd4a7ae",
+        "proof:Tauten/Outcome.lean": "fnv1a64:9a1457f8e8fa48b8",
+        "proof:Tauten/Ratchet.lean": "fnv1a64:348d5f7de112f0f7",
+        "proof:Tauten/RatchetModel.lean": "fnv1a64:68e378121c48660e",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "contains-last-only",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.contains_bytes_spec"
+          ]
+        }
+      ]
+    },
+    {
+      "crate": "tauten-check-kernel",
+      "file": "crates/tauten-check-kernel/src/budget.rs",
+      "function": "charge",
+      "lean": "tauten_check_kernel.budget.charge",
+      "theorems": [
+        "Tauten.Kernel.charge_spec",
+        "Tauten.Kernel.charges_never_exceed_initial"
+      ],
+      "total": null,
+      "subsumes": [],
+      "mutants": [
+        "charge-saturates"
+      ],
+      "outcome": "proved",
+      "badge": "proved",
+      "fingerprint": "fnv1a64:011d7ff3f540d7ef",
+      "inputs": {
+        "lean:budget.charge": "fnv1a64:efa0cf9c88138100",
+        "mutant:charge-saturates": "fnv1a64:39ebc6fce6dbe1bf",
+        "proof:Tauten/Helpers.lean": "fnv1a64:7c94483de3eb4158",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "charge-saturates",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.charge_spec",
+            "Tauten.Kernel.charges_never_exceed_initial"
+          ]
+        }
+      ]
+    },
+    {
+      "crate": "tauten-check-kernel",
+      "file": "crates/tauten-check-kernel/src/budget.rs",
+      "function": "charge_repeated",
+      "lean": "tauten_check_kernel.budget.charge_repeated",
+      "theorems": [
+        "Tauten.Kernel.charge_repeated_no_overflow"
+      ],
+      "total": null,
+      "subsumes": [],
+      "mutants": [
+        "repeat-charged-once"
+      ],
+      "outcome": "proved",
+      "badge": "proved",
+      "fingerprint": "fnv1a64:011d7ff3f540d7ef",
+      "inputs": {
+        "lean:budget.charge_repeated": "fnv1a64:ab4686316d8649ad",
+        "mutant:repeat-charged-once": "fnv1a64:c2e023b973705e3e",
+        "proof:Tauten/Helpers.lean": "fnv1a64:7c94483de3eb4158",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "repeat-charged-once",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.charge_repeated_no_overflow"
+          ]
+        }
+      ]
+    },
+    {
+      "crate": "tauten-check-kernel",
+      "file": "crates/tauten-check-kernel/src/version.rs",
+      "function": "admit",
+      "lean": "tauten_check_kernel.version.admit",
+      "theorems": [
+        "Tauten.Kernel.version_admit_total",
+        "Tauten.Kernel.version_admit_spec",
+        "Tauten.Kernel.never_admits_newer",
+        "Tauten.Kernel.absent_is_invalid"
+      ],
+      "total": null,
+      "subsumes": [],
+      "mutants": [
+        "newer-admitted",
+        "absent-admitted"
+      ],
+      "outcome": "proved",
+      "badge": "proved",
+      "fingerprint": "fnv1a64:011d7ff3f540d7ef",
+      "inputs": {
+        "lean:version.Admission": "fnv1a64:7e83b9b04853e6c5",
+        "lean:version.admit": "fnv1a64:203dab9a06e0f442",
+        "mutant:absent-admitted": "fnv1a64:20a4e26fcb167714",
+        "mutant:newer-admitted": "fnv1a64:afbaf9ab3cca0261",
+        "proof:Tauten/Helpers.lean": "fnv1a64:7c94483de3eb4158",
+        "toolchain": "fnv1a64:5b6ce949a7a318dc"
+      },
+      "mutant_results": [
+        {
+          "mutant": "newer-admitted",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.never_admits_newer",
+            "Tauten.Kernel.version_admit_spec",
+            "Tauten.Kernel.version_admit_total"
+          ]
+        },
+        {
+          "mutant": "absent-admitted",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.absent_is_invalid",
+            "Tauten.Kernel.version_admit_spec"
           ]
         }
       ]
@@ -2894,7 +3053,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:ec20d703dfddbe48",
+      "fingerprint": "fnv1a64:011d7ff3f540d7ef",
       "inputs": {
         "lean:badge.Badge": "fnv1a64:c9e59517420c5e9b",
         "lean:badge.Method": "fnv1a64:fe310cca8171e7ac",
@@ -2967,7 +3126,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:ec20d703dfddbe48",
+      "fingerprint": "fnv1a64:011d7ff3f540d7ef",
       "inputs": {
         "lean:control.member": "fnv1a64:65485cfd8063f4d4",
         "lean:control.member_loop": "fnv1a64:5229829739e63747",
@@ -3040,7 +3199,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:ec20d703dfddbe48",
+      "fingerprint": "fnv1a64:011d7ff3f540d7ef",
       "inputs": {
         "lean:registry.Entry": "fnv1a64:afc8e2c870c3a9d6",
         "lean:registry.kept": "fnv1a64:914d19e15565724f",
@@ -3100,7 +3259,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:ec20d703dfddbe48",
+      "fingerprint": "fnv1a64:011d7ff3f540d7ef",
       "inputs": {
         "lean:assumption.assumptions_ok": "fnv1a64:32f6090ac0e2c70b",
         "lean:control.member": "fnv1a64:65485cfd8063f4d4",
@@ -3174,7 +3333,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:ec20d703dfddbe48",
+      "fingerprint": "fnv1a64:011d7ff3f540d7ef",
       "inputs": {
         "lean:manifest.Fact": "fnv1a64:0b6cdeed3410cd78",
         "lean:manifest.hardening": "fnv1a64:f3abf31255873c75",
@@ -3222,7 +3381,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:ec20d703dfddbe48",
+      "fingerprint": "fnv1a64:011d7ff3f540d7ef",
       "inputs": {
         "lean:rule.finding_severity": "fnv1a64:ab0da7ae4fdd2809",
         "lean:severity.Level": "fnv1a64:7ced964c9470c680",
@@ -3264,7 +3423,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:ec20d703dfddbe48",
+      "fingerprint": "fnv1a64:011d7ff3f540d7ef",
       "inputs": {
         "lean:rule.Input": "fnv1a64:62e84c13fbd46f1a",
         "lean:rule.clean": "fnv1a64:d082e917c3e0d595",
@@ -3303,7 +3462,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:ec20d703dfddbe48",
+      "fingerprint": "fnv1a64:011d7ff3f540d7ef",
       "inputs": {
         "lean:rule.RuleFacts": "fnv1a64:66b54b1fe6565def",
         "lean:rule.fixtures_ok": "fnv1a64:7fdfeb0385744851",
@@ -3350,7 +3509,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:c05b6b57bdd83ff8",
+      "fingerprint": "fnv1a64:daea082a36b004ea",
       "inputs": {
         "lean:machines.publish_step": "fnv1a64:85cfeb6d5ebcf03b",
         "lean:tauten.publish.Command": "fnv1a64:a1b2e70b5a9ea7f4",
@@ -3360,7 +3519,7 @@
         "mutant:cleanup-skipped": "fnv1a64:b413b9b23c70495a",
         "mutant:failure-ignored": "fnv1a64:5dc0057add556962",
         "mutant:rename-before-sync": "fnv1a64:a1bf5dea8ee0bd09",
-        "proof:Tauten/Durable.lean": "fnv1a64:9faba4eccd33dfc3",
+        "proof:Tauten/Durable.lean": "fnv1a64:f684e031844c3788",
         "proof:Tauten/Machine.lean": "fnv1a64:73138c8097fa5b04",
         "proof:Tauten/Publish.lean": "fnv1a64:b63ece1994a38d92",
         "proof:Tauten/TautenAssumption.lean": "fnv1a64:682b860e720dde5c",
@@ -3371,11 +3530,17 @@
           "mutant": "cleanup-skipped",
           "status": "killed",
           "broken": [
+            "Tauten.Durable.absent_durable_needs_rename_atomic",
+            "Tauten.Durable.absent_durable_needs_sync_dir",
+            "Tauten.Durable.absent_or_new_needs_sync_file",
             "Tauten.Durable.create_new_never_replaces",
             "Tauten.Durable.durable_needs_sync_dir",
             "Tauten.Durable.old_or_new_needs_rename_atomic",
             "Tauten.Durable.old_or_new_needs_sync_file",
+            "Tauten.Durable.posix_absent_done_reachable",
             "Tauten.Durable.posix_done_reachable",
+            "Tauten.Durable.publish_absent_durable_on_done",
+            "Tauten.Durable.publish_absent_or_new",
             "Tauten.Durable.publish_create_step_model",
             "Tauten.Durable.publish_durable_on_done",
             "Tauten.Durable.publish_frame",
@@ -3390,11 +3555,17 @@
           "mutant": "rename-before-sync",
           "status": "killed",
           "broken": [
+            "Tauten.Durable.absent_durable_needs_rename_atomic",
+            "Tauten.Durable.absent_durable_needs_sync_dir",
+            "Tauten.Durable.absent_or_new_needs_sync_file",
             "Tauten.Durable.create_new_never_replaces",
             "Tauten.Durable.durable_needs_sync_dir",
             "Tauten.Durable.old_or_new_needs_rename_atomic",
             "Tauten.Durable.old_or_new_needs_sync_file",
+            "Tauten.Durable.posix_absent_done_reachable",
             "Tauten.Durable.posix_done_reachable",
+            "Tauten.Durable.publish_absent_durable_on_done",
+            "Tauten.Durable.publish_absent_or_new",
             "Tauten.Durable.publish_create_step_model",
             "Tauten.Durable.publish_durable_on_done",
             "Tauten.Durable.publish_frame",
@@ -3409,11 +3580,17 @@
           "mutant": "failure-ignored",
           "status": "killed",
           "broken": [
+            "Tauten.Durable.absent_durable_needs_rename_atomic",
+            "Tauten.Durable.absent_durable_needs_sync_dir",
+            "Tauten.Durable.absent_or_new_needs_sync_file",
             "Tauten.Durable.create_new_never_replaces",
             "Tauten.Durable.durable_needs_sync_dir",
             "Tauten.Durable.old_or_new_needs_rename_atomic",
             "Tauten.Durable.old_or_new_needs_sync_file",
+            "Tauten.Durable.posix_absent_done_reachable",
             "Tauten.Durable.posix_done_reachable",
+            "Tauten.Durable.publish_absent_durable_on_done",
+            "Tauten.Durable.publish_absent_or_new",
             "Tauten.Durable.publish_create_step_model",
             "Tauten.Durable.publish_durable_on_done",
             "Tauten.Durable.publish_frame",
@@ -3441,7 +3618,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:ec20d703dfddbe48",
+      "fingerprint": "fnv1a64:011d7ff3f540d7ef",
       "inputs": {
         "lean:layout.Declared": "fnv1a64:d6d7def83ac30b00",
         "lean:layout.t001": "fnv1a64:7d1a9b6b2841c6e4",
@@ -3479,7 +3656,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:ec20d703dfddbe48",
+      "fingerprint": "fnv1a64:011d7ff3f540d7ef",
       "inputs": {
         "lean:control.member": "fnv1a64:65485cfd8063f4d4",
         "lean:control.member_loop": "fnv1a64:5229829739e63747",
@@ -3522,7 +3699,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:ec20d703dfddbe48",
+      "fingerprint": "fnv1a64:011d7ff3f540d7ef",
       "inputs": {
         "lean:layout.NoStd": "fnv1a64:267885b5ec022ab2",
         "lean:layout.k003": "fnv1a64:3387bff42125a9ff",
@@ -3571,7 +3748,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:ec20d703dfddbe48",
+      "fingerprint": "fnv1a64:011d7ff3f540d7ef",
       "inputs": {
         "lean:compiler.MsgLevel": "fnv1a64:6104d3501e88745f",
         "lean:compiler.kept": "fnv1a64:885f5d3a939a58e2",
@@ -3617,7 +3794,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:ec20d703dfddbe48",
+      "fingerprint": "fnv1a64:011d7ff3f540d7ef",
       "inputs": {
         "lean:compiler.applies": "fnv1a64:bbbb4af082bda505",
         "lean:severity.Level": "fnv1a64:7ced964c9470c680",
@@ -3656,7 +3833,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:ec20d703dfddbe48",
+      "fingerprint": "fnv1a64:011d7ff3f540d7ef",
       "inputs": {
         "lean:compiler.passes": "fnv1a64:f90f779656e98f64",
         "lean:compiler.passes_loop": "fnv1a64:b8a19b137a80eda3",
@@ -3688,7 +3865,8 @@
       "function": "step",
       "lean": "tauten_proof_instances.tauten.publish.step",
       "theorems": [
-        "Tauten.Durable.publish_old_or_new"
+        "Tauten.Durable.publish_old_or_new",
+        "Tauten.Durable.publish_absent_or_new"
       ],
       "total": null,
       "subsumes": [],
@@ -3704,11 +3882,12 @@
       "witness": "Tauten.Durable.posix_satisfies",
       "necessity": [
         "Tauten.Durable.old_or_new_needs_rename_atomic",
-        "Tauten.Durable.old_or_new_needs_sync_file"
+        "Tauten.Durable.old_or_new_needs_sync_file",
+        "Tauten.Durable.absent_or_new_needs_sync_file"
       ],
       "outcome": "proved",
       "badge": "proved-under",
-      "fingerprint": "fnv1a64:e61e330d636c4f67",
+      "fingerprint": "fnv1a64:919c57db91052395",
       "inputs": {
         "lean:tauten.publish.Command": "fnv1a64:a1b2e70b5a9ea7f4",
         "lean:tauten.publish.Event": "fnv1a64:ce476b788bc7634d",
@@ -3717,7 +3896,7 @@
         "mutant:failure-ignored": "fnv1a64:5dc0057add556962",
         "mutant:rename-before-sync": "fnv1a64:a1bf5dea8ee0bd09",
         "mutant:skip-sync": "fnv1a64:e03083e7017a761d",
-        "proof:Tauten/Durable.lean": "fnv1a64:9faba4eccd33dfc3",
+        "proof:Tauten/Durable.lean": "fnv1a64:f684e031844c3788",
         "proof:Tauten/Machine.lean": "fnv1a64:73138c8097fa5b04",
         "proof:Tauten/TautenAssumption.lean": "fnv1a64:682b860e720dde5c",
         "toolchain": "fnv1a64:5b6ce949a7a318dc"
@@ -3727,30 +3906,17 @@
           "mutant": "rename-before-sync",
           "status": "killed",
           "broken": [
+            "Tauten.Durable.absent_durable_needs_rename_atomic",
+            "Tauten.Durable.absent_durable_needs_sync_dir",
+            "Tauten.Durable.absent_or_new_needs_sync_file",
             "Tauten.Durable.create_new_never_replaces",
             "Tauten.Durable.durable_needs_sync_dir",
             "Tauten.Durable.old_or_new_needs_rename_atomic",
             "Tauten.Durable.old_or_new_needs_sync_file",
+            "Tauten.Durable.posix_absent_done_reachable",
             "Tauten.Durable.posix_done_reachable",
-            "Tauten.Durable.publish_create_step_model",
-            "Tauten.Durable.publish_durable_on_done",
-            "Tauten.Durable.publish_frame",
-            "Tauten.Durable.publish_old_or_new",
-            "Tauten.Durable.publish_step_model",
-            "Tauten.Durable.publish_stops_on_failure",
-            "Tauten.Instances.publish_reachable_model",
-            "Tauten.Instances.publish_step_model"
-          ]
-        },
-        {
-          "mutant": "failure-ignored",
-          "status": "killed",
-          "broken": [
-            "Tauten.Durable.create_new_never_replaces",
-            "Tauten.Durable.durable_needs_sync_dir",
-            "Tauten.Durable.old_or_new_needs_rename_atomic",
-            "Tauten.Durable.old_or_new_needs_sync_file",
-            "Tauten.Durable.posix_done_reachable",
+            "Tauten.Durable.publish_absent_durable_on_done",
+            "Tauten.Durable.publish_absent_or_new",
             "Tauten.Durable.publish_create_step_model",
             "Tauten.Durable.publish_durable_on_done",
             "Tauten.Durable.publish_frame",
@@ -3765,11 +3931,42 @@
           "mutant": "skip-sync",
           "status": "killed",
           "broken": [
+            "Tauten.Durable.absent_durable_needs_rename_atomic",
+            "Tauten.Durable.absent_durable_needs_sync_dir",
+            "Tauten.Durable.absent_or_new_needs_sync_file",
             "Tauten.Durable.create_new_never_replaces",
             "Tauten.Durable.durable_needs_sync_dir",
             "Tauten.Durable.old_or_new_needs_rename_atomic",
             "Tauten.Durable.old_or_new_needs_sync_file",
+            "Tauten.Durable.posix_absent_done_reachable",
             "Tauten.Durable.posix_done_reachable",
+            "Tauten.Durable.publish_absent_durable_on_done",
+            "Tauten.Durable.publish_absent_or_new",
+            "Tauten.Durable.publish_create_step_model",
+            "Tauten.Durable.publish_durable_on_done",
+            "Tauten.Durable.publish_frame",
+            "Tauten.Durable.publish_old_or_new",
+            "Tauten.Durable.publish_step_model",
+            "Tauten.Durable.publish_stops_on_failure",
+            "Tauten.Instances.publish_reachable_model",
+            "Tauten.Instances.publish_step_model"
+          ]
+        },
+        {
+          "mutant": "failure-ignored",
+          "status": "killed",
+          "broken": [
+            "Tauten.Durable.absent_durable_needs_rename_atomic",
+            "Tauten.Durable.absent_durable_needs_sync_dir",
+            "Tauten.Durable.absent_or_new_needs_sync_file",
+            "Tauten.Durable.create_new_never_replaces",
+            "Tauten.Durable.durable_needs_sync_dir",
+            "Tauten.Durable.old_or_new_needs_rename_atomic",
+            "Tauten.Durable.old_or_new_needs_sync_file",
+            "Tauten.Durable.posix_absent_done_reachable",
+            "Tauten.Durable.posix_done_reachable",
+            "Tauten.Durable.publish_absent_durable_on_done",
+            "Tauten.Durable.publish_absent_or_new",
             "Tauten.Durable.publish_create_step_model",
             "Tauten.Durable.publish_durable_on_done",
             "Tauten.Durable.publish_frame",
@@ -3789,13 +3986,15 @@
       "lean": "tauten_proof_instances.tauten.publish.durable",
       "theorems": [
         "Tauten.Durable.publish_durable_on_done",
-        "Tauten.Durable.durable_model"
+        "Tauten.Durable.durable_model",
+        "Tauten.Durable.publish_absent_durable_on_done"
       ],
       "total": null,
       "subsumes": [],
       "mutants": [
         "durable-too-early",
-        "skip-sync"
+        "skip-sync",
+        "skip-dir-sync"
       ],
       "assumes": [
         "FS.rename-atomic",
@@ -3805,17 +4004,21 @@
       "witness": "Tauten.Durable.posix_satisfies",
       "necessity": [
         "Tauten.Durable.durable_needs_sync_dir",
-        "Tauten.Durable.posix_done_reachable"
+        "Tauten.Durable.posix_done_reachable",
+        "Tauten.Durable.absent_durable_needs_sync_dir",
+        "Tauten.Durable.absent_durable_needs_rename_atomic",
+        "Tauten.Durable.posix_absent_done_reachable"
       ],
       "outcome": "proved",
       "badge": "proved-under",
-      "fingerprint": "fnv1a64:e61e330d636c4f67",
+      "fingerprint": "fnv1a64:919c57db91052395",
       "inputs": {
         "lean:tauten.publish.Phase": "fnv1a64:215496e080bfee67",
         "lean:tauten.publish.durable": "fnv1a64:bc1a089ebffc99a8",
-        "mutant:durable-too-early": "fnv1a64:95f9adb0b614b54d",
+        "mutant:durable-too-early": "fnv1a64:60707a0f57b340b6",
+        "mutant:skip-dir-sync": "fnv1a64:9847c20565f198f7",
         "mutant:skip-sync": "fnv1a64:e03083e7017a761d",
-        "proof:Tauten/Durable.lean": "fnv1a64:9faba4eccd33dfc3",
+        "proof:Tauten/Durable.lean": "fnv1a64:f684e031844c3788",
         "proof:Tauten/Machine.lean": "fnv1a64:73138c8097fa5b04",
         "proof:Tauten/TautenAssumption.lean": "fnv1a64:682b860e720dde5c",
         "toolchain": "fnv1a64:5b6ce949a7a318dc"
@@ -3825,11 +4028,17 @@
           "mutant": "skip-sync",
           "status": "killed",
           "broken": [
+            "Tauten.Durable.absent_durable_needs_rename_atomic",
+            "Tauten.Durable.absent_durable_needs_sync_dir",
+            "Tauten.Durable.absent_or_new_needs_sync_file",
             "Tauten.Durable.create_new_never_replaces",
             "Tauten.Durable.durable_needs_sync_dir",
             "Tauten.Durable.old_or_new_needs_rename_atomic",
             "Tauten.Durable.old_or_new_needs_sync_file",
+            "Tauten.Durable.posix_absent_done_reachable",
             "Tauten.Durable.posix_done_reachable",
+            "Tauten.Durable.publish_absent_durable_on_done",
+            "Tauten.Durable.publish_absent_or_new",
             "Tauten.Durable.publish_create_step_model",
             "Tauten.Durable.publish_durable_on_done",
             "Tauten.Durable.publish_frame",
@@ -3844,9 +4053,37 @@
           "mutant": "durable-too-early",
           "status": "killed",
           "broken": [
+            "Tauten.Durable.absent_durable_needs_rename_atomic",
+            "Tauten.Durable.absent_durable_needs_sync_dir",
             "Tauten.Durable.durable_model",
             "Tauten.Durable.durable_needs_sync_dir",
+            "Tauten.Durable.publish_absent_durable_on_done",
             "Tauten.Durable.publish_durable_on_done"
+          ]
+        },
+        {
+          "mutant": "skip-dir-sync",
+          "status": "killed",
+          "broken": [
+            "Tauten.Durable.absent_durable_needs_rename_atomic",
+            "Tauten.Durable.absent_durable_needs_sync_dir",
+            "Tauten.Durable.absent_or_new_needs_sync_file",
+            "Tauten.Durable.create_new_never_replaces",
+            "Tauten.Durable.durable_needs_sync_dir",
+            "Tauten.Durable.old_or_new_needs_rename_atomic",
+            "Tauten.Durable.old_or_new_needs_sync_file",
+            "Tauten.Durable.posix_absent_done_reachable",
+            "Tauten.Durable.posix_done_reachable",
+            "Tauten.Durable.publish_absent_durable_on_done",
+            "Tauten.Durable.publish_absent_or_new",
+            "Tauten.Durable.publish_create_step_model",
+            "Tauten.Durable.publish_durable_on_done",
+            "Tauten.Durable.publish_frame",
+            "Tauten.Durable.publish_old_or_new",
+            "Tauten.Durable.publish_step_model",
+            "Tauten.Durable.publish_stops_on_failure",
+            "Tauten.Instances.publish_reachable_model",
+            "Tauten.Instances.publish_step_model"
           ]
         }
       ]
@@ -3871,7 +4108,7 @@
       "witness": "Tauten.Durable.posix_satisfies",
       "outcome": "proved",
       "badge": "proved-under",
-      "fingerprint": "fnv1a64:e61e330d636c4f67",
+      "fingerprint": "fnv1a64:919c57db91052395",
       "inputs": {
         "lean:tauten.publish.Command": "fnv1a64:a1b2e70b5a9ea7f4",
         "lean:tauten.publish.Event": "fnv1a64:ce476b788bc7634d",
@@ -3879,7 +4116,7 @@
         "lean:tauten.publish.create_step": "fnv1a64:a8f1003d5868badd",
         "lean:tauten.publish.step": "fnv1a64:bd84cb3bec3eb3db",
         "mutant:replace-under-create-new": "fnv1a64:57eb636d174804f3",
-        "proof:Tauten/Durable.lean": "fnv1a64:9faba4eccd33dfc3",
+        "proof:Tauten/Durable.lean": "fnv1a64:f684e031844c3788",
         "proof:Tauten/Machine.lean": "fnv1a64:73138c8097fa5b04",
         "proof:Tauten/TautenAssumption.lean": "fnv1a64:682b860e720dde5c",
         "toolchain": "fnv1a64:5b6ce949a7a318dc"
@@ -3912,7 +4149,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:c05b6b57bdd83ff8",
+      "fingerprint": "fnv1a64:daea082a36b004ea",
       "inputs": {
         "lean:stamped.Counter": "fnv1a64:dba680b33d83a609",
         "lean:stamped.Counter.Insts.TautenOriginVersioned": "fnv1a64:3e434e24aa4f6285",
@@ -3970,7 +4207,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:ec20d703dfddbe48",
+      "fingerprint": "fnv1a64:011d7ff3f540d7ef",
       "inputs": {
         "lean:layer.may_use": "fnv1a64:b6cba5e7b7776d27",
         "mutant:layer-strict": "fnv1a64:3e77ebb103a8546c",
@@ -4007,7 +4244,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:ec20d703dfddbe48",
+      "fingerprint": "fnv1a64:011d7ff3f540d7ef",
       "inputs": {
         "lean:layer.Layer": "fnv1a64:faa7aee45c2cc31f",
         "lean:layer.finding": "fnv1a64:7e5c1105796a1fdd",
@@ -4053,7 +4290,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:ec20d703dfddbe48",
+      "fingerprint": "fnv1a64:011d7ff3f540d7ef",
       "inputs": {
         "lean:badge.Badge": "fnv1a64:c9e59517420c5e9b",
         "lean:badge.inherit": "fnv1a64:ce468e61adad4a57",
@@ -4085,5 +4322,5 @@
       ]
     }
   ],
-  "commit": "53d8a3cb1739eb996dae560cee01439c0ebb72af"
+  "commit": "95676aa27b78b805d36044d6b1305f18a84f82aa"
 }
