@@ -13,6 +13,7 @@ Updated 2026-11-21. Settled items are kept at the bottom for the record.
 
 | Item | Decision |
 |---|---|
+| 0.2 grooming (2026-11-21) | Owner delegated execution; on a Fable review: both 0.2 RFCs accepted with amendments ([result/world induction](rfcs/2026-11-21-result-world-induction.md): ship `rsys_inv_of_step` plus a miniature; [bounded reads](rfcs/2026-11-21-bounded-capability-reads.md): require `Limit<Bytes>`, `#[non_exhaustive]` `ReadError` convertible to `io::Error`); #35 to later; #66 split (#68); #62 pulled in as a stretch; release issue #70; Gripsack follow-up #69 |
 | Repositioning | Code discipline + proofs; defect reduction only as a side effect (2026-11-19) |
 | Discipline plan | `docs/DISCIPLINE-PROPOSAL.md` approved: D0, then X1-X3, then D1-D8 (2026-11-19) |
 | Verus / TLAPS | No adapters for now; claims format reserves the tool names (2026-11-19) |
