@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Publishing waits for the full proofs gate on the tag commit (#53):
+  `release.yml` calls `proofs.yml` (extract, drift, Lean build and audit,
+  every mutant) in the same run as the CI gate, and `publish` needs both, so a
+  failed, cancelled, timed-out or skipped proofs job blocks it. A
+  `workflow_dispatch` of `release.yml` rehearses the same path without
+  publishing. The hosted proofs timeout is 150 minutes (a full run takes about
+  an hour; 60 minutes cancelled runs that would have passed).
+
 - An empty proof inventory never passes (#51): `cargo tauten proofs` (any
   `--level`) and `cargo tauten verify` over a `proofs/claims.toml` with no
   `[[claim]]` exit 1, say that no theorem was checked, and write no record; a

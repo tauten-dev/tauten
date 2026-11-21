@@ -1,11 +1,19 @@
 name: release
 
-# Push a tag `vX.Y.Z` matching the workspace version. The gate runs first;
-# publishing uses crates.io trusted publishing (GitHub OIDC); no stored token.
-# Each crate's crates.io settings name this repo and `release.yml`.
+# Push a tag `vX.Y.Z` matching the workspace version. Publishing waits for
+# both the CI gate and the full proofs gate (extract, drift, Lean build and
+# audit, every mutant) run in this same workflow run on the exact tag commit
+# (#53): `publish` needs both jobs, so a failed, cancelled, timed-out or
+# skipped one leaves it skipped. Publishing uses crates.io trusted publishing
+# (GitHub OIDC); no stored token. Each crate's crates.io settings name this
+# repo and `release.yml`.
+#
+# `workflow_dispatch` is a rehearsal: the same gate and proofs on the chosen
+# commit, then a `rehearse` job in place of `publish`. It never publishes.
 on:
   push:
     tags: ["v*.*.*"]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -16,7 +24,34 @@ env:
   TAUTEN_MEMORY: 6g
 
 jobs:
+  gate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Tag matches the workspace version
+        if: github.event_name == 'push'
+        run: |
+          version=$(sed -n 's/^version = "\(.*\)"$/\1/p' Cargo.toml | head -1)
+          test "v${version}" = "${GITHUB_REF_NAME}" || { echo "tag ${GITHUB_REF_NAME} != v${version}"; exit 1; }
+      - name: Build the pinned toolchain image
+        run: docker compose --profile build build tools
+      - name: Gate
+        run: docker compose run --rm gate
+
+  # The full proofs gate, on this run's commit (github.sha is shared by every
+  # job of the run, so the evidence is about the tag's tree).
+  proofs:
+    permissions:
+      contents: read
+      packages: read
+    uses: ./.github/workflows/proofs.yml
+
   publish:
+    needs: [gate, proofs]
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     permissions:
@@ -26,14 +61,10 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Tag matches the workspace version
-        run: |
-          version=$(sed -n 's/^version = "\(.*\)"$/\1/p' Cargo.toml | head -1)
-          test "v${version}" = "${GITHUB_REF_NAME}" || { echo "tag ${GITHUB_REF_NAME} != v${version}"; exit 1; }
+      - name: Publishing the commit both gates passed on
+        run: test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
       - name: Build the pinned toolchain image
         run: docker compose --profile build build tools
-      - name: Gate
-        run: docker compose run --rm gate
       - name: Get a short-lived crates.io token (trusted publishing)
         id: auth
         uses: rust-lang/crates-io-auth-action@3268eb413133e2960fa4ae0e963ca76380c54cd9 # v1.0.6
@@ -44,3 +75,14 @@ jobs:
           docker run --rm -e CARGO_REGISTRY_TOKEN \
             -v "$PWD:/work/tauten" -w /work/tauten tauten-tools:local \
             cargo publish --workspace --locked
+
+  # Rehearsal only: reached under exactly the conditions `publish` is, and
+  # publishes nothing (no OIDC permission, no token).
+  rehearse:
+    needs: [gate, proofs]
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Publish would run now
+        run: echo "gate and full proofs passed on ${GITHUB_SHA}; a tag push would publish this commit"

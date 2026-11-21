@@ -6,7 +6,9 @@ name: proofs
 # axiom, constructor and coverage audit, mutant calibration (kernel and
 # macro-source mutants). Separate from the `gate` workflow; runs only when
 # the proved code, the macros, the tauten runtime they call or the proofs
-# change, nightly, and on demand.
+# change, nightly, on demand, and from `release.yml` on the exact tag commit,
+# where publishing waits for it (#53). Always the full gate: every stage and
+# every mutant, never the ship level.
 on:
   push:
     branches: [main]
@@ -30,13 +32,17 @@ on:
   schedule:
     - cron: "17 3 * * *"
   workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: read
   packages: read
 
+# Called from release.yml, github.workflow is `release` and github.ref the
+# tag (or the rehearsed branch), so a release run never shares a group with,
+# or is cancelled by, the proofs runs on pushes to main.
 concurrency:
-  group: proofs-${{ github.ref }}
+  group: ${{ github.workflow }}-proofs-${{ github.ref }}
   cancel-in-progress: true
 
 env:
@@ -45,7 +51,9 @@ env:
 jobs:
   proofs:
     runs-on: ubuntu-24.04
-    timeout-minutes: 60
+    # A full run takes about an hour on a hosted runner; 60 minutes cancelled
+    # runs that would have passed. A timeout is still a failure, never a pass.
+    timeout-minutes: 150
     steps:
       - name: Free disk space for the proofs image (about 20 GB unpacked)
         run: |
