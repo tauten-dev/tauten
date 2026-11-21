@@ -54,7 +54,11 @@ workspace rustc wrapper, adding each crate's tier lints and a generated clippy
 configuration. Deleting or loosening a project's own `clippy.toml` or `[lints]`
 table does not weaken the check. Exceptions are possible only as
 `#[expect(lint, reason = "...")]` on the smallest item, and never for stubs,
-`unsafe` outside the edge, or anything in a kernel crate.
+`unsafe` outside the edge, or anything in a kernel crate. There is one
+narrow file-level exception (TAU-X001, #59). A helper module under
+`tests/` or `benches/` that several test targets include, and that is not
+itself a target root, may carry a reasoned `#![allow(dead_code, reason =
+"...")]`. No other lint, file or form is accepted.
 
 Every rule says what decides it (rustc, clippy, a tauten structural check,
 or convention), exactly what it decides, what it reads and what it does not

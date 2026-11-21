@@ -13,6 +13,7 @@ import Tauten.Outcome
 import Tauten.Span
 import Tauten.Control
 import Tauten.Binding
+import Tauten.Helpers
 import Tauten.Badge
 import Tauten.Registry
 import Tauten.Assumption

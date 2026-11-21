@@ -355,8 +355,58 @@ def binding.same_bytes
   then ok false
   else binding.same_bytes_loop a b true 0#usize
 
-/-- [tauten_check_kernel::binding::has_key]: loop body 0:
+/-- [tauten_check_kernel::binding::contains_bytes]: loop body 0:
     Source: 'crates/tauten-check-kernel/src/binding.rs', lines 48:4-53:5
+    Visibility: public -/
+@[rust_loop_body]
+def binding.contains_bytes_loop.body
+  (list : Slice (alloc.vec.Vec Std.U8)) (item : Slice Std.U8) (found : Bool)
+  (i : Std.Usize) :
+  Result (ControlFlow (Bool × Std.Usize) Bool)
+  := do
+  let i1 := Slice.len list
+  if i < i1
+  then
+    let o ←
+      core.slice.Slice.get (core.slice.index.SliceIndexUsizeSlice
+        (alloc.vec.Vec Std.U8)) list i
+    let found1 ←
+      match o with
+      | none => ok found
+      | some x =>
+        if found
+        then ok true
+        else let s := alloc.vec.Vec.deref x
+             binding.same_bytes s item
+    let i2 ← lift (core.num.Usize.saturating_add i 1#usize)
+    ok (cont (found1, i2))
+  else ok (done found)
+
+/-- [tauten_check_kernel::binding::contains_bytes]: loop 0:
+    Source: 'crates/tauten-check-kernel/src/binding.rs', lines 48:4-53:5
+    Visibility: public -/
+@[rust_loop]
+def binding.contains_bytes_loop
+  (list : Slice (alloc.vec.Vec Std.U8)) (item : Slice Std.U8) (found : Bool)
+  (i : Std.Usize) :
+  Result Bool
+  := do
+  loop
+    (fun (found1, i1) => binding.contains_bytes_loop.body list item found1 i1)
+    (found, i)
+
+/-- [tauten_check_kernel::binding::contains_bytes]:
+    Source: 'crates/tauten-check-kernel/src/binding.rs', lines 45:0-55:1
+    Visibility: public -/
+@[reducible]
+def binding.contains_bytes
+  (list : Slice (alloc.vec.Vec Std.U8)) (item : Slice Std.U8) :
+  Result Bool
+  := do
+  binding.contains_bytes_loop list item false 0#usize
+
+/-- [tauten_check_kernel::binding::has_key]: loop body 0:
+    Source: 'crates/tauten-check-kernel/src/binding.rs', lines 62:4-67:5
     Visibility: public -/
 @[rust_loop_body]
 def binding.has_key_loop.body
@@ -381,7 +431,7 @@ def binding.has_key_loop.body
   else ok (done found)
 
 /-- [tauten_check_kernel::binding::has_key]: loop 0:
-    Source: 'crates/tauten-check-kernel/src/binding.rs', lines 48:4-53:5
+    Source: 'crates/tauten-check-kernel/src/binding.rs', lines 62:4-67:5
     Visibility: public -/
 @[rust_loop]
 def binding.has_key_loop
@@ -394,7 +444,7 @@ def binding.has_key_loop
     (found, i)
 
 /-- [tauten_check_kernel::binding::has_key]:
-    Source: 'crates/tauten-check-kernel/src/binding.rs', lines 45:0-55:1
+    Source: 'crates/tauten-check-kernel/src/binding.rs', lines 59:0-69:1
     Visibility: public -/
 @[reducible]
 def binding.has_key
@@ -402,7 +452,7 @@ def binding.has_key
   binding.has_key_loop list key false 0#usize
 
 /-- [tauten_check_kernel::binding::agrees]: loop body 0:
-    Source: 'crates/tauten-check-kernel/src/binding.rs', lines 62:4-67:5
+    Source: 'crates/tauten-check-kernel/src/binding.rs', lines 76:4-81:5
     Visibility: public -/
 @[rust_loop_body]
 def binding.agrees_loop.body
@@ -432,7 +482,7 @@ def binding.agrees_loop.body
   else ok (done ok1)
 
 /-- [tauten_check_kernel::binding::agrees]: loop 0:
-    Source: 'crates/tauten-check-kernel/src/binding.rs', lines 62:4-67:5
+    Source: 'crates/tauten-check-kernel/src/binding.rs', lines 76:4-81:5
     Visibility: public -/
 @[rust_loop]
 def binding.agrees_loop
@@ -445,7 +495,7 @@ def binding.agrees_loop
     (ok1, i)
 
 /-- [tauten_check_kernel::binding::agrees]:
-    Source: 'crates/tauten-check-kernel/src/binding.rs', lines 59:0-69:1
+    Source: 'crates/tauten-check-kernel/src/binding.rs', lines 73:0-83:1
     Visibility: public -/
 @[reducible]
 def binding.agrees
@@ -455,7 +505,7 @@ def binding.agrees
   binding.agrees_loop list key bytes true 0#usize
 
 /-- [tauten_check_kernel::binding::covered]: loop body 0:
-    Source: 'crates/tauten-check-kernel/src/binding.rs', lines 76:4-81:5
+    Source: 'crates/tauten-check-kernel/src/binding.rs', lines 90:4-95:5
     Visibility: public -/
 @[rust_loop_body]
 def binding.covered_loop.body
@@ -488,7 +538,7 @@ def binding.covered_loop.body
   else ok (done ok1)
 
 /-- [tauten_check_kernel::binding::covered]: loop 0:
-    Source: 'crates/tauten-check-kernel/src/binding.rs', lines 76:4-81:5
+    Source: 'crates/tauten-check-kernel/src/binding.rs', lines 90:4-95:5
     Visibility: public -/
 @[rust_loop]
 def binding.covered_loop
@@ -501,7 +551,7 @@ def binding.covered_loop
     (ok1, i)
 
 /-- [tauten_check_kernel::binding::covered]:
-    Source: 'crates/tauten-check-kernel/src/binding.rs', lines 73:0-83:1
+    Source: 'crates/tauten-check-kernel/src/binding.rs', lines 87:0-97:1
     Visibility: public -/
 @[reducible]
 def binding.covered
@@ -511,7 +561,7 @@ def binding.covered
   binding.covered_loop recorded current true 0#usize
 
 /-- [tauten_check_kernel::binding::present]: loop body 0:
-    Source: 'crates/tauten-check-kernel/src/binding.rs', lines 90:4-95:5
+    Source: 'crates/tauten-check-kernel/src/binding.rs', lines 104:4-109:5
     Visibility: public -/
 @[rust_loop_body]
 def binding.present_loop.body
@@ -536,7 +586,7 @@ def binding.present_loop.body
   else ok (done ok1)
 
 /-- [tauten_check_kernel::binding::present]: loop 0:
-    Source: 'crates/tauten-check-kernel/src/binding.rs', lines 90:4-95:5
+    Source: 'crates/tauten-check-kernel/src/binding.rs', lines 104:4-109:5
     Visibility: public -/
 @[rust_loop]
 def binding.present_loop
@@ -549,7 +599,7 @@ def binding.present_loop
     (ok1, i)
 
 /-- [tauten_check_kernel::binding::present]:
-    Source: 'crates/tauten-check-kernel/src/binding.rs', lines 87:0-97:1
+    Source: 'crates/tauten-check-kernel/src/binding.rs', lines 101:0-111:1
     Visibility: public -/
 @[reducible]
 def binding.present
@@ -559,7 +609,7 @@ def binding.present
   binding.present_loop recorded current true 0#usize
 
 /-- [tauten_check_kernel::binding::fresh]:
-    Source: 'crates/tauten-check-kernel/src/binding.rs', lines 101:0-103:1
+    Source: 'crates/tauten-check-kernel/src/binding.rs', lines 115:0-117:1
     Visibility: public -/
 def binding.fresh
   (recorded : Slice binding.Binding) (current : Slice binding.Binding) :
@@ -569,6 +619,25 @@ def binding.fresh
   if b
   then binding.present recorded current
   else ok false
+
+/-- [tauten_check_kernel::budget::charge]:
+    Source: 'crates/tauten-check-kernel/src/budget.rs', lines 15:0-17:1
+    Visibility: public -/
+def budget.charge
+  (left : Std.U64) (cost : Std.U64) : Result (Option Std.U64) := do
+  ok (U64.checked_sub left cost)
+
+/-- [tauten_check_kernel::budget::charge_repeated]:
+    Source: 'crates/tauten-check-kernel/src/budget.rs', lines 22:0-27:1
+    Visibility: public -/
+def budget.charge_repeated
+  (left : Std.U64) (cost : Std.U64) (times : Std.U64) :
+  Result (Option Std.U64)
+  := do
+  let o ← lift (U64.checked_mul cost times)
+  match o with
+  | none => ok none
+  | some total => ok (U64.checked_sub left total)
 
 /-- [tauten_check_kernel::compiler::MsgLevel]
     Source: 'crates/tauten-check-kernel/src/compiler.rs', lines 20:0-27:1
@@ -2563,5 +2632,32 @@ def tiers.may_depend_on
   let i ← tiers.rank dep
   let i1 ← tiers.rank of
   ok (i <= i1)
+
+/-- [tauten_check_kernel::version::Admission]
+    Source: 'crates/tauten-check-kernel/src/version.rs', lines 15:0-24:1
+    Visibility: public -/
+@[discriminant isize]
+inductive version.Admission where
+| Admitted : version.Admission
+| Newer : version.Admission
+| Older : version.Admission
+| Absent : version.Admission
+
+/-- [tauten_check_kernel::version::admit]:
+    Source: 'crates/tauten-check-kernel/src/version.rs', lines 28:0-41:1
+    Visibility: public -/
+def version.admit
+  (found : Option Std.U32) (oldest : Std.U32) (newest : Std.U32) :
+  Result version.Admission
+  := do
+  match found with
+  | none => ok version.Admission.Absent
+  | some v =>
+    if v > newest
+    then ok version.Admission.Newer
+    else
+      if v < oldest
+      then ok version.Admission.Older
+      else ok version.Admission.Admitted
 
 end tauten_check_kernel

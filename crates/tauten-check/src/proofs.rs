@@ -331,9 +331,10 @@ pub enum ClaimsError {
     /// Not valid TOML for the schema.
     #[error("proofs/claims.toml is not valid: {0}")]
     Parse(#[from] toml::de::Error),
-    /// Unknown format version.
-    #[error("unsupported proofs/claims.toml version {0}")]
-    Version(u32),
+    /// A format version this tauten does not read (newer, older or
+    /// missing), decided by the kernel's `version::admit`.
+    #[error("{0}")]
+    Version(String),
     /// The gate command is empty.
     #[error("[gate] command is empty")]
     NoCommand,
@@ -360,10 +361,15 @@ impl ClaimsFile {
     /// a `total` that is not among its theorems, a `subsumes` rule other
     /// than TAU-N001/TAU-P003 or without `total`, or a function claimed twice.
     pub fn parse(text: &str) -> Result<Self, ClaimsError> {
+        let table: toml::Table = toml::from_str(text)?;
+        crate::format::check(
+            "proofs/claims.toml",
+            crate::format::toml_version(&table),
+            1,
+            2,
+        )
+        .map_err(ClaimsError::Version)?;
         let file: Self = toml::from_str(text)?;
-        if !matches!(file.version, 1 | 2) {
-            return Err(ClaimsError::Version(file.version));
-        }
         if file.gate.command.is_empty() {
             return Err(ClaimsError::NoCommand);
         }
@@ -1283,6 +1289,32 @@ pub struct Record {
     pub commit: Option<String>,
 }
 
+impl Record {
+    /// The newest result format this tauten reads and writes.
+    pub const VERSION: u32 = 1;
+
+    /// Parse a recorded or shipped `claims.json` result, refusing a format
+    /// version this tauten does not read (A10).
+    ///
+    /// # Errors
+    ///
+    /// Malformed JSON, or an unsupported or missing version.
+    pub fn parse(text: &str) -> Result<Self, String> {
+        let value: serde_json::Value = serde_json::from_str(text).map_err(|e| e.to_string())?;
+        Self::from_value(value)
+    }
+
+    fn from_value(value: serde_json::Value) -> Result<Self, String> {
+        crate::format::check(
+            "claims.json",
+            crate::format::json_version(&value),
+            1,
+            Self::VERSION,
+        )?;
+        serde_json::from_value(value).map_err(|e| e.to_string())
+    }
+}
+
 /// The provisional record `cargo tauten proofs reconcile` writes after a
 /// two-parent merge (#50, RFC 2026-11-21-recover-proof-records): the
 /// resolved claim declarations, already checked against both parents'
@@ -1327,10 +1359,14 @@ impl RecordFile {
     pub fn parse(text: &str) -> Result<Self, String> {
         let value: serde_json::Value = serde_json::from_str(text).map_err(|e| e.to_string())?;
         if value.get("state").is_none() {
-            return serde_json::from_value(value)
-                .map(Self::Result)
-                .map_err(|e| e.to_string());
+            return Record::from_value(value).map(Self::Result);
         }
+        crate::format::check(
+            "a pending proofs/claims.json",
+            crate::format::json_version(&value),
+            2,
+            2,
+        )?;
         let pending: Pending = serde_json::from_value(value).map_err(|e| e.to_string())?;
         if pending.state != PENDING_MERGE || pending.version != 2 {
             return Err(format!(

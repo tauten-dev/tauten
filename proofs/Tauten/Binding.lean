@@ -10,6 +10,8 @@ depends on; the extracted `fresh` decides whether it may be reused.
 Proved here, over the extracted functions:
 * `same_bytes_spec`: `same_bytes a b` exactly when `a` and `b` are the same
   byte string (length included).
+* `contains_bytes_spec`: `contains_bytes list item` exactly when `item` is one of
+  the byte strings in `list`.
 * `fresh_iff`: fresh exactly when every current input is recorded, every
   recorded input still exists, and every recorded binding has the same
   bytes as each current binding with its key.
@@ -99,6 +101,27 @@ theorem same_bytes_spec (a b : Slice Std.U8) :
     simp only [hne, ite_true, WP.spec_ok]
     have : a.val ≠ b.val := fun h => hl (by rw [h])
     simp [this]
+
+/-- `contains_bytes list item` exactly when some entry of `list` is the byte
+string `item` (A10, #14). -/
+theorem contains_bytes_spec (l : Slice (alloc.vec.Vec Std.U8)) (item : Slice Std.U8) :
+    binding.contains_bytes l item ⦃ r => r = l.val.any (fun x => decide (x.val = item.val)) ⦄ := by
+  unfold binding.contains_bytes binding.contains_bytes_loop
+  apply WP.spec_mono (fold_loop l (fun a x => a || decide (x.val = item.val)) _ ?_ ?_
+    false 0#usize (by simp))
+  · intro r hr; rw [hr, foldl_or]; simp
+  · intro s i h
+    have hlt : i < Slice.len l := by scalar_tac
+    simp only [binding.contains_bytes_loop.body, hlt, ite_true, get_ok l i h, bind_ok, lift]
+    cases s
+    · simp only [Bool.false_eq_true, ite_false]
+      apply WP.spec_bind (same_bytes_spec _ item)
+      intro b hb
+      simp [hb, vec_deref_val]
+    · simp
+  · intro s i h
+    have hlt : ¬ i < Slice.len l := by scalar_tac
+    simp only [binding.contains_bytes_loop.body, hlt, ite_false, WP.spec_ok]
 
 /-! ## Models -/
 

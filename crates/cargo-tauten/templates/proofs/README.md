@@ -65,6 +65,36 @@ resting on a new assumption), are listed on stderr. A custom gate can pass
 `mutants`) instead; every reference is checked against the translation and
 the audit.
 
+## What a result means
+
+Three checks are easy to confuse; each answers a different question.
+
+- **Check-time subsumption is not a proof run.** `cargo tauten check` never
+  runs Lean. It reads the recorded `claims.json` and reports an N001/P003
+  finding as subsumed only when its function has a claim that is `proved`,
+  `total`, and fresh for the current source. Edit the function and the
+  finding comes back until the gate records again.
+- **A ship-level record reuses mutant kills.** `cargo tauten proofs --level
+  ship` runs extract, drift, build and audit on every claim, but re-runs
+  only the mutants of claims whose recorded inputs changed; the other kills
+  come from the previous record. `--level full` re-runs every mutant. The
+  record says which level produced it.
+- **Direct and dependent failures differ.** A mutant can break a theorem
+  directly (its own proof fails) or only through a lemma it uses (the
+  failed lemma becomes `sorryAx`). The gate reports both lists. A
+  `[[mutant]]` with `direct = [...]` must break exactly those declarations
+  directly. Without `direct`, any break of a listed claim counts.
+- **Compiling a fresh translation is not comparing it.** `cargo tauten
+  proofs extract` (and `check --extract`) translates the crates and
+  compiles the result in Lean, which catches untranslatable code quickly.
+  The gate's drift stage instead compares the fresh translation, byte for
+  byte, with the committed `Extracted/`. Only the full gate does both and
+  then builds the proofs.
+
+A claim's badge (`proved`, or `proved-under` named assumptions) and its
+outcome are separate fields. `proved-under` is conditional: it holds only
+where those assumptions hold.
+
 ## Iterating on one proof
 
 `cargo tauten proofs try --theorems <Lean name>…` (or `--mutants <name>…`)

@@ -4,7 +4,7 @@ members = ["crates/*"]
 exclude = ["fixtures", "proofs"]
 
 [workspace.package]
-version = "0.0.6"
+version = "0.1.0"
 edition = "2024"
 rust-version = "1.98"
 license = "MIT"
@@ -12,8 +12,8 @@ repository = "https://github.com/tauten-dev/tauten"
 homepage = "https://tauten.dev"
 
 [workspace.dependencies]
-tauten-check-kernel = { path = "crates/tauten-check-kernel", version = "0.0.6" }
-tauten-check = { path = "crates/tauten-check", version = "0.0.6" }
+tauten-check-kernel = { path = "crates/tauten-check-kernel", version = "0.1.0" }
+tauten-check = { path = "crates/tauten-check", version = "0.1.0" }
 
 # TAU-H001: release builds check integer overflow.
 [profile.release]

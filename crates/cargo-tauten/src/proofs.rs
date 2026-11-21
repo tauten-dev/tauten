@@ -532,7 +532,7 @@ fn dependency_record(root: &Path, krate: &str) -> Result<(Option<String>, Option
         .map(|p| -> Result<Record> {
             let text =
                 fs::read_to_string(&p).with_context(|| format!("reading {}", p.display()))?;
-            serde_json::from_str(&text).with_context(|| format!("parsing {}", p.display()))
+            Record::parse(&text).map_err(|e| anyhow::anyhow!("{}: {e}", p.display()))
         })
         .transpose()?;
     Ok((Some(package.version.to_string()), shipped))

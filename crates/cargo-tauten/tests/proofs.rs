@@ -569,5 +569,10 @@ open({lib:?}, "a").write("// edited during the run\n")
         )
         .expect("tauten ships its claims");
         assert!(shipped.contains("\"function\": \"step\""));
+        // A shared kernel helper (A10, #14): proved without assumptions.
+        let helper: serde_json::Value =
+            serde_json::from_str(text.lines().nth(1).expect("a second record")).expect("json");
+        assert_eq!(helper["function"], "charge");
+        assert_eq!(helper["badge"], "proved", "{helper}");
     }
 }

@@ -9,3 +9,4 @@ tier = "core"
 
 [dependencies]
 tauten = { path = "../../../crates/tauten" }
+tauten-check-kernel = { path = "../../../crates/tauten-check-kernel" }

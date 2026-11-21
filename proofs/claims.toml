@@ -301,6 +301,40 @@ lean = "tauten_check_kernel.binding.same_bytes"
 theorems = ["Tauten.Kernel.same_bytes_spec"]
 mutants = ["last-byte-ignored", "length-ignored"]
 
+# Shared helpers for other kernels (A10, #14): a consumer cites these
+# through `inherit`.
+[[claim]]
+crate = "tauten-check-kernel"
+file = "crates/tauten-check-kernel/src/binding.rs"
+function = "contains_bytes"
+lean = "tauten_check_kernel.binding.contains_bytes"
+theorems = ["Tauten.Kernel.contains_bytes_spec"]
+mutants = ["contains-last-only"]
+
+[[claim]]
+crate = "tauten-check-kernel"
+file = "crates/tauten-check-kernel/src/budget.rs"
+function = "charge"
+lean = "tauten_check_kernel.budget.charge"
+theorems = ["Tauten.Kernel.charge_spec", "Tauten.Kernel.charges_never_exceed_initial"]
+mutants = ["charge-saturates"]
+
+[[claim]]
+crate = "tauten-check-kernel"
+file = "crates/tauten-check-kernel/src/budget.rs"
+function = "charge_repeated"
+lean = "tauten_check_kernel.budget.charge_repeated"
+theorems = ["Tauten.Kernel.charge_repeated_no_overflow"]
+mutants = ["repeat-charged-once"]
+
+[[claim]]
+crate = "tauten-check-kernel"
+file = "crates/tauten-check-kernel/src/version.rs"
+function = "admit"
+lean = "tauten_check_kernel.version.admit"
+theorems = ["Tauten.Kernel.version_admit_total", "Tauten.Kernel.version_admit_spec", "Tauten.Kernel.never_admits_newer", "Tauten.Kernel.absent_is_invalid"]
+mutants = ["newer-admitted", "absent-admitted"]
+
 [[claim]]
 crate = "tauten-check-kernel"
 file = "crates/tauten-check-kernel/src/badge.rs"

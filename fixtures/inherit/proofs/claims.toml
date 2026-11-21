@@ -12,4 +12,15 @@ function = "step"
 lean = "tauten.publish.step"
 theorems = []
 mutants = []
-inherit = "tauten@0.0.6:step"
+inherit = "tauten@0.1.0:step"
+
+# A shared kernel helper (A10, #14), inherited from the claims.json that
+# tauten-check-kernel ships.
+[[claim]]
+crate = "consumer"
+file = "consumer/src/lib.rs"
+function = "charge"
+lean = "tauten_check_kernel.budget.charge"
+theorems = []
+mutants = []
+inherit = "tauten-check-kernel@0.1.0:charge"

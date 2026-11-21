@@ -1,6 +1,25 @@
 # Changelog
 
-## Unreleased
+## 0.1.0 (2026-11-21)
+
+Milestone 0.1.0: #54, #55, #58, #14 and #38. The publish driver (#13), the
+shared proof gate (#35) and bounded capability reads (#64) moved to 0.2.
+
+- Shared proved helpers for other kernels (A10, #14), in
+  `tauten-check-kernel` (no new crate): `binding::contains_bytes`
+  (`contains_bytes_spec`), `budget::charge` and `budget::charge_repeated`
+  over checked arithmetic (`charge_spec`, `charges_never_exceed_initial`,
+  `charge_repeated_no_overflow`), and `version::admit` (`version_admit_total`,
+  `version_admit_spec`, `never_admits_newer`, `absent_is_invalid`). Five new
+  mutants. A consumer kernel cites them with `inherit =
+  "tauten-check-kernel@<version>:<function>"`, against the `claims.json`
+  that `tauten-check-kernel` now ships. tauten reads `proofs/claims.toml`,
+  `claims.json` (recorded, shipped or pending) and the baseline through
+  `version::admit` (new module `tauten_check::format`): a file from a newer
+  tauten is refused with "upgrade cargo-tauten" instead of being read as
+  the current format, and a missing version is an error.
+  `ClaimsError::Version` now carries the message, and `Record::parse` is new.
+  The bounded `ReadDir` reads and `Env::only` moved to 0.2 (#64).
 
 - Publishing to an absent target, proved (#58, RFC
   `2026-11-21-publish-absent-target`). Companion theorems in

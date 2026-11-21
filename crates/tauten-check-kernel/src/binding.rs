@@ -40,6 +40,20 @@ pub fn same_bytes(a: &[u8], b: &[u8]) -> bool {
     same
 }
 
+/// Whether `item` is one of the byte strings in `list`.
+#[must_use]
+pub fn contains_bytes(list: &[Vec<u8>], item: &[u8]) -> bool {
+    let mut found = false;
+    let mut i: usize = 0;
+    while i < list.len() {
+        if let Some(x) = list.get(i) {
+            found = found || same_bytes(x, item);
+        }
+        i = i.saturating_add(1);
+    }
+    found
+}
+
 /// Whether some binding in `list` has `key`.
 #[must_use]
 pub fn has_key(list: &[Binding], key: usize) -> bool {

@@ -1051,6 +1051,40 @@ fn a_pending_merge_record_is_never_a_result() {
     assert!(RecordFile::parse(v1).expect("v1").result().is_some());
 }
 
+/// A10 (#14): every versioned file is admitted by the kernel's
+/// `version::admit`; a file from a newer tauten is refused, never read.
+#[test]
+fn newer_or_missing_versions_are_refused() {
+    let newer = CLAIMS.replacen("version = 1", "version = 3", 1);
+    assert_ne!(newer, CLAIMS);
+    let error = ClaimsFile::parse(&newer).expect_err("newer claims.toml");
+    assert!(
+        error.to_string().contains("newer than this tauten reads"),
+        "{error}"
+    );
+    let none = CLAIMS.replacen("version = 1", "", 1);
+    let error = ClaimsFile::parse(&none).expect_err("no version");
+    assert!(error.to_string().contains("no format version"), "{error}");
+
+    let v2 = r#"{"version":2,"generated_by":"cargo tauten proofs","claims":[]}"#;
+    assert!(Record::parse(v2).expect_err("newer").contains("newer"));
+    assert!(RecordFile::parse(v2).expect_err("newer").contains("newer"));
+    let v0 = r#"{"version":0,"generated_by":"cargo tauten proofs","claims":[]}"#;
+    assert!(Record::parse(v0).expect_err("older").contains("older"));
+    let missing = r#"{"generated_by":"cargo tauten proofs","claims":[]}"#;
+    assert!(
+        Record::parse(missing)
+            .expect_err("missing")
+            .contains("no format version")
+    );
+    let pending = r#"{"version":3,"state":"pending-merge","parents":["a","b"],"registry":[]}"#;
+    assert!(
+        RecordFile::parse(pending)
+            .expect_err("newer")
+            .contains("newer")
+    );
+}
+
 #[test]
 fn both_parents_must_conserve() {
     let fine = Conservation::default();

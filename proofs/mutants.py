@@ -311,12 +311,12 @@ BINDING_MUTANTS = (
     Mutant("last-byte-ignored", "binding.rs",
            "    while i < a.len() {\n        if let (Some(x), Some(y))",
            "    while i < a.len().saturating_sub(1) {\n        if let (Some(x), Some(y))",
-           (T + "same_bytes_spec",) + (T + "fresh_iff", T + "missing_key_never_fresh", T + "extra_key_never_fresh", T + "changed_never_fresh")),
+           (T + "same_bytes_spec", T + "contains_bytes_spec") + (T + "fresh_iff", T + "missing_key_never_fresh", T + "extra_key_never_fresh", T + "changed_never_fresh")),
     # binding: byte strings of different lengths can compare equal
     Mutant("length-ignored", "binding.rs",
            "    if a.len() != b.len() {\n        return false;\n    }",
            "",
-           (T + "same_bytes_spec",) + (T + "fresh_iff", T + "missing_key_never_fresh", T + "extra_key_never_fresh", T + "changed_never_fresh")),
+           (T + "same_bytes_spec", T + "contains_bytes_spec") + (T + "fresh_iff", T + "missing_key_never_fresh", T + "extra_key_never_fresh", T + "changed_never_fresh")),
     # binding: a current input the record does not mention is accepted
     Mutant("missing-key-accepted", "binding.rs",
            "            ok = ok && has_key(recorded, c.key) && agrees(recorded, c.key, &c.bytes);",
@@ -332,6 +332,31 @@ BINDING_MUTANTS = (
            "            ok = ok && (b.key != key || same_bytes(&b.bytes, bytes));",
            "            ok = ok && (b.key != key || b.bytes.len() == bytes.len());",
            (T + "fresh_iff", T + "missing_key_never_fresh", T + "extra_key_never_fresh", T + "changed_never_fresh")),
+    # binding: only the last entry is compared (A10, #14)
+    Mutant("contains-last-only", "binding.rs",
+           "            found = found || same_bytes(x, item);",
+           "            found = same_bytes(x, item);",
+           (T + "contains_bytes_spec",)),
+    # budget: an overdraft saturates to zero instead of being refused (A10)
+    Mutant("charge-saturates", "budget.rs",
+           "    left.checked_sub(cost)",
+           "    Some(left.saturating_sub(cost))",
+           (T + "charge_spec", T + "charges_never_exceed_initial")),
+    # budget: a repeated charge is charged only once (A10)
+    Mutant("repeat-charged-once", "budget.rs",
+           "        Some(total) => left.checked_sub(total),",
+           "        Some(_) => left.checked_sub(cost),",
+           (T + "charge_repeated_no_overflow",)),
+    # version: one version newer than the newest supported is admitted (A10)
+    Mutant("newer-admitted", "version.rs",
+           "            if v > newest {",
+           "            if v > newest.saturating_add(1) {",
+           (T + "version_admit_total", T + "version_admit_spec", T + "never_admits_newer")),
+    # version: a file without a version is admitted (A10)
+    Mutant("absent-admitted", "version.rs",
+           "        None => Admission::Absent,",
+           "        None => Admission::Admitted,",
+           (T + "version_admit_spec", T + "absent_is_invalid")),
 )
 
 REGISTRY = (T + "kept_spec", T + "conserves_spec", T + "conserves_iff", T + "conserves_refl", T + "amendment_is_explicit")
