@@ -8,13 +8,12 @@ Updated 2026-11-21. Settled items are kept at the bottom for the record.
 |---|---|---|---|
 | 1 | **Triage of 2026-11-20** (Fable plan, applied): milestone 0.0.5 = #21, #46, #42, #39, #36, #48; #40 and #47 merged into #39; #43 (size budgets) and #45 (build-cache budget) declined and parked in #30; #46 reworded from a keyword table to "the fast stage builds the extracted Lean". | Confirms the milestone | Reopen anything you disagree with. |
 | 2 | **Maintenance chains (E2).** Tests whether the bounds E1 relied on survive later edits: 5-8 fresh sessions each adding a feature to one repo, union oracle at the end, arms A vs C. | The only remaining defect-reduction question | Decide whether it is worth a budget; not started. |
-| 3 | [Result/world induction](rfcs/2026-11-21-result-world-induction.md), [#60](https://github.com/tauten-dev/tauten/issues/60): document the existing recursor or also export a named theorem? | A proof-only adoption aid; not a Gripsack release dependency | Compare the same partial-step example both ways. Add the lemma only if it removes actual induction boilerplate. |
-| 4 | [Bounded capability reads](rfcs/2026-11-21-bounded-capability-reads.md), [#64](https://github.com/tauten-dev/tauten/issues/64): require `Limit<Bytes>` on both `ReadDir` reads at the minor break? | The 0.2 capability API and migration docs | Require the argument, a distinct too-large error and explicit snapshot attenuation; do not offer an unbounded overload. |
 
 ## Settled
 
 | Item | Decision |
 |---|---|
+| 0.2 grooming (2026-11-21) | Owner delegated execution; on a Fable review: both 0.2 RFCs accepted with amendments ([result/world induction](rfcs/2026-11-21-result-world-induction.md): ship `rsys_inv_of_step` plus a miniature; [bounded reads](rfcs/2026-11-21-bounded-capability-reads.md): require `Limit<Bytes>`, `#[non_exhaustive]` `ReadError` convertible to `io::Error`); #35 to later; #66 split (#68); #62 pulled in as a stretch; release issue #70; Gripsack follow-up #69 |
 | Repositioning | Code discipline + proofs; defect reduction only as a side effect (2026-11-19) |
 | Discipline plan | `docs/DISCIPLINE-PROPOSAL.md` approved: D0, then X1-X3, then D1-D8 (2026-11-19) |
 | Verus / TLAPS | No adapters for now; claims format reserves the tool names (2026-11-19) |

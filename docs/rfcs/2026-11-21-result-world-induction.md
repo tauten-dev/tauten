@@ -1,7 +1,7 @@
 ---
 rfc: "2026-11-21-result-world-induction"
 title: "Prove a world invariant directly over successful extracted steps"
-status: draft
+status: accepted
 implementation: not-started
 authors:
   - astra
@@ -11,8 +11,7 @@ issue: https://github.com/tauten-dev/tauten/issues/60
 milestone: "0.2"
 supersedes: []
 superseded_by: []
-blocked_on:
-  - "Owner choice: one additive Lean lemma, or a worked use of the existing recursor only"
+blocked_on: []
 ---
 
 # RFC: Prove a world invariant directly over successful extracted steps
@@ -49,8 +48,9 @@ Each premise corresponds to a constructor. `fail` and divergence do not produce 
 
 A short, compiling example using `RSysReachable` induction alone is the no-new-API alternative. Prefer it if the named lemma does not save expressing the constructor plumbing in a real proof. `rinv_of_step` has no world; requiring `rsys_of_model` excludes genuinely partial steps; building a recovery framework addresses a different problem ([#18](https://github.com/tauten-dev/tauten/issues/18)).
 
-For 0.2, show both proof shapes for the example, then let the owner choose example-only or the additive theorem. If the latter, ship the audited source and matching template, not a new crate, format or command. Old pins and proof records stay valid; an adopter can substitute direct induction if it cannot update. No Gripsack migration, tag or host proof is required for Tauten's release.
+For 0.2, ship the additive theorem: it is the missing fourth corner beside `inv_of_step`, `rinv_of_step` and `sys_inv_of_step`, and its premises match the `RSysReachable` constructors one to one, so it costs one three-case induction. The direct-induction miniature stays in the documentation as the no-new-API alternative. Ship the audited source and matching template, not a new crate, format or command. Old pins and proof records stay valid; an adopter can substitute direct induction if it cannot update. No Gripsack migration, tag or host proof is required for Tauten's release.
 
 ## Decision log
 
 - 2026-11-21: drafted for [#60](https://github.com/tauten-dev/tauten/issues/60), following the concrete proof-only use in [Gripsack #366](https://github.com/gripsack-dev/gripsack/issues/366). Owner decision pending.
+- 2026-11-21: **accepted, amended** (the owner delegated 0.2 grooming decisions to the executing agent after a Fable review): decide for the lemma instead of comparing first; keep the direct-induction miniature as the documented alternative; the lemma joins the `Audit.lean` axiom audit and the existing template parity test. The adopter trial is a follow-up ([#69](https://github.com/tauten-dev/tauten/issues/69)); `implementation` becomes `partial` after landing, `complete` once an adopter reports.
