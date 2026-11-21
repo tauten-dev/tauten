@@ -1,7 +1,7 @@
 ---
 rfc: "2026-11-21-draft-claim-entries"
 title: "Draft claim entries from checked declarations"
-status: draft
+status: accepted
 implementation: not-started
 authors:
   - astra
@@ -59,3 +59,4 @@ A whole-file generator would overwrite reviewed obligations. Predicting failures
 ## Decision log
 
 - 2026-11-21: proposed for review; no implementation or owner acceptance.
+- 2026-11-21: accepted by the owner as proposed: a patch-only `cargo tauten proofs draft` plus an opt-in inventory adapter, not a writer or a project-specific integration.

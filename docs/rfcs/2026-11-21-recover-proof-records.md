@@ -1,8 +1,8 @@
 ---
 rfc: "2026-11-21-recover-proof-records"
 title: "Recover proof records after an unavailable tool or a merge"
-status: draft
-implementation: not-started
+status: accepted
+implementation: in-progress
 authors:
   - astra
 created: 2026-11-21
@@ -57,3 +57,4 @@ Choosing `ours`/`theirs` loses obligations or imports stale evidence. Deleting t
 ## Decision log
 
 - 2026-11-21: proposed for review; no implementation or owner acceptance.
+- 2026-11-21: accepted by the owner as proposed, including the explicit provisional `pending-merge` record format and the first-merge recalibration cost. The single-branch retry (#52) is implemented first; the two-parent reconcile (#50) follows.
