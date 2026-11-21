@@ -30,6 +30,9 @@ cargo build --locked --workspace --all-targets
 step "tests (unit + fixture suite)"
 cargo test --locked --workspace
 
+step "api docs: rustdoc builds every crate without warnings (#65)"
+RUSTDOCFLAGS="-D warnings" cargo doc --locked --no-deps --workspace --all-features
+
 step "self-check: tauten's own profile on tauten"
 cargo run --locked --quiet -p cargo-tauten -- tauten check
 

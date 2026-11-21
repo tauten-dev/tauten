@@ -4,7 +4,7 @@
 //! function, the Lean theorems stated over its Charon/Aeneas translation
 //! and the source mutants that must break them. `cargo tauten proofs` runs
 //! the project's proof gate, reads the result lines it prints (see
-//! [`Event`]), decides one [`Outcome`] per claim ([`outcomes`]) and records
+//! [`Event`]), decides one [`Outcome`] per claim ([`outcome`]) and records
 //! them in `proofs/claims.json` together with a fingerprint of the sources
 //! the gate saw. That file is also the data the website's "Proved" badges
 //! are generated from.

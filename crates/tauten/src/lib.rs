@@ -5,7 +5,7 @@
 //!   capabilities: [`cap::Clock`], `cap::Env`, and with the `fs` feature a
 //!   directory or a read-only `cap::ReadDir`. Group them in a
 //!   [`#[derive(Cap)]`](derive@Cap) bundle.
-//! * **Effects are visible in signatures** ([`effects`]). A function's
+//! * **Effects are visible in signatures** ([`effects`](macro@effects)). A function's
 //!   capability parameters bound what it can do; `#[effects(clock, fs_read)]`
 //!   states that row, and `cargo tauten check` compares it with the
 //!   signature (TAU-F001).

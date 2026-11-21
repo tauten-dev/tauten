@@ -13,7 +13,7 @@ use tauten_check::profile::agent_profile;
 use crate::init::{AGENTS_FILE, camel, fill_proofs, proofs_files};
 
 /// The workspace template (`crates/cargo-tauten/templates/new`): written
-/// path, contents. `{{...}}` placeholders are filled by [`fill`].
+/// path, contents. `{{...}}` placeholders are filled by [`files`].
 const TEMPLATE: &[(&str, &str)] = &[
     ("Cargo.toml", include_str!("../templates/new/Cargo.toml.in")),
     ("AGENTS.md", include_str!("../templates/new/AGENTS.md")),

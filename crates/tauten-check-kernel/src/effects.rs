@@ -3,7 +3,7 @@
 //! The shell reads each `pub fn` that carries `#[effects(..)]` (or must, in
 //! a crate with `effects = "required"`), classifies every parameter type as
 //! one [`Source`] (expanding `#[derive(Cap)]` bundles into their fields),
-//! and calls [`derive`] for the row the signature grants and [`agrees`] /
+//! and calls [`derive`](fn@derive) for the row the signature grants and [`agrees`] /
 //! [`missing`] / [`extra`] to decide the finding. The decision is proved:
 //! a finding is reported exactly when the declared and derived rows differ,
 //! and it names exactly the differing labels.
@@ -160,7 +160,7 @@ pub enum Verdict {
 /// The finding for one function.
 ///
 /// * `declared`: the row of its `#[effects(..)]`, or `None` without one.
-/// * `derived`: [`derive`] of its signature.
+/// * `derived`: [`derive`](fn@derive) of its signature.
 /// * `required`: the crate sets `effects = "required"`.
 /// * `resolved`: every parameter type was classified; an unclassified type
 ///   (a bundle from another crate, an unbounded generic) may grant
