@@ -6,6 +6,8 @@ Designs behind items, and any new proposal that is costly to reverse or changes 
 
 Order within a milestone is by return on investment: projects helped × strength of the guarantee ÷ cost. Sizes are estimates in agent-days.
 
+**Next release:** [0.1.0 — open issues](https://github.com/tauten-dev/tauten/milestone/2).
+
 ## Five primitives
 
 The roadmap reduces about sixty proposals (a durability plan, a survey of seven Rust projects, and a survey of safety mechanisms in other languages and the C++ safety-profile proposals) to five general primitives:
@@ -71,6 +73,16 @@ T4–T7, #41, #44.
 
 ## 0.1.0
 
+Rescoped on 2026-11-21 (owner, on a Fable review): the release ships what
+tauten itself implements and proves. Remaining, in order: [#58](https://github.com/tauten-dev/tauten/issues/58)
+(publication to a previously absent target, proved), [#14](https://github.com/tauten-dev/tauten/issues/14)
+(shared proved helpers, a module of `tauten-check-kernel`; bounded reads may
+slip to 0.2), then [#38](https://github.com/tauten-dev/tauten/issues/38) (docs, version bump, release
+rehearsal, tag, then the site). [#13](https://github.com/tauten-dev/tauten/issues/13) (A9, driver) and
+[#35](https://github.com/tauten-dev/tauten/issues/35) (D1, shared gate) moved to 0.2: both depend on adopter
+evidence, which does not gate a release. [#54](https://github.com/tauten-dev/tauten/issues/54) and [#55](https://github.com/tauten-dev/tauten/issues/55)
+are done. [#60](https://github.com/tauten-dev/tauten/issues/60), [#61](https://github.com/tauten-dev/tauten/issues/61) and [#62](https://github.com/tauten-dev/tauten/issues/62) are in later.
+
 | Issue | ID | Item | Days | Depends on |
 |---|---|---|---|---|
 | [#7](https://github.com/tauten-dev/tauten/issues/7) | A3 | Manifest rule: overflow checks in release builds (TAU-H001) | 0.5 | — (in T4) |
@@ -84,22 +96,22 @@ T4–T7, #41, #44.
 | [#10](https://github.com/tauten-dev/tauten/issues/10) | A6 | Machine: step-function trait, Lean induction library, replay | 1.5 | — |
 | [#9](https://github.com/tauten-dev/tauten/issues/9) | A5 | Evidence that cannot go stale: Permit, stamps, derived bindings | 2.5 | S4 |
 | [#11](https://github.com/tauten-dev/tauten/issues/11) | A7 | Atomic publish, proved: old-or-new and durable under named FS laws | 3.5 | A6, S3 |
-| [#13](https://github.com/tauten-dev/tauten/issues/13) | A9 | tauten::durable: Storage, publish driver, DirLock, crash-sim tests | 3.0 | A7, A8 |
 | [#31](https://github.com/tauten-dev/tauten/issues/31) | T4 | Exceptions into the kernel; scanner sees cfg_attr, groups, tests/ | 3 | — |
 | [#32](https://github.com/tauten-dev/tauten/issues/32) | T5 | Compiler mapping, rule applicability and the exit verdict, proved | 2 | — |
 | [#33](https://github.com/tauten-dev/tauten/issues/33) | T6 | Structure rules and Unparsed facts decided by the kernel | 1 | — |
 | [#34](https://github.com/tauten-dev/tauten/issues/34) | T7 | Scanner mutation gate and a rewritten TRUST.md | 1.5 | T4–T6 |
-| [#35](https://github.com/tauten-dev/tauten/issues/35) | D1 | Shared proof gate: public image, audit library, tauten-gate | 5–6 | S2, S3, A8, A11 |
 | [#36](https://github.com/tauten-dev/tauten/issues/36) | D2 | Cadence levels and incremental proofs: ship, verify --level | 3 | S4, D1 |
 | [#37](https://github.com/tauten-dev/tauten/issues/37) | D3 | Obligations: arithmetic and indexing findings as proof obligations | 2 | D1 |
 | [#38](https://github.com/tauten-dev/tauten/issues/38) | D8 | Site, README and rustdoc for 0.1.0; release | 2–3 | everything above |
 
-About 44 days in all. If it must shrink, cut in this order: A9 (ship the theorem, say "no driver yet"), the `Bindings` derive in A5, bounded reads in A10, D2. Never cut S2, S3, S4, A1, A2 or A8: they are what makes every later badge and every "enforced" label true.
+About 44 days as first planned. A9 and D1 were cut to 0.2 (2026-11-21); if more must shrink, cut bounded reads in A10 next. Never cut S2, S3, S4, A1, A2 or A8: they are what makes every later badge and every "enforced" label true.
 
 ## 0.2
 
 | Issue | ID | Item | Days | Depends on |
 |---|---|---|---|---|
+| [#13](https://github.com/tauten-dev/tauten/issues/13) | A9 | tauten::durable: Storage, publish driver, DirLock, crash-sim tests | 3.0 | A7, A8 |
+| [#35](https://github.com/tauten-dev/tauten/issues/35) | D1 | Shared proof gate: public image, audit library, tauten-gate | 5–6 | S2, S3, A8, A11 |
 | [#19](https://github.com/tauten-dev/tauten/issues/19) | B3 | Effect rows over a declared label table (proc, rand, project caps) | 2.5 | — |
 | [#22](https://github.com/tauten-dev/tauten/issues/22) | B7 | Record invariants: #[refined] for structs | 2.0 | — |
 | [#20](https://github.com/tauten-dev/tauten/issues/20) | B4 | Admission kernels: Gate for stale results, once for replays | 3.0 | A6, B1 |

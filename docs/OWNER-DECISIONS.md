@@ -1,14 +1,13 @@
 # Decisions and assets needed from the owner
 
-Updated 2026-11-20. Settled items are kept at the bottom for the record.
+Updated 2026-11-21. Settled items are kept at the bottom for the record.
 
 ## Open
 
 | # | Decision | What it unblocks | Recommendation |
 |---|---|---|---|
 | 1 | **Triage of 2026-11-20** (Fable plan, applied): milestone 0.0.5 = #21, #46, #42, #39, #36, #48; #40 and #47 merged into #39; #43 (size budgets) and #45 (build-cache budget) declined and parked in #30; #46 reworded from a keyword table to "the fast stage builds the extracted Lean". | Confirms the milestone | Reopen anything you disagree with. |
-| 2 | **0.1.0 blockers.** A10 (`tauten-kernel-std`) and A9 (`tauten-test`) are new crates: their first publish needs a crates.io token (the local copy is gone), or fold A10's helpers into `tauten-check-kernel` and ship A9 as a `tauten` feature. D1 needs the proofs image readable by writfold and gripsack (public, or read access granted). | Starting 0.1.0 | Fold A10 into the existing kernel crate; grant read access to the two adopters. |
-| 3 | **Maintenance chains (E2).** Tests whether the bounds E1 relied on survive later edits: 5-8 fresh sessions each adding a feature to one repo, union oracle at the end, arms A vs C. | The only remaining defect-reduction question | Decide whether it is worth a budget; not started. |
+| 2 | **Maintenance chains (E2).** Tests whether the bounds E1 relied on survive later edits: 5-8 fresh sessions each adding a feature to one repo, union oracle at the end, arms A vs C. | The only remaining defect-reduction question | Decide whether it is worth a budget; not started. |
 
 ## Settled
 
@@ -17,7 +16,8 @@ Updated 2026-11-20. Settled items are kept at the bottom for the record.
 | Repositioning | Code discipline + proofs; defect reduction only as a side effect (2026-11-19) |
 | Discipline plan | `docs/DISCIPLINE-PROPOSAL.md` approved: D0, then X1-X3, then D1-D8 (2026-11-19) |
 | Verus / TLAPS | No adapters for now; claims format reserves the tool names (2026-11-19) |
-| Proofs image | Public on ghcr once the shared gate runs writfold and gripsack unchanged (2026-11-19) |
+| Proofs image | Public on ghcr for 0.1.0, no longer tied to adopter parity (2026-11-21; supersedes 2026-11-19) |
+| 0.1.0 scope | #13 (A9 driver) and #35 (D1 shared gate) moved to 0.2; helpers (A10) fold into `tauten-check-kernel` as a module and A9 later ships as a `tauten` feature, so no new crate needs a first-publish token. Reversible (2026-11-21) |
 | Roadmap | Accept only general, proved (or compiler-enforced) items that fit the vision; filed as issues #1-#38, ordered in `docs/ROADMAP.md`; K004 dropped for an extract-only stage (2026-11-19) |
 | Product shape | Fast checks on stable; deep checks in the pinned image at ship/nightly/release; "effects visible in signatures" (2026-11-19) |
 | Name | tauten (2026-11-18) |
