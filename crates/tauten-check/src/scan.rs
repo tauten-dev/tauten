@@ -111,6 +111,8 @@ pub struct LintException {
     /// Whether it is written inside `cfg_attr(..)`, so in force only under
     /// some configuration.
     pub conditional: bool,
+    /// Whether the attribute carries `reason = ...`.
+    pub reasoned: bool,
 }
 
 /// Every lint exception written in the file. Returns `None` if the file
@@ -172,6 +174,7 @@ impl ExceptionVisitor {
         if !(allow || list.path.is_ident("expect")) {
             return;
         }
+        let reasoned = has_reason(list);
         for lint in list_lints(list) {
             self.found.push(LintException {
                 lint,
@@ -179,6 +182,7 @@ impl ExceptionVisitor {
                 crate_level,
                 allow,
                 conditional,
+                reasoned,
             });
         }
     }
@@ -193,6 +197,16 @@ impl<'ast> Visit<'ast> for ExceptionVisitor {
 /// Lint paths named in `allow(..)`/`expect(..)`, skipping `reason = ".."`.
 /// Parsed as attribute syntax, so commas inside the reason string are not
 /// separators.
+/// Whether an `allow(..)`/`expect(..)` list carries `reason = ...`.
+fn has_reason(list: &syn::MetaList) -> bool {
+    list.parse_args_with(syn::punctuated::Punctuated::<syn::Meta, syn::Token![,]>::parse_terminated)
+        .is_ok_and(|metas| {
+            metas
+                .iter()
+                .any(|meta| matches!(meta, syn::Meta::NameValue(nv) if nv.path.is_ident("reason")))
+        })
+}
+
 fn list_lints(list: &syn::MetaList) -> Vec<String> {
     let Ok(metas) = list.parse_args_with(
         syn::punctuated::Punctuated::<syn::Meta, syn::Token![,]>::parse_terminated,
@@ -463,6 +477,27 @@ mod tests {
                 ("clippy::unwrap_used", true, 1),
                 ("clippy::panic", false, 3),
                 ("dead_code", false, 3)
+            ]
+        );
+    }
+
+    /// #59: whether each exception carries `reason = ...`; another
+    /// name-value or a reason with commas is told apart correctly.
+    #[test]
+    fn records_whether_an_exception_has_a_reason() {
+        let src = "#![allow(dead_code, reason = \"a, b c\")]\n#[allow(dead_code)]\nfn f() {}\n#[expect(unused, note = \"x\")]\nfn g() {}\n#[cfg_attr(test, allow(dead_code, reason = \"t\"))]\nfn h() {}\n";
+        let all = lint_exceptions(src).expect("parses");
+        let found: Vec<(&str, u32, bool)> = all
+            .iter()
+            .map(|e| (e.lint.as_str(), e.at.line, e.reasoned))
+            .collect();
+        assert_eq!(
+            found,
+            vec![
+                ("dead_code", 1, true),
+                ("dead_code", 2, false),
+                ("unused", 4, false),
+                ("dead_code", 6, true),
             ]
         );
     }

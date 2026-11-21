@@ -1,4 +1,5 @@
 //! Uses a subset of the helpers.
+#![allow(dead_code, reason = "a target root is not a shared module")]
 
 mod support;
 

@@ -9,6 +9,8 @@ tier = "core"
 
 # #59: a helper module shared by two test targets, one using all of it and
 # one a subset. The documented repair: a reasoned `#[expect(dead_code)]` on
-# the `mod` declaration in exactly the targets where something is unused.
+# the `mod` declaration in exactly the targets where something is unused,
+# or a reasoned file-level `allow(dead_code)` in the shared module (RFC
+# 2026-11-21-shared-test-module-allow).
 [package.metadata.fixture]
 expect = []

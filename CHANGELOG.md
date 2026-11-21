@@ -10,8 +10,14 @@
   `#[expect]` on the `mod` declaration in each target where the lint fires.
   The rule's repair text also names the structural repairs (one
   integration-test target, or a dev-dependency support crate). New fixtures
-  `acc-shared-test-module` and `rej-shared-test-allow`. What is reported is
-  unchanged: a reasoned file-level `allow` is still TAU-X001.
+  `acc-shared-test-module` and `rej-shared-test-allow`.
+- TAU-X001 accepts a reasoned file-level `#![allow(dead_code, reason =
+  "...")]` in a module under `tests/` or `benches/` that is not the root of a
+  Cargo target (#59, RFC `2026-11-21-shared-test-module-allow`). An
+  unreasoned one, another lint or group, `cfg_attr`, a target root, or any
+  file in `src/`, `examples/` or the build script is still reported. Target
+  roots come from `cargo metadata`. `tauten_check::SourceFile` gains
+  `is_target_root`, and `scan::LintException` gains `reasoned`.
 
 - TAU-N002 no longer promises a proof discharge (#57): its repair text said a
   recorded never-fails proof discharges a lossy cast, but only TAU-N001 and

@@ -1,5 +1,5 @@
 //! Helpers shared by several test targets.
-#![allow(dead_code, reason = "shared by several test targets")]
+#![allow(dead_code)]
 
 /// Double of one.
 pub fn small() -> u32 {

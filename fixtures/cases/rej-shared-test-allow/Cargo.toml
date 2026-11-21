@@ -7,7 +7,8 @@ publish = false
 [package.metadata.tauten]
 tier = "core"
 
-# #59: a reasoned file-level `#![allow(dead_code)]` in a shared test module
-# is still reported; it never fails once nothing needs it.
+# #59: the forms RFC 2026-11-21-shared-test-module-allow does not accept: an
+# unreasoned file-level `allow(dead_code)` in a shared module, and a reasoned
+# one in a test target root, where an outer `expect` works.
 [package.metadata.fixture]
 expect = ["TAU-X001"]

@@ -122,6 +122,11 @@ fn member(
         .filter(|t| t.is_lib() || t.is_bin() || t.is_proc_macro())
         .map(|t| t.src_path.as_std_path().to_path_buf())
         .collect();
+    let target_roots: Vec<PathBuf> = package
+        .targets
+        .iter()
+        .map(|t| t.src_path.as_std_path().to_path_buf())
+        .collect();
     let package_dir = manifest_path.parent().unwrap_or(root);
     let mut sources = Vec::new();
     for (dir, kind) in [
@@ -134,6 +139,7 @@ fn member(
             root,
             &package_dir.join(dir),
             &crate_roots,
+            &target_roots,
             kind,
             &mut sources,
         )?;
@@ -149,6 +155,7 @@ fn member(
         sources.push(SourceFile {
             path: relative(root, &path),
             is_crate_root: false,
+            is_target_root: true,
             kind: SourceKind::Build,
             text,
         });
@@ -171,6 +178,7 @@ fn collect_sources(
     root: &Path,
     dir: &Path,
     crate_roots: &[PathBuf],
+    target_roots: &[PathBuf],
     kind: SourceKind,
     out: &mut Vec<SourceFile>,
 ) -> Result<()> {
@@ -184,13 +192,14 @@ fn collect_sources(
     entries.sort();
     for path in entries {
         if path.is_dir() {
-            collect_sources(root, &path, crate_roots, kind, out)?;
+            collect_sources(root, &path, crate_roots, target_roots, kind, out)?;
         } else if path.extension().is_some_and(|e| e == "rs") {
             let text =
                 fs::read_to_string(&path).with_context(|| format!("reading {}", path.display()))?;
             out.push(SourceFile {
                 path: relative(root, &path),
                 is_crate_root: crate_roots.contains(&path),
+                is_target_root: target_roots.contains(&path),
                 kind,
                 text,
             });

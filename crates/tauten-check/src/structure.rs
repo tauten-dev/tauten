@@ -22,6 +22,10 @@ pub struct SourceFile {
     pub text: String,
     /// Whether this is a crate root (`lib.rs`, `main.rs`, `bin/*.rs`).
     pub is_crate_root: bool,
+    /// Whether this is the root of any Cargo target of the package (lib,
+    /// bin, proc-macro, test, bench, example, build script), from `cargo
+    /// metadata`. A file that is not is a module some target declares.
+    pub is_target_root: bool,
     /// Which part of the package the file belongs to.
     pub kind: SourceKind,
 }
@@ -535,13 +539,27 @@ impl Ctx<'_> {
             // Clippy's `allow_attributes` skips inner attributes and cannot
             // see an attribute whose `cfg_attr` is off, so tauten reports
             // those `allow`s itself.
-            if exception.allow && (exception.crate_level || exception.conditional) {
+            // RFC 2026-11-21-shared-test-module-allow (#59): a module compiled
+            // into several test targets cannot carry an inner `expect` for a
+            // lint that fires in only some of them. One exact form is
+            // accepted, decided by this scan and Cargo's target list.
+            let shared_test_helper = exception.allow
+                && exception.crate_level
+                && !exception.conditional
+                && exception.reasoned
+                && lint == "dead_code"
+                && test
+                && !file.is_target_root;
+            if exception.allow
+                && (exception.crate_level || exception.conditional)
+                && !shared_test_helper
+            {
                 let message = if exception.conditional {
                     format!(
                         "`cfg_attr(.., allow({lint}))`: use `expect({lint}, reason = \"...\")`, \
                          or narrow it to the item that needs it"
                     )
-                } else if file.is_crate_root {
+                } else if file.is_target_root {
                     format!(
                         "file-level `#![allow({lint})]`: use `expect({lint}, reason = \"...\")`, \
                          or narrow it to the item that needs it"
@@ -710,26 +728,18 @@ mod tests {
         }
     }
 
-    /// #59: a file-level `allow` is reported in a module file and at a
-    /// crate root alike; only in the module is the `mod`-declaration form
-    /// named, since an inner `expect` there fails in targets that use it all.
-    #[test]
-    fn a_shared_module_file_allow_names_the_mod_declaration_form() {
-        let allow = "//! Helpers.\n#![allow(dead_code, reason = \"shared\")]\n";
+    fn x001_files(files: &[(&str, &str, bool, SourceKind)]) -> Vec<(String, bool)> {
         let mut c = member("c", "core");
-        c.sources.push(SourceFile {
-            path: "c/tests/support/mod.rs".into(),
-            text: allow.into(),
-            is_crate_root: false,
-            kind: SourceKind::Test,
-        });
-        c.sources.push(SourceFile {
-            path: "c/src/lib.rs".into(),
-            text: allow.into(),
-            is_crate_root: true,
-            kind: SourceKind::Src,
-        });
-        let found: Vec<(String, bool)> = run(vec![c])
+        for (path, text, root, kind) in files {
+            c.sources.push(SourceFile {
+                path: (*path).to_owned(),
+                text: (*text).to_owned(),
+                is_crate_root: *root && *kind == SourceKind::Src,
+                is_target_root: *root,
+                kind: *kind,
+            });
+        }
+        run(vec![c])
             .into_iter()
             .filter(|d| d.id == "TAU-X001")
             .map(|d| {
@@ -738,12 +748,69 @@ mod tests {
                     d.message.contains("`mod` declaration"),
                 )
             })
-            .collect();
+            .collect()
+    }
+
+    /// #59: a file-level `allow` is reported in a module file and at a
+    /// target root alike; only in the module is the `mod`-declaration form
+    /// named, since an inner `expect` there fails in targets that use it all.
+    #[test]
+    fn a_shared_module_file_allow_names_the_mod_declaration_form() {
+        let allow = "//! Helpers.\n#![allow(clippy::needless_return, reason = \"style\")]\n";
+        let found = x001_files(&[
+            ("c/tests/support/mod.rs", allow, false, SourceKind::Test),
+            ("c/src/lib.rs", allow, true, SourceKind::Src),
+        ]);
         assert_eq!(
             found,
             vec![
                 ("c/tests/support/mod.rs".to_owned(), true),
                 ("c/src/lib.rs".to_owned(), false),
+            ]
+        );
+    }
+
+    /// RFC 2026-11-21-shared-test-module-allow: exactly a reasoned inner
+    /// `allow(dead_code)` in a non-root test module is accepted; each
+    /// condition, relaxed alone, is reported.
+    #[test]
+    fn only_a_reasoned_dead_code_allow_in_a_test_helper_module_is_accepted() {
+        let ok = "//! H.\n#![allow(dead_code, reason = \"shared\")]\n";
+        let found = x001_files(&[
+            ("c/tests/support/mod.rs", ok, false, SourceKind::Test),
+            ("c/benches/common/mod.rs", ok, false, SourceKind::Test),
+            (
+                "c/tests/a/mod.rs",
+                "#![allow(dead_code)]\n",
+                false,
+                SourceKind::Test,
+            ),
+            (
+                "c/tests/b/mod.rs",
+                "#![allow(unused, reason = \"s\")]\n",
+                false,
+                SourceKind::Test,
+            ),
+            (
+                "c/tests/c/mod.rs",
+                "#![cfg_attr(test, allow(dead_code, reason = \"s\"))]\n",
+                false,
+                SourceKind::Test,
+            ),
+            ("c/tests/one.rs", ok, true, SourceKind::Test),
+            ("c/src/m.rs", ok, false, SourceKind::Src),
+            ("c/examples/m.rs", ok, false, SourceKind::Example),
+        ]);
+        let files: Vec<&str> = found.iter().map(|(f, _)| f.as_str()).collect();
+        assert_eq!(
+            files,
+            vec![
+                "c/tests/a/mod.rs",
+                "c/tests/b/mod.rs",
+                "c/tests/c/mod.rs",
+                "c/tests/one.rs",
+                "c/src/m.rs",
+                "c/examples/m.rs",
             ]
         );
     }
@@ -755,6 +822,7 @@ mod tests {
             path: "k/src/lib.rs".into(),
             text: "#![no_std]\n".into(),
             is_crate_root: true,
+            is_target_root: true,
             kind: SourceKind::Src,
         });
         let mut c = member("c", "core");
@@ -765,6 +833,7 @@ mod tests {
             path: "e/src/main.rs".into(),
             text: "fn main() { let _a = Authority::acquire(); }".into(),
             is_crate_root: true,
+            is_target_root: true,
             kind: SourceKind::Src,
         });
         assert!(run(vec![k, c, e]).is_empty());
@@ -786,6 +855,7 @@ mod tests {
             path: "k/src/lib.rs".into(),
             text: "#![no_std]".into(),
             is_crate_root: true,
+            is_target_root: true,
             kind: SourceKind::Src,
         });
         let mut c = member("c", "core");
@@ -804,6 +874,7 @@ mod tests {
             path: "k/src/lib.rs".into(),
             text: "pub fn f() {}".into(),
             is_crate_root: true,
+            is_target_root: true,
             kind: SourceKind::Src,
         });
         assert_eq!(ids(&run(vec![k])), vec!["TAU-T003", "TAU-K003"]);
@@ -816,6 +887,7 @@ mod tests {
             path: "k/src/lib.rs".into(),
             text: "#![no_std]\n#[expect(clippy::indexing_slicing, reason = \"x\")]\nfn f() {}\n#[expect(dead_code, reason = \"y\")]\nfn g() {}\n".into(),
             is_crate_root: true,
+            is_target_root: true,
             kind: SourceKind::Src,
         });
         let mut e = member("e", "edge");
@@ -823,6 +895,7 @@ mod tests {
             path: "e/src/main.rs".into(),
             text: "#[expect(clippy::todo, reason = \"later\")]\nfn f() {}\n#[expect(clippy::unwrap_used, reason = \"ok\")]\nfn g() {}\n".into(),
             is_crate_root: true,
+            is_target_root: true,
             kind: SourceKind::Src,
         });
         let found = run(vec![k, e]);
@@ -840,6 +913,7 @@ mod tests {
             path: "k/src/lib.rs".into(),
             text: "#![no_std]".into(),
             is_crate_root: true,
+            is_target_root: true,
             kind: SourceKind::Src,
         });
         let found = run(vec![k]);
@@ -866,6 +940,7 @@ mod tests {
             path: "c/src/lib.rs".into(),
             text: "#![expect(clippy::indexing_slicing, reason = \"x\")]\npub fn f() { let _a = Authority::acquire(); } // for now\n".into(),
             is_crate_root: true,
+            is_target_root: true,
             kind: SourceKind::Src,
         });
         let found = run(vec![c]);
@@ -945,6 +1020,7 @@ mod unparsed_tests {
                 path: "k/src/lib.rs".to_owned(),
                 text: "#![no_std]\npub fn broken( {".to_owned(),
                 is_crate_root: true,
+                is_target_root: true,
                 kind: SourceKind::Src,
             }],
             effects_required: false,

@@ -327,13 +327,13 @@ Reject fixtures: `rej-placeholder`
 
 `#[allow]` silently outlives the code it excused. `#[expect(lint, reason = "...")]` documents why and fails once the exception is no longer needed.
 
-**Fix:** Replace `#[allow(x)]` with `#[expect(x, reason = "why this is safe here")]` on the smallest item possible, or fix the code. A module compiled into several targets (helpers under `tests/` declared with `mod support;` by several test files) cannot carry an inner `#![expect]`: it is unfulfilled in every target where the lint does not fire. Put `#[expect(x, reason = "...")]` on the `mod` declaration in exactly the targets where it fires, or remove the sharing: one integration-test target per crate (`tests/it/main.rs` with the tests as modules), or a support crate used as a dev-dependency.
+**Fix:** Replace `#[allow(x)]` with `#[expect(x, reason = "why this is safe here")]` on the smallest item possible, or fix the code. A module compiled into several targets (helpers under `tests/` declared with `mod support;` by several test files) cannot carry an inner `#![expect]`: it is unfulfilled in every target where the lint does not fire. For `dead_code` only, it may carry `#![allow(dead_code, reason = "...")]`. Otherwise put `#[expect(x, reason = "...")]` on the `mod` declaration in exactly the targets where it fires, or remove the sharing: one integration-test target per crate (`tests/it/main.rs` with the tests as modules), or a support crate used as a dev-dependency.
 
-**Decides:** Every lint exception is `#[expect]` with a reason.
+**Decides:** Every lint exception is `#[expect]` with a reason, except a reasoned file-level `#![allow(dead_code)]` in a module under `tests/` or `benches/` that is not the root of a Cargo target (RFC 2026-11-21-shared-test-module-allow).
 
 Family: obligation. Sees: resolved. Complete: yes.
 
-**Does not see:** Code expanded from macros defined in other crates (clippy skips it). Inner attributes and `allow` inside `cfg_attr` are read by tauten itself, in `src/`, `tests/`, `benches/`, `examples/` and the build script.
+**Does not see:** Code expanded from macros defined in other crates (clippy skips it). Inner attributes and `allow` inside `cfg_attr` are read by tauten itself, in `src/`, `tests/`, `benches/`, `examples/` and the build script. The accepted shared-test-module `allow(dead_code)` is decided by that scan and Cargo's target list, not by the compiler: it never fails once no target needs it, so a helper no target uses goes unreported.
 
 Reject fixtures: `rej-allow`, `rej-file-allow`, `rej-cfg-attr-allow`, `rej-shared-test-allow`
 

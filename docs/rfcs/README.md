@@ -127,3 +127,5 @@ Rows are in creation order.
 | [2026-11-19-roadmap-five-primitives](2026-11-19-roadmap-five-primitives.md) | Five general primitives; roadmap issues #1-#38 ([ROADMAP.md](../ROADMAP.md)) | accepted | in-progress |
 | [2026-11-21-draft-claim-entries](2026-11-21-draft-claim-entries.md) | Reviewable claim-entry drafts from existing declarations and mutants ([#49](https://github.com/tauten-dev/tauten/issues/49)) | accepted | partial |
 | [2026-11-21-recover-proof-records](2026-11-21-recover-proof-records.md) | Retry unavailable tools and recover generated proof artifacts on merge ([#50](https://github.com/tauten-dev/tauten/issues/50), [#52](https://github.com/tauten-dev/tauten/issues/52)) | accepted | complete |
+| [2026-11-21-shared-test-module-allow](2026-11-21-shared-test-module-allow.md) | Accept a reasoned file-level `allow(dead_code)` in a non-root test module ([#59](https://github.com/tauten-dev/tauten/issues/59)) | accepted | complete |
+| [2026-11-21-publish-absent-target](2026-11-21-publish-absent-target.md) | Companion theorems for atomic publish to an absent target ([#58](https://github.com/tauten-dev/tauten/issues/58)) | accepted | not-started |
