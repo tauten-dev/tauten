@@ -6,7 +6,7 @@ Designs behind items, and any new proposal that is costly to reverse or changes 
 
 Order within a milestone is by return on investment: projects helped × strength of the guarantee ÷ cost. Sizes are estimates in agent-days.
 
-**Next release:** [0.2 — open issues](https://github.com/tauten-dev/tauten/milestone/3).
+**Next release:** [0.2 — adoption without replacing the adopter's gate](#02). [Live pickup order and issues](https://github.com/tauten-dev/tauten/milestone/3).
 
 ## Five primitives
 
@@ -82,7 +82,7 @@ bounded reads moved to [#64](https://github.com/tauten-dev/tauten/issues/64)) an
 [#38](https://github.com/tauten-dev/tauten/issues/38) (docs, version bump, tag, site).
 [#13](https://github.com/tauten-dev/tauten/issues/13) (A9, driver) and
 [#35](https://github.com/tauten-dev/tauten/issues/35) (D1, shared gate) moved to 0.2: both depend on adopter
-evidence, which does not gate a release. [#60](https://github.com/tauten-dev/tauten/issues/60), [#61](https://github.com/tauten-dev/tauten/issues/61) and [#62](https://github.com/tauten-dev/tauten/issues/62) are in later.
+evidence, which does not gate a release. At that cut [#60](https://github.com/tauten-dev/tauten/issues/60), [#61](https://github.com/tauten-dev/tauten/issues/61) and [#62](https://github.com/tauten-dev/tauten/issues/62) went to `later`; see [0.2](#02) for the subsequent triage.
 
 | Issue | ID | Item | Days | Depends on |
 |---|---|---|---|---|
@@ -109,27 +109,42 @@ About 44 days as first planned. A9 and D1 were cut to 0.2 (2026-11-21); if more 
 
 ## 0.2
 
-| Issue | ID | Item | Days | Depends on |
-|---|---|---|---|---|
-| [#13](https://github.com/tauten-dev/tauten/issues/13) | A9 | tauten::durable: Storage, publish driver, DirLock, crash-sim tests | 3.0 | A7, A8 |
-| [#35](https://github.com/tauten-dev/tauten/issues/35) | D1 | Shared proof gate: public image, audit library, tauten-gate | 5–6 | S2, S3, A8, A11 |
-| [#19](https://github.com/tauten-dev/tauten/issues/19) | B3 | Effect rows over a declared label table (proc, rand, project caps) | 2.5 | — |
-| [#22](https://github.com/tauten-dev/tauten/issues/22) | B7 | Record invariants: #[refined] for structs | 2.0 | — |
-| [#20](https://github.com/tauten-dev/tauten/issues/20) | B4 | Admission kernels: Gate for stale results, once for replays | 3.0 | A6, B1 |
-| [#23](https://github.com/tauten-dev/tauten/issues/23) | B10 | Claim ledger: resolved symbols, generated table, bounded kinds | 3.0 | S3 |
-| [#17](https://github.com/tauten-dev/tauten/issues/17) | B1 | Explorer: machines against crash, delivery and cancel worlds | 3.5 | A6, A9 |
-| [#18](https://github.com/tauten-dev/tauten/issues/18) | B2 | Crash-recovery induction and a guarded single-file replace | 6.0 | A7, B1 |
+**Goal:** make partial adoption useful. A team should be able to try the checker without changing release policy, reuse one Lean theorem without taking a runtime dependency, or draft claims without trusting a second ledger. The [0.1.0 release run](https://github.com/tauten-dev/tauten/actions/runs/44953176654) passed the gate and full proofs and published from `719d4e9`. The public proofs image already exists.
 
-## Later (accepted, not scheduled)
+- **Writfold:** the [main-branch adoption record](https://github.com/writfold-dev/writfold/blob/bb9d8fa637b2f4feec5445ed91d63c8db249b3a4/docs/writfold/tauten-adoption.md#L24-L37) distinguishes the non-gating lint baseline, the custom native proof gate and its recorded claims. The owner [approved overflow checks](https://github.com/writfold-dev/writfold/issues/73#issuecomment-7063879621); the [dev.15 pin change](https://github.com/writfold-dev/writfold/commit/67f11e62541feed88fd123b72e8e1010163c1fdb) uses Tauten `eb1b594`, **not** a released Writfold move to Tauten 0.1. Its [manifest](https://github.com/writfold-dev/writfold/blob/67f11e62541feed88fd123b72e8e1010163c1fdb/proofs/claims.toml#L1-L10) supplies a gate command, not the audited `[gate] try` entry that `proofs draft` needs.
+- **Gripsack:** the [0.58 candidate's proof image](https://github.com/gripsack-dev/gripsack/blob/c62afc5c05087e9e261b68fce1744f0f6301eeef/proofs/Dockerfile#L96-L103) takes one checksum-pinned Lean module and its license. The [publication proof](https://github.com/gripsack-dev/gripsack/blob/c62afc5c05087e9e261b68fce1744f0f6301eeef/proofs/Protocol/Publication.lean#L95-L140) builds a total model to use world induction. Separately, its [diagnostics trial](https://github.com/gripsack-dev/gripsack/issues/383#issuecomment-7063883177) ended **advisory**: no baseline, mandatory gate, runtime change or evidence of a storage defect.
 
-| Issue | ID | Item | Days | Depends on |
-|---|---|---|---|---|
-| [#27](https://github.com/tauten-dev/tauten/issues/27) | L4 | Framed digest preimages and fingerprint soundness | 2.0 | S4, B2 |
-| [#25](https://github.com/tauten-dev/tauten/issues/25) | L2 | #[schema] and schemas.lock on the version admission kernel | 2.5 | A1, A10 |
-| [#24](https://github.com/tauten-dev/tauten/issues/24) | L1 | Spans and edit maps in tauten-kernel-std | 2.5 | A10 |
-| [#26](https://github.com/tauten-dev/tauten/issues/26) | L3 | Process capability: classify, Spawner::only, mandatory limits | 2.5 | B3 |
-| [#29](https://github.com/tauten-dev/tauten/issues/29) | L6 | At-most-once external effect machine | 5.0 | B2, B4 |
-| [#28](https://github.com/tauten-dev/tauten/issues/28) | L5 | Undo-journal simulation theorem and reference machine | 7.0 | B2 |
+| Pickup | Issue | Return and cost | Exit |
+|---|---|---|---|
+| 1 | [#61](https://github.com/tauten-dev/tauten/issues/61) Custom claim inventory | Writfold already maintains a generator and a native audit. A short comparison costs less than designing a runner. | Pin both trees; try the real audit and compare draft vs reviewed entries. Record exact differences or the first unsupported prerequisite. A draft earns no badge. |
+| 2 | [#60](https://github.com/tauten-dev/tauten/issues/60) Invariants for result-returning machines | One proof-library example can help the existing Gripsack proof path without a gate or runtime migration. | Compare direct induction with [one additive lemma](rfcs/2026-11-21-result-world-induction.md); an audited example alone is a useful exit. Owner decides the public API. |
+| 3 | [#65](https://github.com/tauten-dev/tauten/issues/65) Rustdoc | Five known warnings; small patch, every API reader benefits. Can start immediately. | Fix all five, gate all-features workspace docs with warnings denied, refresh affected evidence. |
+| 4 | [#64](https://github.com/tauten-dev/tauten/issues/64) Bounded capability reads | One minor-version API break uses budget arithmetic already proved in 0.1; useful without either adopter switching. | Owner reviews the [read contract](rfcs/2026-11-21-bounded-capability-reads.md). Byte-limit, one-over, IO and UTF-8 cases; no unbounded `ReadDir` overload. Document migration and environment attenuation. |
+| 5 | [#35](https://github.com/tauten-dev/tauten/issues/35) Shared-gate fit | Removing fork maintenance would help both adopters, but an inexact runner would make both worse off. Cap migration at one day per adopter. | Compare named outcomes, assumptions, audits and exact direct mutant witnesses on the same inputs. Two fork-free matches, or document **image only** and keep native gates. No new format on speculation. |
+| 6 | [#66](https://github.com/tauten-dev/tauten/issues/66) Website and onboarding | Small, reusable first steps on the existing site; write them in parallel, publish release-specific examples last. | Advisory trial, opt-in CI ratchet and proof-only reuse; correct Rules headings, live feedback link, versioned README/docs.rs, and captures from the published SHA. |
+
+**Release line:** #61 and #35 are evidence work, not downstream release gates. Record a no-fit or carry an unfinished comparison forward; never turn a missing comparison into a parity claim. Neither adopter has to migrate, ship or weaken its gate. No draft RFC authorizes implementation. For what Tauten actually ships, keep the ordinary gate and full proof gate on the exact tag commit, owner publication approval, and a site pin that distinguishes shipped work from plans.
+
+## Later (not scheduled)
+
+The [later milestone](https://github.com/tauten-dev/tauten/milestone/4) keeps these issues open. The five-primitives design and original acceptance controls still apply; the change is what warrants picking each one up.
+
+| Issue | Defer until / cheaper alternative |
+|---|---|
+| [#13](https://github.com/tauten-dev/tauten/issues/13) Storage driver | Map two real routines to the same commands first. Keep a staged short write followed by failure and ordering of later durable replacements; don't retrofit Gripsack's filesystem to a simulator. The owner already chose a `tauten` feature. |
+| [#17](https://github.com/tauten-dev/tauten/issues/17) Multi-world explorer | First get a useful single-crash driver from #13. Then show a planted fault and replay in a second world; a finite search is bounded evidence only. |
+| [#18](https://github.com/tauten-dev/tauten/issues/18) Recovery induction | Fit two protocols and name interference and recheck assumptions. Preserve [Gripsack's visible-but-not-durable counterexample](https://github.com/gripsack-dev/gripsack/issues/364#issuecomment-7063981545); a local crash model isn't a host guarantee. |
+| [#19](https://github.com/tauten-dev/tauten/issues/19) Extensible effect rows | Bring an adopter-owned capability/label the fixed table cannot express. Try one generated table before a new configuration language. |
+| [#20](https://github.com/tauten-dev/tauten/issues/20) Stale results / replay | Map two existing guards; if their delivery semantics differ, try the smaller `once` kernel. Explorer-dependent acceptance waits for #17. |
+| [#22](https://github.com/tauten-dev/tauten/issues/22) Record invariants | Start with one actual cross-field validator and a private checked constructor. Justify a macro by what that cannot do ergonomically; don't call arbitrary predicates proved. |
+| [#23](https://github.com/tauten-dev/tauten/issues/23) Claim ledger | Try rendering an existing audited record first: [Writfold's assurance page](https://github.com/writfold-dev/writfold/issues/51) needs accurate coverage; [Gripsack's ledger](https://github.com/gripsack-dev/gripsack/issues/313) waits for protocol proofs. Neither request by itself warrants new verdicts or a second inventory. |
+| [#62](https://github.com/tauten-dev/tauten/issues/62) Real merge reconciliation | Use a small two-parent translation with real tools and compare clean extraction and ship/full results. The stand-in test isn't that evidence; this is distinct from #61 and #35. |
+| [#24](https://github.com/tauten-dev/tauten/issues/24) Spans and edit maps | Show a second caller with matching units and a translatable dependency; start with `bind_span` in the existing kernel, not a new crate. |
+| [#25](https://github.com/tauten-dev/tauten/issues/25) Schema locks | Start from 0.1's version-admission function. Require a versioned decoder with a real unmet shape-drift need before adding a macro and lockfile. |
+| [#26](https://github.com/tauten-dev/tauten/issues/26) Process capabilities | Wait for the `proc` label (#19) and an actual attenuation use; `classify` alone need not grow into a supervisor. |
+| [#27](https://github.com/tauten-dev/tauten/issues/27) Digest framing | Require a caller and a migration for persisted digests; keep the hash assumption explicit. |
+| [#28](https://github.com/tauten-dev/tauten/issues/28) Undo journals; [#29](https://github.com/tauten-dev/tauten/issues/29) external effects | Build on #18, and #20 for replay, only when the actual protocols fit. An abstract simulation or `once` is preferable to an unjustified host guarantee. |
+| [#30](https://github.com/tauten-dev/tauten/issues/30) Parked/rejected register | Index, not release work. Its recorded triggers, not a milestone move, reopen an idea. |
 
 ## Dropped from earlier plans
 

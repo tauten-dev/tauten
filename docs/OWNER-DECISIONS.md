@@ -8,6 +8,8 @@ Updated 2026-11-21. Settled items are kept at the bottom for the record.
 |---|---|---|---|
 | 1 | **Triage of 2026-11-20** (Fable plan, applied): milestone 0.0.5 = #21, #46, #42, #39, #36, #48; #40 and #47 merged into #39; #43 (size budgets) and #45 (build-cache budget) declined and parked in #30; #46 reworded from a keyword table to "the fast stage builds the extracted Lean". | Confirms the milestone | Reopen anything you disagree with. |
 | 2 | **Maintenance chains (E2).** Tests whether the bounds E1 relied on survive later edits: 5-8 fresh sessions each adding a feature to one repo, union oracle at the end, arms A vs C. | The only remaining defect-reduction question | Decide whether it is worth a budget; not started. |
+| 3 | [Result/world induction](rfcs/2026-11-21-result-world-induction.md), [#60](https://github.com/tauten-dev/tauten/issues/60): document the existing recursor or also export a named theorem? | A proof-only adoption aid; not a Gripsack release dependency | Compare the same partial-step example both ways. Add the lemma only if it removes actual induction boilerplate. |
+| 4 | [Bounded capability reads](rfcs/2026-11-21-bounded-capability-reads.md), [#64](https://github.com/tauten-dev/tauten/issues/64): require `Limit<Bytes>` on both `ReadDir` reads at the minor break? | The 0.2 capability API and migration docs | Require the argument, a distinct too-large error and explicit snapshot attenuation; do not offer an unbounded overload. |
 
 ## Settled
 
