@@ -15,7 +15,7 @@ use crate::init::{AGENTS_FILE, camel, fill_proofs, proofs_files};
 /// The workspace template (`crates/cargo-tauten/templates/new`): written
 /// path, contents. `{{...}}` placeholders are filled by [`fill`].
 const TEMPLATE: &[(&str, &str)] = &[
-    ("Cargo.toml", include_str!("../templates/new/Cargo.toml")),
+    ("Cargo.toml", include_str!("../templates/new/Cargo.toml.in")),
     ("AGENTS.md", include_str!("../templates/new/AGENTS.md")),
     (".gitignore", include_str!("../templates/new/gitignore")),
     (
@@ -24,7 +24,7 @@ const TEMPLATE: &[(&str, &str)] = &[
     ),
     (
         "crates/{{KERNEL}}/Cargo.toml",
-        include_str!("../templates/new/kernel/Cargo.toml"),
+        include_str!("../templates/new/kernel/Cargo.toml.in"),
     ),
     (
         "crates/{{KERNEL}}/src/lib.rs",
@@ -32,7 +32,7 @@ const TEMPLATE: &[(&str, &str)] = &[
     ),
     (
         "crates/{{CORE}}/Cargo.toml",
-        include_str!("../templates/new/core/Cargo.toml"),
+        include_str!("../templates/new/core/Cargo.toml.in"),
     ),
     (
         "crates/{{CORE}}/src/lib.rs",
@@ -40,7 +40,7 @@ const TEMPLATE: &[(&str, &str)] = &[
     ),
     (
         "crates/{{NAME}}/Cargo.toml",
-        include_str!("../templates/new/edge/Cargo.toml"),
+        include_str!("../templates/new/edge/Cargo.toml.in"),
     ),
     (
         "crates/{{NAME}}/src/main.rs",
