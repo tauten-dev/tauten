@@ -1,6 +1,9 @@
 # Changelog
 
-## Unreleased (0.2.0)
+## 0.2.0 (2026-11-21)
+
+Milestone 0.2: #65, #64 and #60 (release issue #70). #61, #62, #66 and #68
+carry forward; adopter trials never gate a release.
 
 ### Breaking
 

@@ -25,7 +25,7 @@ fs = ["std", "dep:cap-std", "dep:tauten-check-kernel"]
 [dependencies]
 cap-std = { version = "4.0.3", optional = true }
 tauten-check-kernel = { workspace = true, optional = true }
-tauten-macros = { path = "../tauten-macros", version = "0.1.0" }
+tauten-macros = { path = "../tauten-macros", version = "0.2.0" }
 
 [dev-dependencies]
 trybuild = "1.0.125"
