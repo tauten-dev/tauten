@@ -24,6 +24,13 @@ re-calibrated exactly that claim (1 mutant, killed) in 89 s. The writfold
 measurement needs a first full writfold run that records inputs; the owner
 released 0.0.5 without it (2026-11-21), to be measured after release.
 
+Published 2026-11-21 by `release.yml` from tag `v0.0.5` on 0fb7651. The first
+tag (c167c36) failed `cargo publish` verification before uploading anything:
+`templates/new` was left out of the `cargo-tauten` package because its
+subdirectories held `Cargo.toml` files. 0fb7651 renames them to
+`Cargo.toml.in`, and the CI gate now packages every published crate from its
+tarball in a fresh target directory.
+
 ## Milestones (see PLAN.md §6)
 
 | # | Item | State | Evidence |
