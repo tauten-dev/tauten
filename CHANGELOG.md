@@ -2,11 +2,6 @@
 
 ## Unreleased
 
-- `cargo-tauten` packages again: the `cargo tauten new` templates' manifests
-  are now `Cargo.toml.in`, because cargo leaves any subdirectory with a
-  `Cargo.toml` out of a package, which made the v0.0.5 publish fail its
-  verification (nothing was published). The CI gate now runs `cargo package`
-  over every published crate.
 - `cargo tauten proofs reconcile` (#50): in a two-parent merge whose
   human-authored conflicts are resolved, checks the resolved `claims.toml`
   against both parents' recorded claims (TAU-R002 twice, decided together by
@@ -40,6 +35,11 @@
   empty required set. Projects without `proofs/claims.toml` are unaffected.
 
 ## 0.0.5 (2026-11-21)
+
+- `cargo-tauten` packages: the `cargo tauten new` templates' manifests are
+  `Cargo.toml.in` (cargo leaves any subdirectory with a `Cargo.toml` out of a
+  package, so the first v0.0.5 publish failed its verification and uploaded
+  nothing). The CI gate runs `cargo package` over every published crate.
 
 - Inherit a dependency's claim (A7b, #48): `inherit =
   "crate@version:function"` in `proofs/claims.toml` reuses a claim the
