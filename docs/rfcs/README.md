@@ -125,3 +125,5 @@ Rows are in creation order.
 | [2026-11-19-discipline](2026-11-19-discipline.md) | Code discipline + proofs ([DISCIPLINE-PROPOSAL.md](../DISCIPLINE-PROPOSAL.md), [D0-SPEC.md](../D0-SPEC.md)) | accepted | in-progress |
 | [2026-11-19-toolkit-proofs](2026-11-19-toolkit-proofs.md) | Every toolkit decision in the proved kernel ([TOOLKIT-PROOF-PLAN.md](../TOOLKIT-PROOF-PLAN.md)) | accepted | in-progress |
 | [2026-11-19-roadmap-five-primitives](2026-11-19-roadmap-five-primitives.md) | Five general primitives; roadmap issues #1-#38 ([ROADMAP.md](../ROADMAP.md)) | accepted | in-progress |
+| [2026-11-21-draft-claim-entries](2026-11-21-draft-claim-entries.md) | Reviewable claim-entry drafts from existing declarations and mutants ([#49](https://github.com/tauten-dev/tauten/issues/49)) | draft | not-started |
+| [2026-11-21-recover-proof-records](2026-11-21-recover-proof-records.md) | Retry unavailable tools and recover generated proof artifacts on merge ([#50](https://github.com/tauten-dev/tauten/issues/50), [#52](https://github.com/tauten-dev/tauten/issues/52)) | draft | not-started |
