@@ -23,10 +23,7 @@ struct Proposal<'a> {
 fn propose(ws: &Loaded) -> Vec<Proposal<'_>> {
     let mut out = Vec::new();
     for member in ws.model.members.iter().filter(|m| m.tier_raw.is_none()) {
-        let lib_root = member
-            .sources
-            .iter()
-            .find(|f| f.is_crate_root && f.path.ends_with("lib.rs"));
+        let lib_root = member.sources.iter().find(|f| f.is_lib_root);
         let (tier, reason) = match lib_root {
             Some(root)
                 if matches!(
@@ -54,23 +51,24 @@ pub fn run(ws: &Loaded, write: bool) -> Result<()> {
     if proposals.is_empty() {
         println!("every crate already declares a tier");
     }
+    // Every edit is computed and checked before anything is written, so a
+    // refused manifest leaves the whole workspace untouched.
+    let mut edits = Vec::new();
     for p in &proposals {
         println!(
             "{:<28} tier = \"{}\"   ({}; {})",
             p.name, p.tier, p.reason, p.manifest
         );
-        if write {
-            let path = ws.root().join(p.manifest);
-            let mut text =
-                fs::read_to_string(&path).with_context(|| format!("reading {}", path.display()))?;
-            if !text.ends_with('\n') {
-                text.push('\n');
-            }
-            text.push_str(&format!(
-                "\n[package.metadata.tauten]\ntier = \"{}\"\n",
-                p.tier
-            ));
-            fs::write(&path, text).with_context(|| format!("writing {}", path.display()))?;
+        let path = ws.root().join(p.manifest);
+        let text =
+            fs::read_to_string(&path).with_context(|| format!("reading {}", path.display()))?;
+        let edited = with_tier(&text, p.tier)
+            .with_context(|| format!("cannot add the tier to {}", p.manifest))?;
+        edits.push((path, edited));
+    }
+    if write {
+        for (path, text) in &edits {
+            fs::write(path, text).with_context(|| format!("writing {}", path.display()))?;
         }
     }
     hardening(ws, write)?;
@@ -93,6 +91,71 @@ pub fn run(ws: &Loaded, write: bool) -> Result<()> {
             "\nNothing written. Re-run with --write to apply; change any tier afterwards by hand."
         );
     }
+    Ok(())
+}
+
+/// `manifest` with `package.metadata.tauten.tier = tier` added, keeping
+/// every other key, comment and table representation. An existing
+/// `[package.metadata.tauten]` table (explicit, dotted or inline) gets the
+/// key; a shape that cannot hold it is refused, and the result is re-read
+/// with a TOML parser before it is returned.
+fn with_tier(manifest: &str, tier: Tier) -> Result<String> {
+    use toml_edit::{DocumentMut, Item, Table, Value, value};
+    let mut doc: DocumentMut = manifest.parse().context("the manifest is not valid TOML")?;
+    let package = doc
+        .get_mut("package")
+        .and_then(Item::as_table_like_mut)
+        .context("no [package] table")?;
+    if package.get("metadata").is_none() {
+        let mut metadata = Table::new();
+        metadata.set_implicit(true);
+        package.insert("metadata", Item::Table(metadata));
+    }
+    let metadata = package
+        .get_mut("metadata")
+        .and_then(Item::as_table_like_mut)
+        .context("`package.metadata` is not a table; add `tier` by hand")?;
+    if metadata.get("tauten").is_none() {
+        metadata.insert("tauten", Item::Table(Table::new()));
+    }
+    let tauten = metadata.get_mut("tauten").context("tauten table")?;
+    let tier_value = tier.to_string();
+    match tauten {
+        Item::Table(table) => {
+            refuse_existing(table.contains_key("tier"))?;
+            table.insert("tier", value(tier_value.as_str()));
+        }
+        Item::Value(Value::InlineTable(table)) => {
+            refuse_existing(table.contains_key("tier"))?;
+            table.insert("tier", tier_value.as_str().into());
+            table.fmt();
+        }
+        _ => anyhow::bail!("`package.metadata.tauten` is not a table; add `tier` by hand"),
+    }
+    let edited = doc.to_string();
+    let check: toml::Table = edited
+        .parse()
+        .context("the edited manifest would not parse; nothing written")?;
+    let written = check
+        .get("package")
+        .and_then(|p| p.get("metadata"))
+        .and_then(|m| m.get("tauten"))
+        .and_then(|t| t.get("tier"))
+        .and_then(toml::Value::as_str);
+    anyhow::ensure!(
+        written == Some(tier_value.as_str()),
+        "the edited manifest would not declare the tier; nothing written"
+    );
+    Ok(edited)
+}
+
+/// A `tier` key that is present but not a string is the user's to fix:
+/// `init` only fills a missing tier.
+fn refuse_existing(present: bool) -> Result<()> {
+    anyhow::ensure!(
+        !present,
+        "`package.metadata.tauten.tier` is present but not a string; fix it by hand"
+    );
     Ok(())
 }
 
@@ -171,36 +234,58 @@ const PROOFS_TEMPLATE: &[(&str, &str)] = &[
 ];
 
 /// TAU-H001: turn on release overflow checks in the workspace manifest,
-/// unless they are already on. An existing `[profile.release]` table is
-/// left for the user to edit (appending a second table would be invalid).
+/// unless they are already on. A `[profile.release]` table that already
+/// sets `overflow-checks` is left for the user to edit; otherwise the key
+/// is added to the existing table (in whatever form) or a new one.
 fn hardening(ws: &Loaded, write: bool) -> Result<()> {
     use tauten_check::manifest::Fact;
+    use toml_edit::{DocumentMut, Item, Table, value};
     if ws.model.overflow_checks == Some(Fact::Yes) {
         println!("{:<28} overflow-checks already on", "Cargo.toml");
         return Ok(());
     }
     let path = ws.root().join("Cargo.toml");
-    let mut text =
-        fs::read_to_string(&path).with_context(|| format!("reading {}", path.display()))?;
-    if text.contains("[profile.release") {
+    let text = fs::read_to_string(&path).with_context(|| format!("reading {}", path.display()))?;
+    let mut doc: DocumentMut = text
+        .parse()
+        .with_context(|| format!("parsing {}", path.display()))?;
+    let by_hand = || {
         println!(
             "{:<28} set `overflow-checks = true` under [profile.release] by hand (TAU-H001)",
             "Cargo.toml"
         );
-        return Ok(());
+        Ok(())
+    };
+    let profile = doc.entry("profile").or_insert_with(|| {
+        let mut t = Table::new();
+        t.set_implicit(true);
+        Item::Table(t)
+    });
+    let Some(profile) = profile.as_table_like_mut() else {
+        return by_hand();
+    };
+    let fresh = profile.get("release").is_none();
+    if fresh {
+        let mut release = Table::new();
+        release
+            .decor_mut()
+            .set_prefix("\n# TAU-H001: release builds check integer overflow.\n");
+        profile.insert("release", Item::Table(release));
     }
+    let Some(release) = profile
+        .get_mut("release")
+        .and_then(Item::as_table_like_mut)
+        .filter(|r| !r.contains_key("overflow-checks"))
+    else {
+        return by_hand();
+    };
+    release.insert("overflow-checks", value(true));
     println!(
         "{:<28} [profile.release] overflow-checks = true",
         "Cargo.toml"
     );
     if write {
-        if !text.ends_with('\n') {
-            text.push('\n');
-        }
-        text.push_str(
-            "\n# TAU-H001: release builds check integer overflow.\n[profile.release]\noverflow-checks = true\n",
-        );
-        fs::write(&path, text).with_context(|| format!("writing {}", path.display()))?;
+        fs::write(&path, doc.to_string()).with_context(|| format!("writing {}", path.display()))?;
     }
     Ok(())
 }

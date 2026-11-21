@@ -20,8 +20,13 @@ pub struct SourceFile {
     pub path: String,
     /// File contents.
     pub text: String,
-    /// Whether this is a crate root (`lib.rs`, `main.rs`, `bin/*.rs`).
+    /// Whether this is the root of the package's library or a binary
+    /// (Cargo's declared `src_path`, whatever the file is called).
     pub is_crate_root: bool,
+    /// Whether this is the root of the package's library target (any
+    /// library crate type, including proc-macro), by Cargo's target kind
+    /// rather than the file name (#55).
+    pub is_lib_root: bool,
     /// Whether this is the root of any Cargo target of the package (lib,
     /// bin, proc-macro, test, bench, example, build script), from `cargo
     /// metadata`. A file that is not is a module some target declares.
@@ -440,7 +445,7 @@ impl Ctx<'_> {
 
     /// TAU-K003, decided by the proved [`layout::k003`] on the library root.
     fn crate_root(&mut self, tier: Tier, file: &SourceFile) {
-        if !file.path.ends_with("lib.rs") {
+        if !file.is_lib_root {
             return;
         }
         let fact = scan::no_std(&file.text);
@@ -735,6 +740,7 @@ mod tests {
                 path: (*path).to_owned(),
                 text: (*text).to_owned(),
                 is_crate_root: *root && *kind == SourceKind::Src,
+                is_lib_root: *root && *kind == SourceKind::Src && path.ends_with("lib.rs"),
                 is_target_root: *root,
                 kind: *kind,
             });
@@ -822,6 +828,7 @@ mod tests {
             path: "k/src/lib.rs".into(),
             text: "#![no_std]\n".into(),
             is_crate_root: true,
+            is_lib_root: true,
             is_target_root: true,
             kind: SourceKind::Src,
         });
@@ -833,6 +840,7 @@ mod tests {
             path: "e/src/main.rs".into(),
             text: "fn main() { let _a = Authority::acquire(); }".into(),
             is_crate_root: true,
+            is_lib_root: false,
             is_target_root: true,
             kind: SourceKind::Src,
         });
@@ -855,6 +863,7 @@ mod tests {
             path: "k/src/lib.rs".into(),
             text: "#![no_std]".into(),
             is_crate_root: true,
+            is_lib_root: true,
             is_target_root: true,
             kind: SourceKind::Src,
         });
@@ -874,6 +883,7 @@ mod tests {
             path: "k/src/lib.rs".into(),
             text: "pub fn f() {}".into(),
             is_crate_root: true,
+            is_lib_root: true,
             is_target_root: true,
             kind: SourceKind::Src,
         });
@@ -887,6 +897,7 @@ mod tests {
             path: "k/src/lib.rs".into(),
             text: "#![no_std]\n#[expect(clippy::indexing_slicing, reason = \"x\")]\nfn f() {}\n#[expect(dead_code, reason = \"y\")]\nfn g() {}\n".into(),
             is_crate_root: true,
+            is_lib_root: true,
             is_target_root: true,
             kind: SourceKind::Src,
         });
@@ -895,6 +906,7 @@ mod tests {
             path: "e/src/main.rs".into(),
             text: "#[expect(clippy::todo, reason = \"later\")]\nfn f() {}\n#[expect(clippy::unwrap_used, reason = \"ok\")]\nfn g() {}\n".into(),
             is_crate_root: true,
+            is_lib_root: false,
             is_target_root: true,
             kind: SourceKind::Src,
         });
@@ -913,6 +925,7 @@ mod tests {
             path: "k/src/lib.rs".into(),
             text: "#![no_std]".into(),
             is_crate_root: true,
+            is_lib_root: true,
             is_target_root: true,
             kind: SourceKind::Src,
         });
@@ -940,6 +953,7 @@ mod tests {
             path: "c/src/lib.rs".into(),
             text: "#![expect(clippy::indexing_slicing, reason = \"x\")]\npub fn f() { let _a = Authority::acquire(); } // for now\n".into(),
             is_crate_root: true,
+            is_lib_root: true,
             is_target_root: true,
             kind: SourceKind::Src,
         });
@@ -1020,6 +1034,7 @@ mod unparsed_tests {
                 path: "k/src/lib.rs".to_owned(),
                 text: "#![no_std]\npub fn broken( {".to_owned(),
                 is_crate_root: true,
+                is_lib_root: true,
                 is_target_root: true,
                 kind: SourceKind::Src,
             }],

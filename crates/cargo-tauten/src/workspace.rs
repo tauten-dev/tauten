@@ -4,7 +4,9 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
-use cargo_metadata::{DependencyKind, Metadata, MetadataCommand, Package, PackageId};
+use cargo_metadata::{
+    DependencyKind, Metadata, MetadataCommand, Package, PackageId, Target, TargetKind,
+};
 use tauten_check::structure::{ManifestLint, Member, SourceFile, SourceKind, Workspace};
 
 /// A loaded workspace: cargo metadata plus the check model.
@@ -116,17 +118,7 @@ fn member(
     };
     let manifest_path = package.manifest_path.as_std_path();
     let manifest_lints = read_package_lints(manifest_path, workspace_lints)?;
-    let crate_roots: Vec<PathBuf> = package
-        .targets
-        .iter()
-        .filter(|t| t.is_lib() || t.is_bin() || t.is_proc_macro())
-        .map(|t| t.src_path.as_std_path().to_path_buf())
-        .collect();
-    let target_roots: Vec<PathBuf> = package
-        .targets
-        .iter()
-        .map(|t| t.src_path.as_std_path().to_path_buf())
-        .collect();
+    let roots = Roots::of(package);
     let package_dir = manifest_path.parent().unwrap_or(root);
     let mut sources = Vec::new();
     for (dir, kind) in [
@@ -135,14 +127,25 @@ fn member(
         ("benches", SourceKind::Test),
         ("examples", SourceKind::Example),
     ] {
-        collect_sources(
-            root,
-            &package_dir.join(dir),
-            &crate_roots,
-            &target_roots,
-            kind,
-            &mut sources,
-        )?;
+        collect_sources(root, &package_dir.join(dir), &roots, kind, &mut sources)?;
+    }
+    // #55: a target Cargo declares outside the conventional directories
+    // (`[lib] path = "code/lib.rs"`) is checked like a conventional one:
+    // its directory is walked, or just the file when it sits directly in
+    // the package directory.
+    for target in package.targets.iter().filter(|t| !t.is_custom_build()) {
+        let path = target.src_path.as_std_path();
+        if !path.is_file() || sources.iter().any(|s| s.path == relative(root, path)) {
+            continue;
+        }
+        let kind = target_kind(target);
+        match path
+            .parent()
+            .filter(|dir| *dir != package_dir && dir.starts_with(package_dir))
+        {
+            Some(dir) => collect_sources(root, dir, &roots, kind, &mut sources)?,
+            None => push_source(root, path, &roots, kind, &mut sources)?,
+        }
     }
     let build = package
         .targets
@@ -155,6 +158,7 @@ fn member(
         sources.push(SourceFile {
             path: relative(root, &path),
             is_crate_root: false,
+            is_lib_root: false,
             is_target_root: true,
             kind: SourceKind::Build,
             text,
@@ -174,11 +178,65 @@ fn member(
     })
 }
 
+/// The target roots of one package, by Cargo's declared kind and
+/// `src_path` (never by file name).
+struct Roots {
+    /// Library (any crate type) and binary roots.
+    crates: Vec<PathBuf>,
+    /// Library roots only.
+    libs: Vec<PathBuf>,
+    /// Every target's root, tests, benches, examples and build script too.
+    targets: Vec<PathBuf>,
+}
+
+impl Roots {
+    fn of(package: &Package) -> Self {
+        let paths = |keep: &dyn Fn(&Target) -> bool| {
+            package
+                .targets
+                .iter()
+                .filter(|t| keep(t))
+                .map(|t| t.src_path.as_std_path().to_path_buf())
+                .collect()
+        };
+        Self {
+            crates: paths(&|t| is_library(t) || t.is_bin()),
+            libs: paths(&is_library),
+            targets: paths(&|_| true),
+        }
+    }
+}
+
+/// Whether a target is the package's library, whatever its crate types
+/// (`lib`, `rlib`, `cdylib`, `proc-macro`, ...).
+fn is_library(target: &Target) -> bool {
+    target.kind.iter().any(|k| {
+        !matches!(
+            k,
+            TargetKind::Bin
+                | TargetKind::Test
+                | TargetKind::Bench
+                | TargetKind::Example
+                | TargetKind::CustomBuild
+        )
+    })
+}
+
+/// Which part of the package a declared target's files belong to.
+fn target_kind(target: &Target) -> SourceKind {
+    if target.is_test() || target.is_bench() {
+        SourceKind::Test
+    } else if target.is_example() {
+        SourceKind::Example
+    } else {
+        SourceKind::Src
+    }
+}
+
 fn collect_sources(
     root: &Path,
     dir: &Path,
-    crate_roots: &[PathBuf],
-    target_roots: &[PathBuf],
+    roots: &Roots,
     kind: SourceKind,
     out: &mut Vec<SourceFile>,
 ) -> Result<()> {
@@ -192,19 +250,36 @@ fn collect_sources(
     entries.sort();
     for path in entries {
         if path.is_dir() {
-            collect_sources(root, &path, crate_roots, target_roots, kind, out)?;
+            collect_sources(root, &path, roots, kind, out)?;
         } else if path.extension().is_some_and(|e| e == "rs") {
-            let text =
-                fs::read_to_string(&path).with_context(|| format!("reading {}", path.display()))?;
-            out.push(SourceFile {
-                path: relative(root, &path),
-                is_crate_root: crate_roots.contains(&path),
-                is_target_root: target_roots.contains(&path),
-                kind,
-                text,
-            });
+            push_source(root, &path, roots, kind, out)?;
         }
     }
+    Ok(())
+}
+
+/// Add one source file, unless it is already in `out`.
+fn push_source(
+    root: &Path,
+    path: &Path,
+    roots: &Roots,
+    kind: SourceKind,
+    out: &mut Vec<SourceFile>,
+) -> Result<()> {
+    let rel = relative(root, path);
+    if out.iter().any(|s| s.path == rel) {
+        return Ok(());
+    }
+    let text = fs::read_to_string(path).with_context(|| format!("reading {}", path.display()))?;
+    let path = path.to_path_buf();
+    out.push(SourceFile {
+        path: rel,
+        is_crate_root: roots.crates.contains(&path),
+        is_lib_root: roots.libs.contains(&path),
+        is_target_root: roots.targets.contains(&path),
+        kind,
+        text,
+    });
     Ok(())
 }
 

@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+- `cargo tauten init --write` keeps valid manifests valid (#54). An existing
+  `[package.metadata.tauten]` table gets the proposed `tier` in whatever form
+  it has (explicit header, dotted keys, inline table), instead of a second,
+  duplicate header that Cargo refuses. Comments and other keys are kept, a
+  second run changes nothing, and a `tier` that is present but not a string
+  is refused before anything is written. TAU-H001's `overflow-checks` is
+  likewise added to an existing `[profile.release]` table. Manifests are
+  edited with `toml_edit`, and every edit is re-parsed before it is written.
+- Library and binary roots come from Cargo's declared targets (#55). A
+  library at a non-default path or file name (`[lib] path =
+  "code/kernel.rs"`) now gets the same structural findings (TAU-K003 and the
+  other source rules) and the same `init` tier proposal as `src/lib.rs`.
+  Before, such a crate was checked as if it had no library and was proposed
+  as `edge`. Files outside `src/`, `tests/`, `benches/` and `examples/` are
+  collected from each declared target's directory. Library targets of any
+  crate type (`cdylib`, `staticlib`, ...) count as crate roots.
+  `tauten_check::SourceFile` gains `is_lib_root`.
+
 ## 0.0.6 (2026-11-21)
 
 - TAU-X001 advice for modules shared by several targets (#59): an inner
