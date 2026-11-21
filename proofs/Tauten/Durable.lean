@@ -40,6 +40,14 @@ Proved here (theorems stated over the extracted step functions):
   `durable_needs_sync_dir`: with that one guarantee switched off, the
   property fails on a concrete run.
 
+Started with the target durably absent (`init0Absent`, #58):
+* `publish_absent_or_new` (under `FS.sync-file` only): a reader, and a
+  reader after any crash, sees nothing or the new content.
+* `publish_absent_durable_on_done` (all three): once `Done`, every crash
+  leaves the new content.
+* `posix_absent_done_reachable`; `absent_or_new_needs_sync_file`,
+  `absent_durable_needs_sync_dir`, `absent_durable_needs_rename_atomic`.
+
 Trusted, not proved: that a real filesystem behaves like a profile with the
 named guarantees (that is what the assumptions say), and the driver that
 performs the commands (no driver is shipped yet).
@@ -532,5 +540,220 @@ theorem durable_needs_sync_dir :
       (by simp [world, exec, publishM, stepN])
     simpa [publishM, stepN] using r5
   · simp [Crash, r, f4, f3, f2, f1, fs0, moved]
+
+/-! ## Publishing to an absent target (#58)
+
+Companions of the replacement results for a first publish: the target does
+not exist, durably, before the machine starts. The step function, `exec`,
+`Crash` and the profiles are the ones above; `init0` and `Inv` are unchanged.
+Absent-or-new needs only `FS.sync-file`: a non-atomic rename can only leave
+the target missing, which a reader of a fresh name may see anyway. Durability
+on `Done` needs all three guarantees. -/
+
+/-- Before a first publish: the target does not exist, durably, and there is
+no temporary file. -/
+def init0Absent (x : P × Fs) : Prop :=
+  x.1 = .Idle ∧ x.2.tgt = none ∧ x.2.tgtD = none ∧ x.2.tmp = none
+
+/-- The invariant behind absent-or-new. `n` is the new content. -/
+def InvAbsent (pr : Profile) (n : Nat) : P × Fs → Prop
+  | (p, fs) =>
+    fs.tgt ≠ some .old ∧ fs.tgtD ≠ some .old ∧
+    ((fs.tgt = some .new ∨ fs.tgtD = some .new) → fs.newV = n ∧ fs.newD = n) ∧
+    (p = .Idle → fs.tgt = none ∧ fs.tgtD = none) ∧
+    (p = .Writing → fs.tgt = none ∧ fs.tgtD = none ∧
+      (fs.lastOk = true → fs.newV = n ∧ fs.tmp = some .new)) ∧
+    (p = .Written → fs.tgt = none ∧ fs.tgtD = none ∧
+      (fs.lastOk = true → fs.newV = n ∧ fs.newD = n ∧ fs.tmp = some .new)) ∧
+    (p = .Synced → fs.newV = n ∧ fs.newD = n ∧
+      (pr.renameAtomic = true → fs.lastOk = true → fs.tgt = some .new)) ∧
+    (p = .Renamed → fs.newV = n ∧ fs.newD = n ∧
+      (pr.renameAtomic = true → fs.tgt = some .new ∧
+        (pr.syncDir = true → fs.lastOk = true → fs.tgtD = some .new))) ∧
+    (p = .Done → fs.newV = n ∧ fs.newD = n ∧
+      (pr.renameAtomic = true → fs.tgt = some .new ∧ (pr.syncDir = true → fs.tgtD = some .new)))
+
+theorem inv_absent_holds (pr : Profile) (n : Nat) (hS : SyncFile pr) :
+    ∀ x, SysReachable publishM (world pr n) init0Absent x → InvAbsent pr n x := by
+  unfold SyncFile at hS
+  apply sys_inv_of_step publishM (world pr n) init0Absent (InvAbsent pr n)
+  · rintro ⟨p, fs⟩ ⟨h1, h2, h3, h4⟩
+    simp only at h1 h2 h3 h4
+    subst h1
+    simp [InvAbsent, h2, h3]
+  · rintro s ⟨tgt, tgtD, tmp, nv, nd, rest, ok⟩ v' e hi hd hx
+    simp only [world, deliverF] at hd hx
+    obtain ⟨i1, i2, i3, i4, i5, i6, i7, i8, i9⟩ := hi
+    cases s <;> cases e <;>
+      simp only [publishM, stepN, exec, moved] at hx hd ⊢ <;>
+      simp_all [InvAbsent] <;>
+      (try (rcases hx with hx | hx | hx | hx)) <;>
+      (try (rcases hx with ⟨hx1, hx2, hx3, hx4, hx5, hx6⟩)) <;>
+      (try (rcases hx with ⟨hx1, hx2, hx3, hx4⟩)) <;>
+      (try (rcases hx with ⟨hx1, ok', hx2⟩)) <;>
+      (try subst_vars) <;> simp_all
+  · intro s v v' _ h
+    exact h.elim
+
+/-- Under `FS.sync-file`, publishing to an absent target: in every reachable
+configuration, and after any crash, a reader of the target sees nothing or
+the new content, never anything else. -/
+theorem publish_absent_or_new (pr : Profile) (o n : Nat) (hS : SyncFile pr) (x : P × Fs)
+    (h : RSysReachable publishR (world pr n) init0Absent x) :
+    (readT o x.2 = none ∨ readT o x.2 = some n) ∧
+    ∀ r, Crash x.2 r → readT o r = none ∨ readT o r = some n := by
+  have h := publish_model x pr n _ h
+  obtain ⟨i1, i2, i3, -⟩ := inv_absent_holds pr n hS x h
+  refine ⟨?_, ?_⟩
+  · unfold readT
+    rcases ht : x.2.tgt with _ | _ | _
+    · simp
+    · exact absurd ht i1
+    · simp [(i3 (Or.inl ht)).1]
+  · rintro r ⟨c1, -, c3, -, -⟩
+    unfold readT
+    rcases ht : r.tgt with _ | _ | _
+    · simp
+    · rcases c1 with c1 | c1 <;> rw [c1] at ht
+      · exact absurd ht i2
+      · exact absurd ht i1
+    · have hnew : x.2.tgt = some .new ∨ x.2.tgtD = some .new := by
+        rcases c1 with c1 | c1 <;> rw [c1] at ht <;> simp [ht]
+      obtain ⟨hv, hd⟩ := i3 hnew
+      rcases c3 with c3 | c3 <;> simp [c3, hv, hd]
+
+/-- Under `FS.rename-atomic`, `FS.sync-file` and `FS.sync-dir`, publishing
+to an absent target: once `durable` reports, every crash leaves the new
+content. -/
+theorem publish_absent_durable_on_done (pr : Profile) (o n : Nat) (hR : RenameAtomic pr)
+    (hS : SyncFile pr) (hD : SyncDir pr) (p : P) (fs : Fs)
+    (h : RSysReachable publishR (world pr n) init0Absent (p, fs))
+    (hdur : machines.publish_durable p = ok true) :
+    ∀ r, Crash fs r → readT o r = some n := by
+  rw [durable_model] at hdur
+  have hp : p = .Done := by cases p <;> simp_all [durableN]
+  subst hp
+  have h := publish_model _ pr n _ h
+  obtain ⟨-, -, -, -, -, -, -, -, i9⟩ := inv_absent_holds pr n hS _ h
+  obtain ⟨hv, hd, hrest⟩ := i9 rfl
+  obtain ⟨ht, htd⟩ := hrest hR
+  have htd := htd hD
+  rintro r ⟨c1, -, c3, -, -⟩
+  unfold readT
+  have : r.tgt = some .new := by rcases c1 with c1 | c1 <;> simp [c1, ht, htd]
+  rw [this]
+  rcases c3 with c3 | c3 <;> simp [c3, hv, hd]
+
+def fs0Absent : Fs := ⟨none, none, none, 2, 2, fun _ => none, true⟩
+
+/-- Under `posix`, a first publish does reach `Done` (the absent-start
+durable theorem is not vacuous). -/
+theorem posix_absent_done_reachable :
+    ∃ fs, RSysReachable publishR (world posix 1) init0Absent (.Done, fs) ∧
+      readT 0 fs = some 1 := by
+  let f1 : Fs := { fs0Absent with tmp := some .new, newV := 1, lastOk := true }
+  let f2 : Fs := { f1 with newD := f1.newV, lastOk := true }
+  let f3 : Fs := moved f2 true
+  let f4 : Fs := { f3 with tgtD := f3.tgt, lastOk := true }
+  refine ⟨f4, ?_, by simp [readT, f4, f3, f2, f1, moved]⟩
+  apply rsys_of_sys publishR publishM (fun s e => publish_step_model s e)
+  have r0 : SysReachable publishM (world posix 1) init0Absent (.Idle, fs0Absent) :=
+    .init _ ⟨rfl, rfl, rfl, rfl⟩
+  have r1 := SysReachable.step _ _ f1 .Start r0 (by simp [world, deliverF])
+    (by simp [world, exec, publishM, stepN, f1])
+  have r2 := SysReachable.step _ _ f2 .Ok r1 (by simp [world, deliverF, f1])
+    (by simp [world, exec, publishM, stepN, f2])
+  have r3 := SysReachable.step _ _ f3 .Ok r2 (by simp [world, deliverF, f2])
+    (by simp [world, exec, publishM, stepN, f3])
+  have r4 := SysReachable.step _ _ f4 .Ok r3 (by simp [world, deliverF, f3, moved])
+    (by simp [world, exec, publishM, stepN, f4])
+  have r5 := SysReachable.step _ _ f4 .Ok r4 (by simp [world, deliverF, f4])
+    (by simp [world, exec, publishM, stepN])
+  simpa [publishM, stepN] using r5
+
+/-- Without `FS.sync-file` (all else given), a crash after the first rename
+can leave content that is neither absent nor new. -/
+theorem absent_or_new_needs_sync_file :
+    ∃ pr x r, RenameAtomic pr ∧ SyncDir pr ∧ ¬ SyncFile pr ∧
+      RSysReachable publishR (world pr 1) init0Absent x ∧ Crash x.2 r ∧ readT 0 r = some 2 := by
+  let pr : Profile := ⟨true, false, true, true⟩
+  let f1 : Fs := { fs0Absent with tmp := some .new, newV := 1, lastOk := true }
+  let f2 : Fs := { f1 with lastOk := true }
+  let f3 : Fs := moved f2 true
+  let r : Fs := { f3 with tgtD := some .new, newV := 2, newD := 2 }
+  refine ⟨pr, (.Synced, f3), r, rfl, rfl, by simp [SyncFile, pr], ?_, ?_,
+    by simp [readT, r, f3, f2, f1, fs0Absent, moved]⟩
+  · apply rsys_of_sys publishR publishM (fun s e => publish_step_model s e)
+    have r0 : SysReachable publishM (world pr 1) init0Absent (.Idle, fs0Absent) :=
+      .init _ ⟨rfl, rfl, rfl, rfl⟩
+    have r1 := SysReachable.step _ _ f1 .Start r0 (by simp [world, deliverF])
+      (by simp [world, exec, publishM, stepN, f1])
+    have r2 := SysReachable.step _ _ f2 .Ok r1 (by simp [world, deliverF, f1])
+      (by simp [world, exec, publishM, stepN, f2, pr])
+    have r3 := SysReachable.step _ _ f3 .Ok r2 (by simp [world, deliverF, f2])
+      (by simp [world, exec, publishM, stepN, f3])
+    simpa [publishM, stepN] using r3
+  · simp [Crash, r, f3, f2, f1, fs0Absent, moved]
+
+/-- Without `FS.sync-dir` (all else given), a crash after `Done` can lose
+the new name: the reader sees nothing. -/
+theorem absent_durable_needs_sync_dir :
+    ∃ pr fs r, RenameAtomic pr ∧ SyncFile pr ∧ ¬ SyncDir pr ∧
+      machines.publish_durable .Done = ok true ∧
+      RSysReachable publishR (world pr 1) init0Absent (.Done, fs) ∧ Crash fs r ∧
+      readT 0 r = none := by
+  let pr : Profile := ⟨true, true, false, true⟩
+  let f1 : Fs := { fs0Absent with tmp := some .new, newV := 1, lastOk := true }
+  let f2 : Fs := { f1 with newD := f1.newV, lastOk := true }
+  let f3 : Fs := moved f2 true
+  let f4 : Fs := { f3 with lastOk := true }
+  let r : Fs := { f4 with tgt := none, tgtD := none }
+  refine ⟨pr, f4, r, rfl, rfl, by simp [SyncDir, pr], by rw [durable_model]; rfl, ?_, ?_,
+    by simp [readT, r]⟩
+  · apply rsys_of_sys publishR publishM (fun s e => publish_step_model s e)
+    have r0 : SysReachable publishM (world pr 1) init0Absent (.Idle, fs0Absent) :=
+      .init _ ⟨rfl, rfl, rfl, rfl⟩
+    have r1 := SysReachable.step _ _ f1 .Start r0 (by simp [world, deliverF])
+      (by simp [world, exec, publishM, stepN, f1])
+    have r2 := SysReachable.step _ _ f2 .Ok r1 (by simp [world, deliverF, f1])
+      (by simp [world, exec, publishM, stepN, f2])
+    have r3 := SysReachable.step _ _ f3 .Ok r2 (by simp [world, deliverF, f2])
+      (by simp [world, exec, publishM, stepN, f3])
+    have r4 := SysReachable.step _ _ f4 .Ok r3 (by simp [world, deliverF, f3, moved])
+      (by simp [world, exec, publishM, stepN, f4, pr])
+    have r5 := SysReachable.step _ _ f4 .Ok r4 (by simp [world, deliverF, f4])
+      (by simp [world, exec, publishM, stepN])
+    simpa [publishM, stepN] using r5
+  · simp [Crash, r, f4, f3, f2, f1, fs0Absent, moved]
+
+/-- Without `FS.rename-atomic` (all else given), a first publish can reach
+`Done` with the target missing: the rename unlinked instead of moving. -/
+theorem absent_durable_needs_rename_atomic :
+    ∃ pr fs r, SyncFile pr ∧ SyncDir pr ∧ ¬ RenameAtomic pr ∧
+      machines.publish_durable .Done = ok true ∧
+      RSysReachable publishR (world pr 1) init0Absent (.Done, fs) ∧ Crash fs r ∧
+      readT 0 r = none := by
+  let pr : Profile := ⟨false, true, true, true⟩
+  let f1 : Fs := { fs0Absent with tmp := some .new, newV := 1, lastOk := true }
+  let f2 : Fs := { f1 with newD := f1.newV, lastOk := true }
+  let f3 : Fs := { f2 with tgt := none, lastOk := true }
+  let f4 : Fs := { f3 with tgtD := f3.tgt, lastOk := true }
+  refine ⟨pr, f4, f4, rfl, rfl, by simp [RenameAtomic, pr], by rw [durable_model]; rfl, ?_, ?_,
+    by simp [readT, f4, f3]⟩
+  · apply rsys_of_sys publishR publishM (fun s e => publish_step_model s e)
+    have r0 : SysReachable publishM (world pr 1) init0Absent (.Idle, fs0Absent) :=
+      .init _ ⟨rfl, rfl, rfl, rfl⟩
+    have r1 := SysReachable.step _ _ f1 .Start r0 (by simp [world, deliverF])
+      (by simp [world, exec, publishM, stepN, f1])
+    have r2 := SysReachable.step _ _ f2 .Ok r1 (by simp [world, deliverF, f1])
+      (by simp [world, exec, publishM, stepN, f2])
+    have r3 := SysReachable.step _ _ f3 .Ok r2 (by simp [world, deliverF, f2])
+      (by simp [world, exec, publishM, stepN, f3, pr])
+    have r4 := SysReachable.step _ _ f4 .Ok r3 (by simp [world, deliverF, f3])
+      (by simp [world, exec, publishM, stepN, f4])
+    have r5 := SysReachable.step _ _ f4 .Ok r4 (by simp [world, deliverF, f4])
+      (by simp [world, exec, publishM, stepN])
+    simpa [publishM, stepN] using r5
+  · simp [Crash, f4, f3, f2, f1, fs0Absent]
 
 end Tauten.Durable

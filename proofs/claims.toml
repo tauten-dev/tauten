@@ -429,10 +429,10 @@ crate = "tauten"
 file = "crates/tauten/src/publish.rs"
 function = "step"
 lean = "tauten_proof_instances.tauten.publish.step"
-theorems = ["Tauten.Durable.publish_old_or_new"]
+theorems = ["Tauten.Durable.publish_old_or_new", "Tauten.Durable.publish_absent_or_new"]
 assumes = ["FS.rename-atomic", "FS.sync-file"]
 witness = "Tauten.Durable.posix_satisfies"
-necessity = ["Tauten.Durable.old_or_new_needs_rename_atomic", "Tauten.Durable.old_or_new_needs_sync_file"]
+necessity = ["Tauten.Durable.old_or_new_needs_rename_atomic", "Tauten.Durable.old_or_new_needs_sync_file", "Tauten.Durable.absent_or_new_needs_sync_file"]
 mutants = ["skip-sync", "rename-before-sync", "failure-ignored"]
 
 [[claim]]
@@ -440,11 +440,11 @@ crate = "tauten"
 file = "crates/tauten/src/publish.rs"
 function = "durable"
 lean = "tauten_proof_instances.tauten.publish.durable"
-theorems = ["Tauten.Durable.publish_durable_on_done", "Tauten.Durable.durable_model"]
+theorems = ["Tauten.Durable.publish_durable_on_done", "Tauten.Durable.durable_model", "Tauten.Durable.publish_absent_durable_on_done"]
 assumes = ["FS.rename-atomic", "FS.sync-dir", "FS.sync-file"]
 witness = "Tauten.Durable.posix_satisfies"
-necessity = ["Tauten.Durable.durable_needs_sync_dir", "Tauten.Durable.posix_done_reachable"]
-mutants = ["durable-too-early", "skip-sync"]
+necessity = ["Tauten.Durable.durable_needs_sync_dir", "Tauten.Durable.posix_done_reachable", "Tauten.Durable.absent_durable_needs_sync_dir", "Tauten.Durable.absent_durable_needs_rename_atomic", "Tauten.Durable.posix_absent_done_reachable"]
+mutants = ["durable-too-early", "skip-sync", "skip-dir-sync"]
 
 [[claim]]
 crate = "tauten"

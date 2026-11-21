@@ -650,6 +650,10 @@ Dur = "Tauten.Durable."
 DURABLE = (Dur + "publish_step_model", Dur + "publish_old_or_new", Dur + "publish_durable_on_done", Dur + "publish_stops_on_failure",
            Dur + "publish_frame", Dur + "posix_done_reachable", Dur + "old_or_new_needs_rename_atomic",
            Dur + "old_or_new_needs_sync_file", Dur + "durable_needs_sync_dir",
+           # the absent-target companions (#58)
+           Dur + "publish_absent_or_new", Dur + "publish_absent_durable_on_done",
+           Dur + "posix_absent_done_reachable", Dur + "absent_or_new_needs_sync_file",
+           Dur + "absent_durable_needs_sync_dir", Dur + "absent_durable_needs_rename_atomic",
            # create_step calls step
            Dur + "create_new_never_replaces", Dur + "publish_create_step_model")
 RUNTIME_MUTANTS = (
@@ -677,7 +681,15 @@ RUNTIME_MUTANTS = (
     Mutant("durable-too-early", "publish.rs",
            "        Phase::Done => true,\n        Phase::Idle",
            "        Phase::Done | Phase::Renamed => true,\n        Phase::Idle",
-           (Dur + "durable_model", Dur + "publish_durable_on_done", Dur + "durable_needs_sync_dir"), crate="runtime"),
+           (Dur + "durable_model", Dur + "publish_durable_on_done", Dur + "durable_needs_sync_dir",
+            Dur + "publish_absent_durable_on_done", Dur + "absent_durable_needs_sync_dir",
+            Dur + "absent_durable_needs_rename_atomic"), crate="runtime"),
+    # publish: the directory is never synced after the rename, so a first
+    # publish can lose its new name (#58)
+    Mutant("skip-dir-sync", "publish.rs",
+           "        (Phase::Synced, Event::Ok) => (Phase::Renamed, Command::SyncDir),",
+           "        (Phase::Synced, Event::Ok) => (Phase::Renamed, Command::Nothing),",
+           PUBLISH + DURABLE, crate="runtime"),
     # create-new: the final move replaces an existing target (A7)
     Mutant("replace-under-create-new", "publish.rs",
            "        (next, Command::Rename) => (next, Command::RenameNoReplace),",

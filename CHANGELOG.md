@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+- Publishing to an absent target, proved (#58, RFC
+  `2026-11-21-publish-absent-target`). Companion theorems in
+  `proofs/Tauten/Durable.lean` for a publish started with the target durably
+  absent (`init0Absent`). `publish_absent_or_new`: in every reachable
+  configuration and after any crash, a reader sees nothing or the new
+  content. It needs only `FS.sync-file`, because a non-atomic rename can only
+  leave a fresh name missing. `publish_absent_durable_on_done`: once `Done`,
+  every crash leaves the new content (all three FS assumptions). Non-vacuity:
+  `posix_absent_done_reachable`. Necessity: `absent_or_new_needs_sync_file`,
+  `absent_durable_needs_sync_dir` (a crash loses the new name) and
+  `absent_durable_needs_rename_atomic`. The theorems join the existing
+  `step` and `durable` claims (one claim per function); no published
+  theorem, name or assumption changes. New mutant `skip-dir-sync`.
+
 - `cargo tauten init --write` keeps valid manifests valid (#54). An existing
   `[package.metadata.tauten]` table gets the proposed `tier` in whatever form
   it has (explicit header, dotted keys, inline table), instead of a second,

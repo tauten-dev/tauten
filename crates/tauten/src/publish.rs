@@ -7,8 +7,8 @@
 //! translation (`proofs/Tauten/Publish.lean`): against a world in which any
 //! command may fail (leaving partial effects) and the temporary file may
 //! vanish at any time, in every reachable terminal phase no temporary file
-//! is left behind (`publish_discharged`). What the content is after a crash
-//! is the subject of roadmap item A7.
+//! is left behind (`publish_discharged`). After a crash a replaced target
+//! holds old or new, and an absent one nothing or new (`Durable.lean`, #58).
 
 use crate::machine::Machine;
 

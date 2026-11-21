@@ -198,6 +198,13 @@ def claims : List Name := [
   ``Tauten.Durable.old_or_new_needs_rename_atomic,
   ``Tauten.Durable.old_or_new_needs_sync_file,
   ``Tauten.Durable.durable_needs_sync_dir,
+  -- publishing to an absent target (#58)
+  ``Tauten.Durable.publish_absent_or_new,
+  ``Tauten.Durable.publish_absent_durable_on_done,
+  ``Tauten.Durable.posix_absent_done_reachable,
+  ``Tauten.Durable.absent_or_new_needs_sync_file,
+  ``Tauten.Durable.absent_durable_needs_sync_dir,
+  ``Tauten.Durable.absent_durable_needs_rename_atomic,
   -- a stamped kernel action (A5)
   ``Tauten.Instances.stale_refused,
   ``Tauten.Instances.fresh_accepted,

@@ -2,7 +2,7 @@
 rfc: "2026-11-21-publish-absent-target"
 title: "Atomic publish to an absent target: companion theorems"
 status: accepted
-implementation: not-started
+implementation: in-progress
 authors:
   - astra
 created: 2026-11-21
@@ -97,3 +97,19 @@ None.
   recommended to keep 0.0.5 claims byte-stable.
 - 2026-11-21: accepted by the owner ("you have my blessing … file the rfcs
   and mark them as accepted").
+
+## Implementation notes (2026-11-21)
+
+- `publish_absent_or_new` is stated under `FS.sync-file` alone, not under
+  `FS.rename-atomic` as well. In the model, a non-atomic rename can only
+  unlink the target, and for a fresh name that is the "absent" a reader
+  may already see. The rename-atomic necessity therefore cannot be
+  re-established for absent-or-new. It holds for durability instead:
+  `absent_durable_needs_rename_atomic` reaches `Done` with the target
+  missing.
+- A function can carry only one claim, so the companion theorems, their
+  necessity theorems and the witness join the existing `step` and `durable`
+  claims. The claims grow; no theorem, name or assumption is removed or
+  changed, and their `assumes` stay the same.
+- The directory-sync mutant (`skip-dir-sync`) changes the shared step
+  function, so it breaks the replacement and absent-start theorems alike.
