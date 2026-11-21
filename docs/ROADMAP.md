@@ -18,7 +18,7 @@ The roadmap reduces about sixty proposals (a durability plan, a survey of seven 
 | **Registry** | that nothing may be quietly removed or weakened | the baseline ratchet, theorems and mutants per claim, assumptions that may not grow |
 | **Effect row** | that a signature's capabilities match its declared effects | TAU-F001, later a declared label table |
 
-## 0.0.6 (prepared 2026-11-21)
+## 0.0.6 (released 2026-11-21)
 
 Proof records an adopter can recover, and advice that works. Triaged
 2026-11-21 (Fable plan; #57 and #59 admitted from adopter reports, #58

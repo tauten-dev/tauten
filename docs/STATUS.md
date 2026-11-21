@@ -3,11 +3,11 @@
 Updated 2026-11-21. Name final: tauten; license MIT; code at github.com/tauten-dev/tauten (public). Every line says how far an item got:
 **specified → implemented → exercised**. "Exercised" means it ran against
 real input in this repository, and the evidence is named. Versions 0.0.1
-0.0.2, 0.0.3, 0.0.4 and 0.0.5 are on crates.io (0.0.6 prepared); the site is at tauten.dev. Benchmark: no
+0.0.2, 0.0.3, 0.0.4, 0.0.5 and 0.0.6 are on crates.io; the site is at tauten.dev. Benchmark: no
 defect-reduction benefit established (ceiling; held-out run stopped by its
 go/no-go rule; audited findings were not defects).
 
-## 0.0.6 (prepared 2026-11-21)
+## 0.0.6 (2026-11-21)
 
 Milestone 0.0.6 closed: #49, #50, #51, #52, #53, #57, #59 (see
 `docs/ROADMAP.md` and `CHANGELOG.md`). Exercised: the release workflow
@@ -47,7 +47,7 @@ tarball in a fresh target directory.
 | # | Item | State | Evidence |
 |---|---|---|---|
 | M0 | Plan, mapping, agent profile, rule table (42 rules, ~200 banned API paths) | **done** | `docs/`, `crates/tauten-check/agents.md`, `crates/tauten-check/rules.toml`, generated `docs/RULES.md` (drift-checked) |
-| M0 | Fixtures ported from Sovel examples | **exercised** | `fixtures/cases`: 42 reject + 5 accept crates (plus workspace fixtures `layers`, `rej-overflow`, `generated`, `inherit`, `extract`, `proofs-subsume`), exact expected IDs, one tier per crate (`tests/fixtures.rs`) |
+| M0 | Fixtures ported from Sovel examples | **exercised** | `fixtures/cases`: 43 reject + 6 accept crates (plus workspace fixtures `layers`, `rej-overflow`, `generated`, `inherit`, `extract`, `proofs-subsume`), exact expected IDs, one tier per crate (`tests/fixtures.rs`) |
 | M0b | Writfold dry run | **exercised** | `docs/dry-runs/writfold-2026-11-18.md`. It found 4 defects in tauten, now fixed. |
 | M1 | `cargo tauten check` (human/JSON), `explain` (+`--markdown`), `profile`, `--assume-tier` | **exercised** | fixtures, self-check, writfold |
 | M1 | Ratchet: `cargo tauten baseline`, `--baseline`, stale-baseline rule TAU-R001, increases refused | **exercised** | unit tests; `tests/ratchet.rs`; writfold clone (707 accepted → 1 new `unwrap` = 1 error → stale slot = R001 → increase refused) |
