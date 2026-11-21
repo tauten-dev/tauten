@@ -236,6 +236,16 @@ enum ProofsAction {
         #[arg(long = "crate")]
         krate: String,
     },
+    /// In a two-parent merge whose human-authored conflicts are resolved:
+    /// check the resolved claims against both parents' records, regenerate
+    /// the declared extraction, and write a pending (not proved) record.
+    /// Never stages or commits; the merge commit's gate replaces the record.
+    Reconcile {
+        /// The `[[workspace.metadata.tauten.generated]]` entry to
+        /// regenerate (default: the one producing proofs/Extracted).
+        #[arg(long)]
+        generated: Option<String>,
+    },
     /// Translate the kernel crates (Charon, Aeneas) without building the
     /// proofs: the authoritative check that kernel code stays inside the
     /// translatable subset. Needs `[gate] extract` in proofs/claims.toml.
@@ -350,6 +360,9 @@ fn run(cli: Cli) -> Result<ExitCode> {
             match action {
                 Some(ProofsAction::Extract { krate }) => proofs::extract(&ws, krate.as_deref()),
                 Some(ProofsAction::Export { krate }) => proofs::export(&ws, &krate),
+                Some(ProofsAction::Reconcile { generated }) => {
+                    proofs::reconcile(&ws, generated.as_deref())
+                }
                 Some(ProofsAction::Try { theorems, mutants }) => {
                     proofs::try_run(&ws, &theorems, &mutants)
                 }

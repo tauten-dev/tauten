@@ -30,7 +30,7 @@ use anyhow::{Context, Result, bail};
 use tauten_check::generated::{self, Entry, Outcome};
 
 /// Read the entries from the root manifest.
-fn entries(root: &Path) -> Result<Vec<Entry>> {
+pub fn entries(root: &Path) -> Result<Vec<Entry>> {
     let path = root.join("Cargo.toml");
     let text = fs::read_to_string(&path).with_context(|| format!("reading {}", path.display()))?;
     let table: toml::Table = text
@@ -64,7 +64,7 @@ fn entries(root: &Path) -> Result<Vec<Entry>> {
 
 /// Every regular file at or under `rel` in `base`, keyed by path relative
 /// to `base`.
-fn files_under(base: &Path, rel: &str, out: &mut BTreeMap<String, Vec<u8>>) -> Result<()> {
+pub fn files_under(base: &Path, rel: &str, out: &mut BTreeMap<String, Vec<u8>>) -> Result<()> {
     let path = base.join(rel);
     if path.is_file() {
         out.insert(rel.to_owned(), fs::read(&path)?);
@@ -82,7 +82,10 @@ fn files_under(base: &Path, rel: &str, out: &mut BTreeMap<String, Vec<u8>>) -> R
 }
 
 /// A scratch copy of the workspace, removed on drop.
-struct Scratch(PathBuf);
+pub struct Scratch(PathBuf);
+
+/// A scratch copy and the files a command produced under its outputs.
+pub type Produced = (Scratch, BTreeMap<String, Vec<u8>>);
 
 impl Drop for Scratch {
     fn drop(&mut self) {
@@ -190,8 +193,35 @@ fn run_one(root: &Path, entry: &Entry) -> Result<Outcome> {
             &produced,
         ));
     }
-    let scratch = copy_workspace(root)?;
+    let (scratch, produced) = match produce(root, entry, &[])? {
+        Ok(found) => found,
+        Err(why) => return Ok(Outcome::Failed(why)),
+    };
+    drop(scratch);
+    let mut committed = BTreeMap::new();
     for out in &entry.outputs {
+        files_under(root, out, &mut committed)?;
+    }
+    Ok(generated::compare(&entry.outputs, &committed, &produced))
+}
+
+/// Run an `outputs` entry in a scratch copy of the workspace, with its
+/// outputs (and the `clear`ed paths) removed first, so the command never
+/// reads what it regenerates. The scratch copy and every file it produced
+/// under the outputs, or why the command failed.
+pub fn produce(
+    root: &Path,
+    entry: &Entry,
+    clear: &[&str],
+) -> Result<std::result::Result<Produced, String>> {
+    let (program, args) = entry.command.split_first().context("empty command")?;
+    let scratch = copy_workspace(root)?;
+    for out in entry
+        .outputs
+        .iter()
+        .map(String::as_str)
+        .chain(clear.iter().copied())
+    {
         let target = scratch.0.join(out);
         if target.is_dir() {
             fs::remove_dir_all(&target)?;
@@ -208,24 +238,18 @@ fn run_one(root: &Path, entry: &Entry) -> Result<Outcome> {
     match status {
         Ok(s) if s.success() => {}
         Ok(s) => {
-            return Ok(Outcome::Failed(format!(
+            return Ok(Err(format!(
                 "`{}` exited with {s}",
                 entry.command.join(" ")
             )));
         }
-        Err(e) => {
-            return Ok(Outcome::Failed(format!(
-                "`{program}` could not be run: {e}"
-            )));
-        }
+        Err(e) => return Ok(Err(format!("`{program}` could not be run: {e}"))),
     }
-    let mut committed = BTreeMap::new();
     let mut produced = BTreeMap::new();
     for out in &entry.outputs {
-        files_under(root, out, &mut committed)?;
         files_under(&scratch.0, out, &mut produced)?;
     }
-    Ok(generated::compare(&entry.outputs, &committed, &produced))
+    Ok(Ok((scratch, produced)))
 }
 
 /// Run the stage; `only` restricts it to the named entries.

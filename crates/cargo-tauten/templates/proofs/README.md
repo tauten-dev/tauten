@@ -46,6 +46,33 @@ theorems, in parallel, and prints a `PARTIAL` line per affected claim. It
 never writes `claims.json` and is not a gate result; run the full
 `cargo tauten proofs` before you record.
 
+## When the tool is unavailable
+
+If the gate cannot start (no Docker daemon, no image), `cargo tauten proofs`
+prints `tool-missing` for every claim and exits 1, but leaves `claims.json`
+as it was: restore the tool and run the same command again.
+
+## Merging two branches
+
+When both branches changed proofs, `Extracted/` and `claims.json` conflict.
+Resolve and stage every human-authored conflict (sources, `claims.toml`,
+`Proofs/`), then run `cargo tauten proofs reconcile`. It checks the resolved
+`claims.toml` against both parents' `claims.json` (TAU-R002: neither side's
+theorems or mutants may be dropped, nor assumptions added, without an
+`[[amend]]`), regenerates the translation, and writes a `pending-merge`
+record: **pending, not proved**. It never stages or commits. Stage what it
+lists, commit the merge, then run `cargo tauten proofs --level ship` on the
+merge commit; only that gate replaces the pending record. Until then nothing
+is subsumed and `proofs export` refuses. Reconcile needs the translation
+declared in the workspace `Cargo.toml`:
+
+```toml
+[[workspace.metadata.tauten.generated]]
+name = "translation"
+command = ["sh", "proofs/refresh.sh"]
+outputs = ["proofs/Extracted"]
+```
+
 ## Assumptions about the outside world
 
 A theorem about code that talks to the outside world (a filesystem, a

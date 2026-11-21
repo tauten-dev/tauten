@@ -13,7 +13,7 @@ use anyhow::{Context, Result};
 use tauten_check::Diagnostic;
 use tauten_check::proofs::{
     self, AssumptionsFile, Badge, ClaimRecord, ClaimsFile, Event, FunctionSpan, Outcome, Record,
-    Recorded, Report,
+    RecordFile, Recorded, Report,
 };
 
 use crate::workspace::Loaded;
@@ -24,6 +24,9 @@ pub const CLAIMS_TOML: &str = "proofs/claims.toml";
 pub const ASSUMPTIONS_TOML: &str = "proofs/assumptions.toml";
 /// The outcomes `cargo tauten proofs` recorded (and the badge data).
 pub const CLAIMS_JSON: &str = "proofs/claims.json";
+
+/// The translation directory `reconcile` regenerates by default.
+const EXTRACTED: &str = "proofs/Extracted";
 
 /// Run the gate and record the outcomes. Exit 0 iff every claim is proved.
 ///
@@ -287,9 +290,16 @@ fn run_in(
         .collect();
     let previous = committed_record(live_root)?;
     let own = file.claim.iter().any(|c| c.inherit.is_none());
-    let plan = match (level, &previous, &file.gate.try_) {
+    let reusable = previous.as_ref().and_then(RecordFile::result);
+    let plan = match (level, reusable, &file.gate.try_) {
         (Level::Ship, Some(previous), Some(try_)) => {
             Some(ship_plan(&file, &inputs, previous, try_))
+        }
+        (Level::Ship, None, _) if matches!(previous, Some(RecordFile::Pending(_))) => {
+            eprintln!(
+                "tauten: {CLAIMS_JSON} is a pending merge record: no evidence to reuse, so every claim is re-calibrated (the full gate)"
+            );
+            None
         }
         (Level::Ship, _, _) => {
             eprintln!(
@@ -385,20 +395,25 @@ fn run_in(
         return Ok(ExitCode::FAILURE);
     }
     if write && let Some(committed) = committed_record(live_root)? {
-        let found = proofs::conservation(&file, &committed);
+        let found = proofs::conservation_of(&file, &committed.declared());
         if !found.weakened.is_empty() {
-            for (_, f, function, kind, name) in &found.weakened {
-                let change = match kind {
-                    proofs::AmendKind::Assumption => "gain assumption",
-                    proofs::AmendKind::Theorem => "lose theorem",
-                    proofs::AmendKind::Mutant => "lose mutant",
-                };
-                eprintln!(
-                    "tauten: TAU-R002: {f}: claim `{function}` would {change} `{name}` without an `[[amend]]` entry"
-                );
-            }
+            report_weakened(&found, "");
             eprintln!("tauten: not recording {CLAIMS_JSON}: a recorded claim would be weakened");
             return Ok(ExitCode::FAILURE);
+        }
+        if let RecordFile::Pending(pending) = &committed {
+            if let Some(why) = promotion_refused(live_root, &file, pending, commit.as_deref())? {
+                eprintln!(
+                    "tauten: not recording {CLAIMS_JSON}: {why}; the pending merge record is kept"
+                );
+                return Ok(ExitCode::FAILURE);
+            }
+            if !proofs::records_pass(&records) {
+                eprintln!(
+                    "tauten: not recording {CLAIMS_JSON}: only a gate that proves every claim replaces a pending merge record"
+                );
+                return Ok(ExitCode::FAILURE);
+            }
         }
     }
     if records.is_empty() {
@@ -526,8 +541,12 @@ fn dependency_record(root: &Path, krate: &str) -> Result<(Option<String>, Option
 /// `cargo tauten proofs export --crate <name>`: the recorded claims of one
 /// crate, as the `claims.json` that crate ships for `inherit`.
 pub fn export(ws: &Loaded, krate: &str) -> Result<ExitCode> {
-    let Some(record) = committed_record(ws.root())? else {
-        anyhow::bail!("no {CLAIMS_JSON} to export from");
+    let record = match committed_record(ws.root())? {
+        None => anyhow::bail!("no {CLAIMS_JSON} to export from"),
+        Some(RecordFile::Pending(_)) => anyhow::bail!(
+            "{CLAIMS_JSON} is a pending merge record, not evidence; run `cargo tauten proofs` on the merged commit before exporting"
+        ),
+        Some(RecordFile::Result(record)) => record,
     };
     let shipped = Record {
         version: record.version,
@@ -923,16 +942,111 @@ fn current_fingerprints(ws: &Loaded, crates: &[&str]) -> Result<BTreeMap<String,
     Ok(out)
 }
 
-/// The committed `proofs/claims.json`, if present.
-fn committed_record(root: &Path) -> Result<Option<Record>> {
+/// The committed `proofs/claims.json`, if present: a gate result or a
+/// pending merge record (#50).
+fn committed_record(root: &Path) -> Result<Option<RecordFile>> {
     let path = root.join(CLAIMS_JSON);
     if !path.is_file() {
         return Ok(None);
     }
     let text = fs::read_to_string(&path).with_context(|| format!("reading {}", path.display()))?;
-    let record =
-        serde_json::from_str(&text).with_context(|| format!("parsing {}", path.display()))?;
-    Ok(Some(record))
+    RecordFile::parse(&text)
+        .map(Some)
+        .map_err(|e| anyhow::anyhow!("parsing {}: {e}", path.display()))
+}
+
+/// Print one TAU-R002 line per unexcused weakening; `against` names the
+/// record compared with (empty for the committed one).
+fn report_weakened(found: &proofs::Conservation, against: &str) {
+    for (_, f, function, kind, name) in &found.weakened {
+        let change = match kind {
+            proofs::AmendKind::Assumption => "gain assumption",
+            proofs::AmendKind::Theorem => "lose theorem",
+            proofs::AmendKind::Mutant => "lose mutant",
+        };
+        eprintln!(
+            "tauten: TAU-R002: {f}: claim `{function}` would {change} `{name}`{against} without an `[[amend]]` entry"
+        );
+    }
+}
+
+/// `git` in `root`: its trimmed standard output, or `None` if it failed.
+fn git(root: &Path, args: &[&str]) -> Option<String> {
+    let out = Command::new("git")
+        .args(args)
+        .current_dir(root)
+        .output()
+        .ok()?;
+    out.status
+        .success()
+        .then(|| String::from_utf8_lossy(&out.stdout).trim().to_owned())
+}
+
+/// The gate result `proofs/claims.json` held at commit `oid`.
+fn parent_record(root: &Path, oid: &str) -> Result<Record> {
+    let Some(text) = git(root, &["show", &format!("{oid}:{CLAIMS_JSON}")]) else {
+        anyhow::bail!("commit {oid} has no readable {CLAIMS_JSON}");
+    };
+    match RecordFile::parse(&text) {
+        Ok(RecordFile::Result(record)) => Ok(record),
+        Ok(RecordFile::Pending(_)) => anyhow::bail!(
+            "{CLAIMS_JSON} at {oid} is itself a pending merge record; run its gate first"
+        ),
+        Err(e) => anyhow::bail!("parsing {CLAIMS_JSON} at {oid}: {e}"),
+    }
+}
+
+/// TAU-R002 of `file` against each parent's record, decided together by
+/// [`proofs::parents_conserved`]; prints every weakening.
+fn parents_conserve(root: &Path, file: &ClaimsFile, parents: &[String]) -> Result<bool> {
+    let mut found = Vec::new();
+    for oid in parents {
+        let record = parent_record(root, oid)?;
+        let declared: Vec<&proofs::Claim> = record.claims.iter().map(|c| &c.claim).collect();
+        let conserved = proofs::conservation_of(file, &declared);
+        report_weakened(&conserved, &format!(" (recorded at parent {oid})"));
+        found.push(conserved);
+    }
+    Ok(proofs::parents_conserved(&found))
+}
+
+/// Why a gate run may not replace a pending merge record, if it may not:
+/// it must check a snapshot of the merge commit the record names (its two
+/// parents, in order), and the resolved claims must still conserve both
+/// parents' obligations. A hand-written pending file is not promoted just
+/// because it parses.
+fn promotion_refused(
+    root: &Path,
+    file: &ClaimsFile,
+    pending: &proofs::Pending,
+    commit: Option<&str>,
+) -> Result<Option<String>> {
+    let Some(commit) = commit else {
+        return Ok(Some(
+            "a pending merge record is replaced only by a gate on a snapshot of the merge commit (run without --live)".to_owned(),
+        ));
+    };
+    let parents: Vec<String> = ["^1", "^2"]
+        .iter()
+        .filter_map(|n| {
+            git(
+                root,
+                &["rev-parse", "--verify", "-q", &format!("{commit}{n}")],
+            )
+        })
+        .collect();
+    if parents != pending.parents {
+        return Ok(Some(format!(
+            "commit {commit} is not the merge of {} the pending record names",
+            pending.parents.join(" and ")
+        )));
+    }
+    if !parents_conserve(root, file, &pending.parents)? {
+        return Ok(Some(
+            "the resolved claims weaken a parent's obligations".to_owned(),
+        ));
+    }
+    Ok(None)
 }
 
 /// TAU-R002: `proofs/claims.toml` against the committed
@@ -949,7 +1063,8 @@ pub fn conservation(root: &Path, profile: &tauten_check::Profile) -> Result<Vec<
     let text = fs::read_to_string(&toml_path)
         .with_context(|| format!("reading {}", toml_path.display()))?;
     let file = ClaimsFile::parse(&text)?;
-    let found = proofs::conservation(&file, &record);
+    // A pending merge record's registry is the baseline until its gate runs.
+    let found = proofs::conservation_of(&file, &record.declared());
     Ok(proofs::conservation_diagnostics(profile, &file, &found))
 }
 
@@ -969,8 +1084,12 @@ pub fn load(ws: &Loaded) -> Result<Option<RecordedProofs>> {
         return Ok(None);
     }
     let text = fs::read_to_string(&path).with_context(|| format!("reading {}", path.display()))?;
-    let record: Record =
-        serde_json::from_str(&text).with_context(|| format!("parsing {}", path.display()))?;
+    let record = match RecordFile::parse(&text) {
+        Ok(RecordFile::Result(record)) => record,
+        // A pending merge is not evidence: it subsumes nothing.
+        Ok(RecordFile::Pending(_)) => return Ok(None),
+        Err(e) => anyhow::bail!("parsing {}: {e}", path.display()),
+    };
     let crates: Vec<&str> = record
         .claims
         .iter()
@@ -1018,4 +1137,159 @@ pub fn subsume(diags: Vec<Diagnostic>, loaded: Option<&RecordedProofs>) -> Vec<D
         .map(|(record, &fresh)| Recorded { record, fresh })
         .collect();
     proofs::subsume(diags, &recorded, &loaded.functions)
+}
+
+/// `cargo tauten proofs reconcile` (#50): in a two-parent merge whose
+/// human-authored conflicts are resolved, check the resolved claims against
+/// both parents' records, regenerate the declared extraction, and write a
+/// pending merge record. It never stages, commits, or edits a hand-written
+/// file; only the extraction outputs and `proofs/claims.json` change, and the
+/// result is pending, not proved, until a gate runs on the merge commit.
+pub fn reconcile(ws: &Loaded, entry_name: Option<&str>) -> Result<ExitCode> {
+    let root = ws.root();
+    // The merge: HEAD and exactly one MERGE_HEAD.
+    let merge_head = git(root, &["rev-parse", "--git-path", "MERGE_HEAD"])
+        .map(|p| root.join(p))
+        .filter(|p| p.is_file());
+    let Some(merge_head) = merge_head else {
+        anyhow::bail!(
+            "no merge in progress: run reconcile in a two-parent merge, after resolving and staging the human-authored conflicts"
+        );
+    };
+    let heads: Vec<String> = fs::read_to_string(&merge_head)
+        .with_context(|| format!("reading {}", merge_head.display()))?
+        .lines()
+        .map(str::trim)
+        .filter(|l| !l.is_empty())
+        .map(str::to_owned)
+        .collect();
+    let [second] = heads.as_slice() else {
+        anyhow::bail!(
+            "reconcile supports a two-parent merge; this one has {} merge heads",
+            heads.len().saturating_add(1)
+        );
+    };
+    let Some(first) = git(root, &["rev-parse", "--verify", "HEAD"]) else {
+        anyhow::bail!("cannot read HEAD");
+    };
+    if &first == second {
+        anyhow::bail!("the merge's parents are the same commit");
+    }
+    let parents = vec![first.clone(), second.clone()];
+
+    // The declared extraction, unambiguously.
+    let entries = crate::generated::entries(root)?;
+    let candidates: Vec<&tauten_check::generated::Entry> = entries
+        .iter()
+        .filter(|e| !e.outputs.is_empty())
+        .filter(|e| match entry_name {
+            Some(name) => e.name == name,
+            None => e
+                .outputs
+                .iter()
+                .any(|o| o == EXTRACTED || o.starts_with(&format!("{EXTRACTED}/"))),
+        })
+        .collect();
+    let [entry] = candidates.as_slice() else {
+        anyhow::bail!(
+            "reconcile needs exactly one [[workspace.metadata.tauten.generated]] entry with `outputs` producing {EXTRACTED} (or name one with --generated); found {}",
+            candidates.len()
+        );
+    };
+
+    // Only generated outputs and the record may still be unmerged.
+    let under = |path: &str| {
+        path == CLAIMS_JSON
+            || entry
+                .outputs
+                .iter()
+                .any(|o| path == o || path.starts_with(&format!("{o}/")))
+    };
+    let unmerged = git(root, &["diff", "--name-only", "--diff-filter=U"]).unwrap_or_default();
+    let human: Vec<&str> = unmerged
+        .lines()
+        .filter(|p| !p.is_empty() && !under(p))
+        .collect();
+    if !human.is_empty() {
+        anyhow::bail!(
+            "resolve and stage these conflicts first (reconcile only regenerates {} and {CLAIMS_JSON}): {}",
+            entry.outputs.join(", "),
+            human.join(", ")
+        );
+    }
+
+    // Both parents' obligations, in the resolved claims.
+    let path = root.join(CLAIMS_TOML);
+    let text = fs::read_to_string(&path).with_context(|| format!("reading {}", path.display()))?;
+    let file = ClaimsFile::parse(&text)?;
+    if !parents_conserve(root, &file, &parents)? {
+        eprintln!(
+            "tauten: not reconciling: the resolved {CLAIMS_TOML} weakens a parent's obligations (add a reasoned [[amend]] if intended)"
+        );
+        return Ok(ExitCode::FAILURE);
+    }
+
+    // Regenerate in scratch before touching the checkout.
+    let (scratch, produced) = match crate::generated::produce(root, entry, &[CLAIMS_JSON])? {
+        Ok(found) => found,
+        Err(why) => anyhow::bail!("regenerating `{}` failed: {why}", entry.name),
+    };
+    let mut committed = BTreeMap::new();
+    for out in &entry.outputs {
+        crate::generated::files_under(root, out, &mut committed)?;
+    }
+    let changed = match tauten_check::generated::compare(&entry.outputs, &committed, &produced) {
+        tauten_check::generated::Outcome::Same => Vec::new(),
+        tauten_check::generated::Outcome::Drift(paths) => paths,
+        tauten_check::generated::Outcome::Missing(paths) => {
+            anyhow::bail!(
+                "regenerating `{}` produced no {}",
+                entry.name,
+                paths.join(", ")
+            )
+        }
+        tauten_check::generated::Outcome::Failed(why) => anyhow::bail!("{why}"),
+    };
+
+    // The pending record first, then the regenerated outputs: an
+    // interruption leaves the record pending, and a rerun finishes.
+    let pending = proofs::Pending {
+        version: 2,
+        state: proofs::PENDING_MERGE.to_owned(),
+        parents: parents.clone(),
+        registry: file.claim.clone(),
+    };
+    let mut json = serde_json::to_string_pretty(&pending)?;
+    json.push('\n');
+    let target = root.join(CLAIMS_JSON);
+    fs::write(&target, json).with_context(|| format!("writing {}", target.display()))?;
+    for out in &entry.outputs {
+        let dest = root.join(out);
+        if dest.is_dir() {
+            fs::remove_dir_all(&dest).with_context(|| format!("clearing {}", dest.display()))?;
+        } else if dest.is_file() {
+            fs::remove_file(&dest).with_context(|| format!("clearing {}", dest.display()))?;
+        }
+    }
+    for (rel, bytes) in &produced {
+        let dest = root.join(rel);
+        if let Some(parent) = dest.parent() {
+            fs::create_dir_all(parent)?;
+        }
+        fs::write(&dest, bytes).with_context(|| format!("writing {}", dest.display()))?;
+    }
+    drop(scratch);
+
+    eprintln!(
+        "tauten: reconciled the merge of {first} and {second}: {} regenerated path(s) changed",
+        changed.len()
+    );
+    for path in &changed {
+        println!("{path}");
+    }
+    println!("{CLAIMS_JSON}");
+    eprintln!(
+        "tauten: {CLAIMS_JSON} is pending, not proved: stage the paths above, commit the merge, then run `cargo tauten proofs --level ship` on the merge commit"
+    );
+    Ok(ExitCode::SUCCESS)
 }

@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- `cargo tauten proofs reconcile` (#50): in a two-parent merge whose
+  human-authored conflicts are resolved, checks the resolved `claims.toml`
+  against both parents' recorded claims (TAU-R002 twice, decided together by
+  the proved `control::admit`), regenerates the declared translation, and
+  writes a `pending-merge` record (`version: 2`, `parents`, `registry`; no
+  results). A pending record is never evidence: it subsumes nothing, `proofs
+  export` refuses it, the ship level reuses nothing, and a v1 reader refuses
+  it. It stays the TAU-R002 baseline until a gate on a snapshot of the merge
+  commit (its parents checked against the record) proves every claim.
+
 - A missing proof tool no longer overwrites the record (#52): when the gate
   cannot start, prints nothing, or reports only `tools` missing, `cargo tauten
   proofs` still prints a `tool-missing` outcome per claim and exits 1, but
