@@ -1,0 +1,56 @@
+# Proof claims (tauten proof tier; `cargo tauten init --proofs` generated
+# this file). `cargo tauten proofs` runs the gate below and records one
+# outcome per claim in proofs/claims.json: proved, drift, build-failed,
+# audit-failed, mutant-survived or tool-missing.
+version = 1
+
+[gate]
+# Run from the workspace root. proofs/run.sh checks for Docker and the
+# pinned image, then runs proofs/gate.py in it.
+command = ["sh", "proofs/run.sh"]
+# Only translate (`cargo tauten proofs extract [--crate <dir>]`): the
+# authoritative check that kernel code stays inside what the toolchain
+# translates, without building the proofs.
+extract = ["sh", "proofs/run.sh", "python3", "proofs/gate.py", "--extract-only"]
+# The developer loop (`cargo tauten proofs try --theorems T… | --mutants M…`):
+# every stage, but only the named mutants, in parallel; never recorded.
+# Fixture: replays the recorded output of a real gate run (no mutants run).
+try = ["sh", "-c", "cat proofs/recorded-gate.txt", "replay"]
+# Crate directories the gate translates with Charon/Aeneas.
+crates = ["crates/demo49-kernel"]
+
+# One [[claim]] per proved Rust function:
+#
+# [[claim]]
+# crate = "demo49-kernel"
+# file = "crates/demo49-kernel/src/lib.rs"     # workspace-relative
+# function = "apply"                    # `name`, `Type::name` or `module::name`
+# lean = "demo49_kernel.apply"         # the extracted definition
+# theorems = ["Proofs.Demo49Kernel.apply_total"]
+# total = "Proofs.Demo49Kernel.apply_total"  # optional: ∀ args, apply args ⦃ _ ⦄
+# subsumes = ["TAU-N001", "TAU-P003"]    # optional; needs `total`
+# mutants = ["apply-skips-check"]       # each must break one of `theorems`
+#
+# [[mutant]]
+# name = "apply-skips-check"
+# file = "crates/demo49-kernel/src/lib.rs"
+# before = "checked_add(amount)"        # must occur exactly once
+# after = "wrapping_add(amount)"
+# direct = ["Proofs.Module.apply_step"]  # optional, exact: the declarations
+#                                       # whose own proof must fail (helpers
+#                                       # included), and no others. Without
+#                                       # it, the mutant must break one of
+#                                       # its claim's theorems, directly or
+#                                       # through a dependency.
+
+[[mutant]]
+name = "affordable-strict"
+file = "crates/demo49-kernel/src/lib.rs"
+before = "total <= budget"
+after = "total < budget"
+
+[[mutant]]
+name = "affordable-overflow-fits"
+file = "crates/demo49-kernel/src/lib.rs"
+before = "None => false"
+after = "None => true"

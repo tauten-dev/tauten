@@ -32,9 +32,13 @@ mod draft {
     }
 
     fn scratch(name: &str) -> PathBuf {
+        scratch_of(&fixture(), name)
+    }
+
+    fn scratch_of(from: &Path, name: &str) -> PathBuf {
         let dir = Path::new(env!("CARGO_TARGET_TMPDIR")).join(format!("draft-{name}"));
         let _ = fs::remove_dir_all(&dir);
-        copy(&fixture(), &dir);
+        copy(from, &dir);
         dir
     }
 
@@ -275,5 +279,50 @@ mod draft {
         assert_ne!(out.status.code(), Some(0));
         assert!(out.stdout.is_empty());
         assert!(String::from_utf8_lossy(&out.stderr).contains("unsupported inventory version"));
+    }
+
+    /// A real Aeneas translation and the recorded lines of a real gate run
+    /// (`fixtures/proofs-draft-real`, from `cargo tauten new demo49` with its
+    /// claim removed): the draft re-adds the scaffold's claim.
+    #[test]
+    fn a_real_translation_and_gate_run_redraft_the_scaffold_claim() {
+        let real = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/proofs-draft-real");
+        let root = scratch_of(&real, "real");
+        let out = draft(&root, &[], None);
+        let stderr = String::from_utf8_lossy(&out.stderr);
+        assert_eq!(out.status.code(), Some(0), "{stderr}");
+        let patch = String::from_utf8_lossy(&out.stdout).into_owned();
+        assert_eq!(
+            patch,
+            "--- a/proofs/claims.toml
++++ b/proofs/claims.toml
+@@ -54,3 +54,13 @@
+ file = \"crates/demo49-kernel/src/lib.rs\"
+ before = \"None => false\"
+ after = \"None => true\"
++
++[[claim]]
++crate = \"demo49-kernel\"
++file = \"crates/demo49-kernel/src/lib.rs\"
++function = \"affordable\"
++lean = \"demo49_kernel.affordable\"
++theorems = [\"Proofs.Demo49Kernel.affordable_spec\"]
++total = \"Proofs.Demo49Kernel.affordable_spec\"
++subsumes = [\"TAU-N001\", \"TAU-P003\"]
++mutants = [\"affordable-overflow-fits\", \"affordable-strict\"]
+",
+            "{stderr}"
+        );
+        let applied = git_apply(&root, patch.as_bytes(), true);
+        assert!(
+            applied.status.success(),
+            "{}",
+            String::from_utf8_lossy(&applied.stderr)
+        );
+        assert!(git_apply(&root, patch.as_bytes(), false).status.success());
+        let again = draft(&root, &[], None);
+        assert_eq!(again.status.code(), Some(0));
+        assert!(again.stdout.is_empty());
+        assert!(!root.join("proofs/claims.json").exists());
     }
 }
