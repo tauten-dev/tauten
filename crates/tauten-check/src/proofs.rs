@@ -1201,6 +1201,25 @@ impl MutantResult {
 }
 
 impl Report {
+    /// Whether the gate got as far as a local proof stage (#52): it started,
+    /// and reported something other than an unavailable toolchain. A command
+    /// that could not start, printed nothing, or only reported `tools`
+    /// missing is an attempt: its claims are `tool-missing`, but it is not a
+    /// result to record over an earlier one. A started gate that then fails
+    /// (drift, build, audit, mutants) is a result.
+    #[must_use]
+    pub fn started(&self) -> bool {
+        self.not_started.is_none()
+            && self.events.iter().any(|event| match event {
+                Event::Stage { stage, status, .. } => stage != "tools" || status == "ok",
+                Event::Theorem { .. }
+                | Event::Total { .. }
+                | Event::Premises { .. }
+                | Event::Establishes { .. }
+                | Event::Mutant { .. } => true,
+            })
+    }
+
     /// The results the gate reported for `names`.
     #[must_use]
     pub fn mutant_results(&self, names: &[String]) -> Vec<MutantResult> {

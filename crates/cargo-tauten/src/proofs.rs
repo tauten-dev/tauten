@@ -306,6 +306,10 @@ fn run_in(
     } else {
         proofs::Report::default()
     };
+    // An attempt that never reached a proof stage is reported but never
+    // recorded (#52): the committed record stays byte-identical, so a plain
+    // retry finds a clean checkout once the tool is back.
+    let attempt_only = own && !report.started();
     report.changed_during_run = !proofs::unchanged(&before, &fingerprints(ws, &file)?);
     report.expected_direct = proofs::expected_direct(&file);
     if let Some(plan) = &plan {
@@ -363,6 +367,22 @@ fn run_in(
     for record in &records {
         serde_json::to_writer(&mut out, record)?;
         writeln!(out)?;
+    }
+    if attempt_only {
+        let proved = records
+            .iter()
+            .filter(|r| r.outcome == Outcome::Proved)
+            .count();
+        eprintln!(
+            "tauten: {proved} of {} claim(s) proved: the proof gate never started a proof stage (tool missing or unavailable)",
+            records.len()
+        );
+        if write {
+            eprintln!(
+                "tauten: not recording {CLAIMS_JSON}: an attempt that could not run is not a result; the committed record is unchanged, so retry the same command once the tool is available"
+            );
+        }
+        return Ok(ExitCode::FAILURE);
     }
     if write && let Some(committed) = committed_record(live_root)? {
         let found = proofs::conservation(&file, &committed);

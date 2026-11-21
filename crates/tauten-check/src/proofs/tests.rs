@@ -1004,3 +1004,28 @@ fn a_run_passes_only_when_every_claim_of_a_nonempty_set_is_proved() {
     ]));
     assert!(!records_pass(&[record(Outcome::Drift)]));
 }
+
+#[test]
+fn only_a_gate_that_reached_a_proof_stage_started() {
+    let only = |json: &[&str]| Report {
+        events: json.iter().map(|j| event(j)).collect(),
+        ..Report::default()
+    };
+    assert!(!Report::default().started(), "printed nothing");
+    let not_started = Report {
+        not_started: Some("no such command".to_owned()),
+        ..passing()
+    };
+    assert!(!not_started.started());
+    assert!(!only(&[r#"{"stage":"tools","status":"missing"}"#]).started());
+    assert!(only(&[r#"{"stage":"tools","status":"ok"}"#]).started());
+    // A real failure after the tools stage is a result, not an attempt.
+    assert!(
+        only(&[
+            r#"{"stage":"tools","status":"ok"}"#,
+            r#"{"stage":"build","status":"fail"}"#
+        ])
+        .started()
+    );
+    assert!(passing().started());
+}

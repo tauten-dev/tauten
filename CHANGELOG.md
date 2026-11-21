@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- A missing proof tool no longer overwrites the record (#52): when the gate
+  cannot start, prints nothing, or reports only `tools` missing, `cargo tauten
+  proofs` still prints a `tool-missing` outcome per claim and exits 1, but
+  leaves `proofs/claims.json` byte-identical (or absent), so the same command
+  can be retried from the clean checkout. A gate that started and then failed
+  (drift, build, audit, mutants) is recorded as before.
+
 - Publishing waits for the full proofs gate on the tag commit (#53):
   `release.yml` calls `proofs.yml` (extract, drift, Lean build and audit,
   every mutant) in the same run as the CI gate, and `publish` needs both, so a
