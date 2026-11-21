@@ -364,9 +364,6 @@ fn run_in(
         serde_json::to_writer(&mut out, record)?;
         writeln!(out)?;
     }
-    if records.is_empty() {
-        eprintln!("tauten: {CLAIMS_TOML} lists no claim");
-    }
     if write && let Some(committed) = committed_record(live_root)? {
         let found = proofs::conservation(&file, &committed);
         if !found.weakened.is_empty() {
@@ -383,6 +380,18 @@ fn run_in(
             eprintln!("tauten: not recording {CLAIMS_JSON}: a recorded claim would be weakened");
             return Ok(ExitCode::FAILURE);
         }
+    }
+    if records.is_empty() {
+        // An empty inventory proves nothing: no gate ran, and the proved
+        // admission refuses an empty required set (#51). The committed
+        // record, if any, stays as it is.
+        eprintln!(
+            "tauten: {CLAIMS_TOML} lists no claim, so no theorem was checked; add a [[claim]] (or an `inherit` one) or remove {CLAIMS_TOML} if the project has no proof tier"
+        );
+        if write {
+            eprintln!("tauten: not recording {CLAIMS_JSON}: a record of no claims is not a result");
+        }
+        return Ok(ExitCode::FAILURE);
     }
     if write {
         let record = Record {
@@ -418,7 +427,7 @@ fn run_in(
             String::new()
         }
     );
-    Ok(if proved == records.len() {
+    Ok(if proofs::records_pass(&records) {
         ExitCode::SUCCESS
     } else {
         ExitCode::FAILURE

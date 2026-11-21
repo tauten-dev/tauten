@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- An empty proof inventory never passes (#51): `cargo tauten proofs` (any
+  `--level`) and `cargo tauten verify` over a `proofs/claims.toml` with no
+  `[[claim]]` exit 1, say that no theorem was checked, and write no record; a
+  previous record still triggers TAU-R002. The run's verdict is now decided by
+  the proved `control::admit` (one `Pass` control per claim), which refuses an
+  empty required set. Projects without `proofs/claims.toml` are unaffected.
+
 ## 0.0.5 (2026-11-21)
 
 - Inherit a dependency's claim (A7b, #48): `inherit =

@@ -989,3 +989,18 @@ fn inheriting_never_strengthens_a_claim() {
         Badge::NotEstablished
     );
 }
+
+#[test]
+fn a_run_passes_only_when_every_claim_of_a_nonempty_set_is_proved() {
+    assert!(!records_pass(&[]), "an empty inventory never passes (#51)");
+    assert!(records_pass(&[record(Outcome::Proved)]));
+    assert!(records_pass(&[
+        record(Outcome::Proved),
+        record(Outcome::Proved)
+    ]));
+    assert!(!records_pass(&[
+        record(Outcome::Proved),
+        record(Outcome::ToolMissing)
+    ]));
+    assert!(!records_pass(&[record(Outcome::Drift)]));
+}

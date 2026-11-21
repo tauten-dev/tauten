@@ -1531,6 +1531,34 @@ pub struct Conservation {
     pub unneeded: Vec<usize>,
 }
 
+/// Whether a proof run passes: one required `Pass` control per claim, met
+/// only by a `proved` outcome. Decided by the proved
+/// [`kernel_control::admit`], which refuses an empty required set, so a run
+/// over no claims never passes (#51).
+#[must_use]
+pub fn records_pass(records: &[ClaimRecord]) -> bool {
+    use kernel_control::{Control, Expect, Observation, Seen};
+    let controls: Vec<Control> = (0..records.len())
+        .map(|id| Control {
+            id,
+            expect: Expect::Pass,
+        })
+        .collect();
+    let observed: Vec<Observation> = records
+        .iter()
+        .enumerate()
+        .map(|(id, r)| Observation {
+            id,
+            seen: if r.outcome == Outcome::Proved {
+                Seen::Pass
+            } else {
+                Seen::FailOther
+            },
+        })
+        .collect();
+    kernel_control::admit(&controls, &observed)
+}
+
 /// Whether `claims.toml` keeps every theorem and mutant of the committed
 /// record (`claims.json`) and adds no assumption, except where an
 /// `[[amend]]` entry names the change.

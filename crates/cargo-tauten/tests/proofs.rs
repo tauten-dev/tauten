@@ -464,6 +464,41 @@ open({lib:?}, "a").write("// edited during the run\n")
 
     /// A7b: a claim inherited from tauten's shipped record is proved under
     /// the same assumptions; a version other than the locked one is not.
+    /// #51: a configured but empty inventory proves nothing. It fails at
+    /// every level and in `verify`, writes no record, and leaves a previous
+    /// record to TAU-R002.
+    #[test]
+    fn an_empty_inventory_never_passes() {
+        let root = scratch("empty");
+        let claims = root.join("proofs/claims.toml");
+        let text = fs::read_to_string(&claims).expect("read");
+        let gate_only = text.split("[[claim]]").next().expect("header").to_owned();
+        fs::write(&claims, gate_only).expect("write");
+        let record = root.join("proofs/claims.json");
+        let before = fs::read_to_string(&record).expect("recorded");
+
+        // With a record on file, dropping every claim is a weakening.
+        let weakened = tauten(&["proofs", "--live"], &root);
+        assert_eq!(weakened.status.code(), Some(1));
+        assert!(String::from_utf8_lossy(&weakened.stderr).contains("TAU-R002"));
+        assert_eq!(fs::read_to_string(&record).expect("kept"), before);
+
+        // Without one, nothing is checked: refused, and nothing recorded.
+        fs::remove_file(&record).expect("remove record");
+        for args in [
+            &["proofs", "--live"][..],
+            &["proofs", "--live", "--level", "ship"],
+            &["verify", "--level", "ship", "--live"],
+        ] {
+            let out = tauten(args, &root);
+            let err = String::from_utf8_lossy(&out.stderr);
+            assert_eq!(out.status.code(), Some(1), "{args:?}: {err}");
+            assert!(err.contains("no theorem was checked"), "{args:?}: {err}");
+            assert!(!err.contains("0 of 0"), "{args:?}: {err}");
+            assert!(!record.exists(), "{args:?} wrote a record");
+        }
+    }
+
     #[test]
     fn an_inherited_claim_carries_the_dependency_badge() {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/inherit");
