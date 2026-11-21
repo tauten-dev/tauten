@@ -49,6 +49,12 @@ scripts/mutants --file crates/tauten-check/src/scan.rs \
   --file crates/tauten-check/src/manifest.rs \
   --jobs "${TAUTEN_MUTANT_JOBS:-4}" --timeout 180
 
+step "packages: every published crate packages and builds from its tarball"
+# What `cargo publish` verifies before uploading. Catches files cargo leaves
+# out of a package (a subdirectory with its own Cargo.toml is excluded),
+# which broke the v0.0.5 publish.
+cargo package --locked --workspace --exclude tauten-proof-instances --allow-dirty
+
 step "dependencies: licenses, advisories, sources"
 cargo deny --locked check
 

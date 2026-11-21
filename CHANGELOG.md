@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- `cargo-tauten` packages again: the `cargo tauten new` templates' manifests
+  are now `Cargo.toml.in`, because cargo leaves any subdirectory with a
+  `Cargo.toml` out of a package, which made the v0.0.5 publish fail its
+  verification (nothing was published). The CI gate now runs `cargo package`
+  over every published crate.
+
 - Publishing waits for the full proofs gate on the tag commit (#53):
   `release.yml` calls `proofs.yml` (extract, drift, Lean build and audit,
   every mutant) in the same run as the CI gate, and `publish` needs both, so a
