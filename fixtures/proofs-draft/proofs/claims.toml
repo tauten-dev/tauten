@@ -1,0 +1,100 @@
+# Proof claims of the drafting fixture. The gate here is a stand-in that
+# prints recorded audit lines (proofs/audit-stub.sh); nothing is proved.
+version = 2
+
+[gate]
+command = ["sh", "proofs/audit-stub.sh"]
+try = ["sh", "proofs/audit-stub.sh"]
+crates = ["draft-kernel"]
+
+# Hand-written: this comment and the amendment below must survive a draft
+# byte for byte.
+[[claim]]
+crate = "draft-kernel"
+file = "draft-kernel/src/lib.rs"
+function = "add_capped"
+lean = "draft_kernel.add_capped"
+theorems = ["Proofs.DraftKernel.add_capped_spec"]  # the headline
+total = "Proofs.DraftKernel.add_capped_spec"
+subsumes = ["TAU-N001"]
+mutants = [
+    "guard-dropped",
+]
+
+# Under a named assumption.
+[[claim]]
+crate = "draft-kernel"
+file = "draft-kernel/src/lib.rs"
+function = "latest"
+lean = "draft_kernel.latest"
+theorems = ["Proofs.DraftKernel.latest_is_later_reading"]
+assumes = ["FIXTURE.counter-monotone"]
+witness = "Proofs.DraftKernel.constant_counter_is_monotone"
+mutants = ["stored-wins"]
+
+[[amend]]
+file = "draft-kernel/src/lib.rs"
+function = "add_capped"
+kind = "theorem"
+name = "Proofs.DraftKernel.add_capped_old"
+reason = "Replaced by add_capped_spec, which states the cap exactly."
+
+[[mutant]]
+name = "guard-dropped"
+file = "draft-kernel/src/lib.rs"
+before = "if a > u32::MAX - b { u32::MAX } else { a + b }"
+after = "a + b"
+
+[[mutant]]
+name = "stored-wins"
+file = "draft-kernel/src/lib.rs"
+before = "if seen >= stored { seen } else { stored }"
+after = "stored"
+
+[[mutant]]
+name = "capped-at-zero"
+file = "draft-kernel/src/lib.rs"
+before = "{ u32::MAX } else"
+after = "{ 0 } else"
+
+[[mutant]]
+name = "clamp-to-x"
+file = "draft-kernel/src/lib.rs"
+before = "if x > hi { hi } else { x }"
+after = "x"
+
+[[mutant]]
+name = "double-triples"
+file = "draft-kernel/src/lib.rs"
+before = "a * 2"
+after = "a * 3"
+
+[[mutant]]
+name = "halve-thirds"
+file = "draft-kernel/src/lib.rs"
+before = "a / 2"
+after = "a / 3"
+
+[[mutant]]
+name = "quarter-once"
+file = "draft-kernel/src/lib.rs"
+before = "halve(halve(a))"
+after = "halve(a)"
+
+[[mutant]]
+name = "count-stops-early"
+file = "draft-kernel/src/lib.rs"
+before = "while i < n {"
+after = "while i + 1 < n {"
+
+[[mutant]]
+name = "alpha-adds-two"
+file = "draft-kernel/src/alpha.rs"
+before = "x.saturating_add(1)"
+after = "x.saturating_add(2)"
+
+[[mutant]]
+name = "beta-adds-three"
+file = "draft-kernel/src/beta.rs"
+before = "x + 2"
+after = "x + 3"

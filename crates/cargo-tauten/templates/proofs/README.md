@@ -38,6 +38,33 @@ trusted rather than proved.
    Docker or the image every claim is `tool-missing`; nothing passes
    without the gate.
 
+## Drafting claim entries
+
+`cargo tauten proofs draft [--crate <package>] > claims.patch` prints a
+reviewable patch to `claims.toml` for new or changed functions: for each
+translated function with an audited theorem about it and a `[[mutant]]`
+inside it that no claim lists yet, a `[[claim]]` with those theorems (and
+those of its loops), the mutant, and `total`/`subsumes` only when the audit
+found exactly one premise-free total theorem about the function itself. It
+runs `[gate] try` with no mutant selected (extract, drift, build, audit),
+joins theorems to functions by the subject the audit prints (`SUBJECT`
+lines), never by a short name, and refuses with no patch on missing tools, a
+stale translation or an ambiguous association. It writes nothing and grants
+no proof credit:
+
+    cargo tauten proofs draft > /tmp/claims.patch
+    git apply --check /tmp/claims.patch   # then review it
+    git apply /tmp/claims.patch && git commit -am "Claim ..." && cargo tauten proofs
+
+Existing claims are only extended (new theorems whose premises they already
+assume, new mutants, a missing `total`); comments, other entries and
+`[[amend]]` stay as written, and a second draft is empty. Functions it
+skips, and suggestions that need review (a conflicting `total`, a theorem
+resting on a new assumption), are listed on stderr. A custom gate can pass
+`--inventory <file.json>` (`version: 1`, `functions`, `theorems`,
+`mutants`) instead; every reference is checked against the translation and
+the audit.
+
 ## Iterating on one proof
 
 `cargo tauten proofs try --theorems <Lean name>…` (or `--mutants <name>…`)

@@ -1,0 +1,17 @@
+# Fixture of `cargo tauten proofs draft` (#49): a kernel crate with new
+# functions next to hand-written claims, and the controls of the drafting
+# RFC (two modules with the same short name, a helper and a loop theorem, a
+# conditional theorem, a claim with assumptions, uncalibrated mutants).
+# Tested by crates/cargo-tauten/tests/draft.rs.
+[workspace]
+resolver = "3"
+members = ["draft-kernel"]
+
+[workspace.package]
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+# TAU-H001: release builds check integer overflow.
+[profile.release]
+overflow-checks = true

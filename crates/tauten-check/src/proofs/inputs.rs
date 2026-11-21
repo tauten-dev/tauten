@@ -55,7 +55,7 @@ const SECTION: &[&str] = &[
 
 /// The declaration a line opens, if any: its name (`instance` without a
 /// name is keyed by its line).
-fn opens(line: &str, number: usize) -> Option<String> {
+pub(super) fn opens(line: &str, number: usize) -> Option<String> {
     let mut words = line.split_whitespace().peekable();
     while let Some(word) = words.peek() {
         if word.starts_with("@[") {

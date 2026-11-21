@@ -543,6 +543,16 @@ pub enum Event {
         /// Extracted Lean function.
         function: String,
     },
+    /// The audit found that `theorem` concludes a triple about `subject`
+    /// (`… ⦃ _ ⦄` over an application of that constant), whatever its
+    /// hypotheses. Read only by `cargo tauten proofs draft`, never by an
+    /// outcome (#49).
+    Subject {
+        /// Fully qualified theorem name.
+        theorem: String,
+        /// The extracted Lean declaration the triple is about.
+        subject: String,
+    },
     /// A mutant's result: the claims' theorems it broke.
     Mutant {
         /// Mutant name.
@@ -634,6 +644,7 @@ impl Report {
             Event::Stage { .. }
             | Event::Theorem { .. }
             | Event::Total { .. }
+            | Event::Subject { .. }
             | Event::Premises { .. }
             | Event::Establishes { .. }
             | Event::Mutant { .. } => None,
@@ -685,6 +696,7 @@ impl Report {
                 | Event::Stage { .. }
                 | Event::Theorem { .. }
                 | Event::Total { .. }
+                | Event::Subject { .. }
                 | Event::Mutant { .. } => {}
             }
         }
@@ -749,6 +761,7 @@ impl Report {
                 }
                 Event::Stage { .. }
                 | Event::Total { .. }
+                | Event::Subject { .. }
                 | Event::Premises { .. }
                 | Event::Establishes { .. }
                 | Event::Mutant { .. } => None,
@@ -816,6 +829,7 @@ impl Report {
                 Event::Stage { .. }
                 | Event::Theorem { .. }
                 | Event::Total { .. }
+                | Event::Subject { .. }
                 | Event::Premises { .. }
                 | Event::Establishes { .. } => None,
             })
@@ -842,6 +856,7 @@ impl Report {
             Event::Stage { .. }
             | Event::Theorem { .. }
             | Event::Total { .. }
+            | Event::Subject { .. }
             | Event::Premises { .. }
             | Event::Establishes { .. } => false,
         })
@@ -1032,6 +1047,7 @@ pub fn outcome(claim: &Claim, report: &Report) -> (Outcome, Option<String>) {
                     Event::Stage { .. }
                     | Event::Theorem { .. }
                     | Event::Total { .. }
+                    | Event::Subject { .. }
                     | Event::Premises { .. }
                     | Event::Establishes { .. }
                     | Event::Mutant { .. } => None,
@@ -1224,6 +1240,7 @@ impl Report {
                 | Event::Stage { .. }
                 | Event::Theorem { .. }
                 | Event::Total { .. }
+                | Event::Subject { .. }
                 | Event::Premises { .. }
                 | Event::Establishes { .. } => None,
             })
@@ -1761,6 +1778,7 @@ pub fn conservation_diagnostics(
     out
 }
 
+pub mod draft;
 pub mod inputs;
 
 #[cfg(test)]

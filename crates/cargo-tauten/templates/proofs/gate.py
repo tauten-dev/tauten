@@ -205,6 +205,7 @@ DECLARATION = re.compile(
 NAMESPACE = re.compile(r"^namespace\s+(?P<name>\S+)", re.M)
 AXIOMS = re.compile(r"AXIOMS (?P<name>\S+): \[(?P<axioms>[^\]]*)\]", re.S)
 TOTAL = re.compile(r"TOTAL (?P<theorem>\S+) (?P<function>\S+)")
+SUBJECT = re.compile(r"SUBJECT (?P<theorem>\S+) (?P<function>\S+)")
 PREMISES = re.compile(r"(?P<kind>PREMISES|ESTABLISHES) (?P<name>\S+): \[(?P<ids>[^\]]*)\]", re.S)
 SORRY_DEPENDENT = re.compile(r"SORRY_DEPENDENT (?P<name>\S+)")
 REPORTER = """
@@ -363,6 +364,9 @@ def gate(only: set[str] | None = None) -> int:
         emit(theorem=name, status="ok" if axioms <= ALLOWED else "fail")
     for match in TOTAL.finditer(audit.stdout):
         emit(total=match.group("theorem"), function=match.group("function"))
+    for match in SUBJECT.finditer(audit.stdout):
+        # Read by `cargo tauten proofs draft` only (#49).
+        emit(theorem=match.group("theorem"), subject=match.group("function"))
     for match in PREMISES.finditer(audit.stdout):
         ids = [i.strip() for i in match.group("ids").split(",") if i.strip()]
         key = "premises" if match.group("kind") == "PREMISES" else "establishes"

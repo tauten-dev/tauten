@@ -20,7 +20,11 @@ outcome per claim of `proofs/claims.toml`.
    `TOTAL <theorem> <f>`. A claim's `total` theorem must be one of these
    before `cargo tauten check` lets it subsume arithmetic and indexing
    findings.
-3. Named assumptions (`@[tauten_assumption "ID"]`, see
+3. Every theorem whose conclusion is a triple `f x₁ … ⦃ _ ⦄` over an
+   extracted function, with or without hypotheses, is printed as
+   `SUBJECT <theorem> <f>`, so `cargo tauten proofs draft` can join it to its
+   function by name (it decides nothing).
+4. Named assumptions (`@[tauten_assumption "ID"]`, see
    `Proofs/TautenAssumption.lean` and the section below): each theorem's
    `PREMISES` and, for a witness, what it `ESTABLISHES`.
 -/
@@ -53,6 +57,17 @@ def totalOver (type : Expr) : MetaM (Option Name) :=
     unless args.size == xs.size do return none
     for (arg, x) in args.zip xs do
       unless arg == x do return none
+    return some fn.constName!
+
+/-- The extracted function a theorem's conclusion is a triple about (`… ⦃ _ ⦄`
+over an application of a constant), whatever its hypotheses. Read only by
+`cargo tauten proofs draft` to join a theorem to its function by its fully
+qualified name; it decides nothing. -/
+def subjectOf (type : Expr) : MetaM (Option Name) :=
+  forallTelescope type fun _ body => do
+    unless body.isAppOfArity ``Aeneas.Std.WP.spec 3 do return none
+    let fn := body.getAppArgs[1]!.getAppFn
+    unless fn.isConst do return none
     return some fn.constName!
 
 /-! ## Named assumptions (A8)
@@ -136,6 +151,8 @@ def audit : CommandElabM Unit := do
     if let some info := env.find? decl then
       if let some fn ← liftTermElabM (totalOver info.type) then
         logInfo m!"TOTAL {decl} {fn}"
+      if let some fn ← liftTermElabM (subjectOf info.type) then
+        logInfo m!"SUBJECT {decl} {fn}"
       let (premises, established) ← liftTermElabM (assumptionFacts env info.type)
       logInfo m!"PREMISES {decl}: {premises.toList}"
       unless established.isEmpty do

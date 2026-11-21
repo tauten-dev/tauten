@@ -437,7 +437,7 @@ fn run_in(
 /// Run the gate command from the workspace root. Its output goes to stderr
 /// (progress); result lines are collected. A command that cannot start is
 /// reported, never treated as a pass.
-fn run_gate(root: &Path, command: &[String]) -> Result<Report> {
+pub(crate) fn run_gate(root: &Path, command: &[String]) -> Result<Report> {
     let mut report = Report::default();
     let Some((program, args)) = command.split_first() else {
         report.not_started = Some("[gate] command is empty".to_owned());
@@ -710,6 +710,7 @@ fn run_extract(root: &Path, only: Option<&str>) -> Result<ExtractRun> {
             Event::Stage { .. }
             | Event::Theorem { .. }
             | Event::Total { .. }
+            | Event::Subject { .. }
             | Event::Premises { .. }
             | Event::Establishes { .. }
             | Event::Mutant { .. } => None,
