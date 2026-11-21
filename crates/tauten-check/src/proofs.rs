@@ -1201,6 +1201,25 @@ impl MutantResult {
 }
 
 impl Report {
+    /// Whether the gate got as far as a local proof stage (#52): it started,
+    /// and reported something other than an unavailable toolchain. A command
+    /// that could not start, printed nothing, or only reported `tools`
+    /// missing is an attempt: its claims are `tool-missing`, but it is not a
+    /// result to record over an earlier one. A started gate that then fails
+    /// (drift, build, audit, mutants) is a result.
+    #[must_use]
+    pub fn started(&self) -> bool {
+        self.not_started.is_none()
+            && self.events.iter().any(|event| match event {
+                Event::Stage { stage, status, .. } => stage != "tools" || status == "ok",
+                Event::Theorem { .. }
+                | Event::Total { .. }
+                | Event::Premises { .. }
+                | Event::Establishes { .. }
+                | Event::Mutant { .. } => true,
+            })
+    }
+
     /// The results the gate reported for `names`.
     #[must_use]
     pub fn mutant_results(&self, names: &[String]) -> Vec<MutantResult> {
@@ -1244,6 +1263,117 @@ pub struct Record {
     /// (the default in a Git checkout); absent for a run on the live tree.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub commit: Option<String>,
+}
+
+/// The provisional record `cargo tauten proofs reconcile` writes after a
+/// two-parent merge (#50, RFC 2026-11-21-recover-proof-records): the
+/// resolved claim declarations, already checked against both parents'
+/// records, and nothing else. It is not a gate result: it has no `claims`
+/// results, fingerprints, commit or mutant kills, so a v1 reader refuses it
+/// (no `claims` array) and no reader may count it as evidence. Only a
+/// successful gate on the merged commit replaces it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Pending {
+    /// Format version (2).
+    pub version: u32,
+    /// Always `pending-merge`.
+    pub state: String,
+    /// The merge's first and second parent commits.
+    pub parents: Vec<String>,
+    /// The resolved `proofs/claims.toml` claims.
+    pub registry: Vec<Claim>,
+}
+
+/// The `state` of a [`Pending`] record.
+pub const PENDING_MERGE: &str = "pending-merge";
+
+/// What `proofs/claims.json` holds: a gate result, or a pending merge.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum RecordFile {
+    /// A v1 gate result.
+    Result(Record),
+    /// A v2 provisional registry after a merge; never evidence.
+    Pending(Pending),
+}
+
+impl RecordFile {
+    /// Parse `proofs/claims.json`. A file with a `state` key must be a
+    /// well-formed pending merge record (version 2, two distinct parents);
+    /// anything else must be a v1 result.
+    ///
+    /// # Errors
+    ///
+    /// Malformed JSON, an unknown `state` or version, or a pending record
+    /// without two distinct parents.
+    pub fn parse(text: &str) -> Result<Self, String> {
+        let value: serde_json::Value = serde_json::from_str(text).map_err(|e| e.to_string())?;
+        if value.get("state").is_none() {
+            return serde_json::from_value(value)
+                .map(Self::Result)
+                .map_err(|e| e.to_string());
+        }
+        let pending: Pending = serde_json::from_value(value).map_err(|e| e.to_string())?;
+        if pending.state != PENDING_MERGE || pending.version != 2 {
+            return Err(format!(
+                "unknown record state `{}` (version {})",
+                pending.state, pending.version
+            ));
+        }
+        match pending.parents.as_slice() {
+            [a, b] if a != b && !a.is_empty() && !b.is_empty() => Ok(Self::Pending(pending)),
+            _ => Err("a pending merge record needs two distinct parents".to_owned()),
+        }
+    }
+
+    /// The gate result, if this is one; a pending merge is never evidence.
+    #[must_use]
+    pub const fn result(&self) -> Option<&Record> {
+        match self {
+            Self::Result(r) => Some(r),
+            Self::Pending(_) => None,
+        }
+    }
+
+    /// The recorded claim declarations, for TAU-R002 ([`conservation_of`]).
+    #[must_use]
+    pub fn declared(&self) -> Vec<&Claim> {
+        match self {
+            Self::Result(r) => r.claims.iter().map(|c| &c.claim).collect(),
+            Self::Pending(p) => p.registry.iter().collect(),
+        }
+    }
+}
+
+/// Whether both parents of a merge conserve their obligations in the
+/// resolved `claims.toml` (#50): one required `Pass` control per parent,
+/// decided by the proved [`kernel_control::admit`]. A missing parent
+/// observation cannot pass, and fewer than two parents never do.
+#[must_use]
+pub fn parents_conserved(found: &[Conservation]) -> bool {
+    use kernel_control::{Control, Expect, Observation, Seen};
+    if found.len() != 2 {
+        return false;
+    }
+    let controls: Vec<Control> = (0..found.len())
+        .map(|id| Control {
+            id,
+            expect: Expect::Pass,
+        })
+        .collect();
+    let observed: Vec<Observation> = found
+        .iter()
+        .enumerate()
+        .map(|(id, c)| Observation {
+            id,
+            seen: if c.weakened.is_empty() {
+                Seen::Pass
+            } else {
+                Seen::FailOther
+            },
+        })
+        .collect();
+    kernel_control::admit(&controls, &observed)
 }
 
 /// A change-detection fingerprint of a set of files (path, contents):
@@ -1569,6 +1699,14 @@ pub fn records_pass(records: &[ClaimRecord]) -> bool {
 /// function only interns the entries.
 #[must_use]
 pub fn conservation<'a>(file: &'a ClaimsFile, record: &'a Record) -> Conservation {
+    let recorded: Vec<&'a Claim> = record.claims.iter().map(|c| &c.claim).collect();
+    conservation_of(file, &recorded)
+}
+
+/// [`conservation`] against a list of recorded claim declarations: a v1
+/// record's claims, or the registry of a pending merge record (#50).
+#[must_use]
+pub fn conservation_of<'a>(file: &'a ClaimsFile, recorded: &[&'a Claim]) -> Conservation {
     use tauten_check_kernel::registry::{self, Entry};
     let mut ids: BTreeMap<RegistryKey<'a>, usize> = BTreeMap::new();
     let mut intern = |k: RegistryKey<'a>| -> usize {
@@ -1585,12 +1723,11 @@ pub fn conservation<'a>(file: &'a ClaimsFile, record: &'a Record) -> Conservatio
     };
     // An inherited claim's theorems and assumptions are the dependency's,
     // checked against its version (`inherited`), not this file's registry.
-    let own = |c: &&ClaimRecord| c.claim.inherit.is_none();
-    let recorded_keys: Vec<_> = record
-        .claims
+    let own = |c: &&&'a Claim| c.inherit.is_none();
+    let recorded_keys: Vec<_> = recorded
         .iter()
         .filter(own)
-        .flat_map(|c| claim_entries(&c.claim))
+        .flat_map(|c| claim_entries(c))
         .collect();
     let current_keys: Vec<_> = file
         .claim
@@ -1598,11 +1735,10 @@ pub fn conservation<'a>(file: &'a ClaimsFile, record: &'a Record) -> Conservatio
         .filter(|c| c.inherit.is_none())
         .flat_map(claim_entries)
         .collect();
-    let recorded_assumes: Vec<_> = record
-        .claims
+    let recorded_assumes: Vec<_> = recorded
         .iter()
         .filter(own)
-        .flat_map(|c| assumption_entries(&c.claim))
+        .flat_map(|c| assumption_entries(c))
         .collect();
     // Only claims already on record may not gain assumptions; a new claim
     // states its own.
@@ -1611,10 +1747,9 @@ pub fn conservation<'a>(file: &'a ClaimsFile, record: &'a Record) -> Conservatio
         .iter()
         .filter(|c| {
             c.inherit.is_none()
-                && record
-                    .claims
+                && recorded
                     .iter()
-                    .any(|r| r.claim.file == c.file && r.claim.function == c.function)
+                    .any(|r| r.file == c.file && r.function == c.function)
         })
         .flat_map(assumption_entries)
         .collect();
@@ -1638,10 +1773,9 @@ pub fn conservation<'a>(file: &'a ClaimsFile, record: &'a Record) -> Conservatio
     let amended: Vec<usize> = amend_keys.iter().map(|k| intern(*k)).collect();
 
     let krate_of = |file_name: &str, function: &str| -> String {
-        record
-            .claims
+        recorded
             .iter()
-            .map(|c| &c.claim)
+            .copied()
             .chain(file.claim.iter())
             .find(|c| c.file == file_name && c.function == function)
             .map(|c| c.krate.clone())

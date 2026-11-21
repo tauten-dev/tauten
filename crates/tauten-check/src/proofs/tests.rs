@@ -1004,3 +1004,72 @@ fn a_run_passes_only_when_every_claim_of_a_nonempty_set_is_proved() {
     ]));
     assert!(!records_pass(&[record(Outcome::Drift)]));
 }
+
+#[test]
+fn only_a_gate_that_reached_a_proof_stage_started() {
+    let only = |json: &[&str]| Report {
+        events: json.iter().map(|j| event(j)).collect(),
+        ..Report::default()
+    };
+    assert!(!Report::default().started(), "printed nothing");
+    let not_started = Report {
+        not_started: Some("no such command".to_owned()),
+        ..passing()
+    };
+    assert!(!not_started.started());
+    assert!(!only(&[r#"{"stage":"tools","status":"missing"}"#]).started());
+    assert!(only(&[r#"{"stage":"tools","status":"ok"}"#]).started());
+    // A real failure after the tools stage is a result, not an attempt.
+    assert!(
+        only(&[
+            r#"{"stage":"tools","status":"ok"}"#,
+            r#"{"stage":"build","status":"fail"}"#
+        ])
+        .started()
+    );
+    assert!(passing().started());
+}
+
+#[test]
+fn a_pending_merge_record_is_never_a_result() {
+    let pending = r#"{"version":2,"state":"pending-merge","parents":["a","b"],"registry":[]}"#;
+    // A v1 reader refuses it rather than reading an empty success.
+    assert!(serde_json::from_str::<Record>(pending).is_err());
+    let parsed = RecordFile::parse(pending).expect("pending");
+    assert!(parsed.result().is_none());
+    assert!(matches!(parsed, RecordFile::Pending(_)));
+    for bad in [
+        r#"{"version":2,"state":"pending-merge","parents":["a","a"],"registry":[]}"#,
+        r#"{"version":2,"state":"pending-merge","parents":["a"],"registry":[]}"#,
+        r#"{"version":2,"state":"pending-merge","parents":["a","b"],"registry":[],"claims":[]}"#,
+        r#"{"version":3,"state":"pending-merge","parents":["a","b"],"registry":[]}"#,
+        r#"{"version":2,"state":"proved","parents":["a","b"],"registry":[]}"#,
+    ] {
+        assert!(RecordFile::parse(bad).is_err(), "{bad}");
+    }
+    let v1 = r#"{"version":1,"generated_by":"cargo tauten proofs","claims":[]}"#;
+    assert!(RecordFile::parse(v1).expect("v1").result().is_some());
+}
+
+#[test]
+fn both_parents_must_conserve() {
+    let fine = Conservation::default();
+    let weak = Conservation {
+        weakened: vec![(
+            "k".to_owned(),
+            "f.rs".to_owned(),
+            "f".to_owned(),
+            AmendKind::Theorem,
+            "t".to_owned(),
+        )],
+        ..Conservation::default()
+    };
+    assert!(parents_conserved(&[fine.clone(), fine.clone()]));
+    assert!(!parents_conserved(&[fine.clone(), weak.clone()]));
+    assert!(!parents_conserved(&[weak, fine.clone()]));
+    assert!(
+        !parents_conserved(std::slice::from_ref(&fine)),
+        "a missing parent never passes"
+    );
+    assert!(!parents_conserved(&[]));
+}

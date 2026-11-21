@@ -2,7 +2,7 @@
 rfc: "2026-11-21-recover-proof-records"
 title: "Recover proof records after an unavailable tool or a merge"
 status: accepted
-implementation: in-progress
+implementation: complete
 authors:
   - astra
 created: 2026-11-21
@@ -58,3 +58,4 @@ Choosing `ours`/`theirs` loses obligations or imports stale evidence. Deleting t
 
 - 2026-11-21: proposed for review; no implementation or owner acceptance.
 - 2026-11-21: accepted by the owner as proposed, including the explicit provisional `pending-merge` record format and the first-merge recalibration cost. The single-branch retry (#52) is implemented first; the two-parent reconcile (#50) follows.
+- 2026-11-21: implemented. #52: an attempt that never reached a proof stage is reported but not recorded (`Report::started`); tested with and without a previous record and from a clean Git clone. #50: `cargo tauten proofs reconcile` and the `pending-merge` record (`RecordFile`, `Pending`); both parents decided by `proofs::parents_conserved` over the proved `control::admit`, no new kernel verdict. Tested on an adopter-shaped two-parent fixture (`crates/cargo-tauten/tests/reconcile.rs`): conflicting translation regenerated to match a fresh one, pending never subsumes or exports, a dropped parent obligation and unresolved human conflicts are refused, a pending record naming other parents is not promoted, and the merge commit's gate replaces it. Git reading, regeneration and file replacement are tested, not proved. Not exercised: a real Charon/Aeneas translation in the merge fixture (a stand-in generator) and comparing the ship run with a full run on a real merge.

@@ -189,13 +189,60 @@ mod proofs {
                 &format!("command = {command}"),
             );
             fs::write(&claims, text).expect("write");
-            let output = tauten(&["proofs"], &root);
+            let record = root.join("proofs/claims.json");
+            let before = fs::read_to_string(&record).expect("recorded");
+            let output = tauten(&["proofs", "--live"], &root);
             assert_eq!(output.status.code(), Some(1), "{name}");
             assert_eq!(outcomes(&output), ["tool-missing"; 4], "{name}");
-            let record = fs::read_to_string(root.join("proofs/claims.json")).expect("recorded");
-            assert!(!record.contains("\"proved\""), "{name}: {record}");
-            // and the check then subsumes nothing
+            // #52: an attempt is not a result; the record is untouched.
+            assert_eq!(fs::read_to_string(&record).expect("kept"), before, "{name}");
+            assert!(String::from_utf8_lossy(&output.stderr).contains("not recording"));
+            // With no previous record, none is created.
+            fs::remove_file(&record).expect("remove");
+            let output = tauten(&["proofs", "--live"], &root);
+            assert_eq!(output.status.code(), Some(1), "{name}");
+            assert_eq!(outcomes(&output), ["tool-missing"; 4], "{name}");
+            assert!(!record.exists(), "{name}: an attempt wrote a record");
+            // and with no record the check subsumes nothing
             assert_nothing_subsumed(&root);
+        }
+    }
+
+    /// #52: in a clean clone, an attempt with the toolchain unavailable
+    /// leaves the checkout clean, so the same command can simply be retried
+    /// (never refused for uncommitted changes it wrote itself).
+    #[test]
+    fn a_missing_tool_leaves_a_clean_checkout_to_retry() {
+        let root = scratch("retry");
+        let claims = root.join("proofs/claims.toml");
+        let text = fs::read_to_string(&claims).expect("read").replace(
+            r#"command = ["sh", "proofs/run.sh"]"#,
+            r#"command = ["sh", "-c", "echo 'TAUTEN-PROOFS {\"stage\":\"tools\",\"status\":\"missing\",\"detail\":\"daemon unavailable\"}'; exit 3"]"#,
+        );
+        fs::write(&claims, text).expect("write");
+        let git = |args: &[&str]| {
+            Command::new("git")
+                .args(["-c", "user.name=t", "-c", "user.email=t@example.invalid"])
+                .args(args)
+                .current_dir(&root)
+                .output()
+                .expect("git")
+        };
+        assert!(git(&["init", "-q"]).status.success());
+        assert!(git(&["add", "-A"]).status.success());
+        assert!(git(&["commit", "-q", "-m", "fixture"]).status.success());
+        for attempt in ["first", "retry"] {
+            let out = tauten(&["proofs"], &root);
+            let err = String::from_utf8_lossy(&out.stderr);
+            assert_eq!(out.status.code(), Some(1), "{attempt}: {err}");
+            assert!(!err.contains("uncommitted changes"), "{attempt}: {err}");
+            assert_eq!(outcomes(&out), ["tool-missing"; 4], "{attempt}");
+            let status = git(&["status", "--porcelain"]);
+            assert!(
+                status.stdout.is_empty(),
+                "{attempt}: {}",
+                String::from_utf8_lossy(&status.stdout)
+            );
         }
     }
 
