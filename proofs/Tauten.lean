@@ -20,6 +20,7 @@ import Tauten.Assumption
 import Tauten.Manifest
 import Tauten.Rule
 import Tauten.Machine
+import Tauten.MachineWorld
 import Tauten.Publish
 import Tauten.ExceptionGroup
 import Tauten.Layout

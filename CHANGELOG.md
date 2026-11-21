@@ -30,6 +30,13 @@
 
 ### Added
 
+- `rsys_inv_of_step` in `Tauten.Machine` (and the shipped
+  `Proofs/TautenMachine.lean` template) (#60, RFC
+  `2026-11-21-result-world-induction`): invariant induction for an
+  extracted step that may fail, run against a world, with no total model.
+  `proofs/Tauten/MachineWorld.lean` is a worked miniature. It shows a
+  success that changes state and world, a refused input, and a corrupting
+  adversary that breaks the invariant. All of these are in the axiom audit.
 - `Env::only(names)` narrows an environment snapshot to the listed
   variables without reading the process environment again. A removed name
   cannot come back (#64).

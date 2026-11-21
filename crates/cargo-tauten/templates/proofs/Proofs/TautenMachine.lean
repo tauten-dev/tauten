@@ -13,11 +13,12 @@ event, command) is proved once here, generically:
 * `RMachine`, `RReachable`, `rinv_of_step`: the same for a step function as
   Aeneas extracts it, returning `Result (S × C)`; the per-step obligation is
   a Hoare triple over the extracted function.
-* `World` and `SysReachable` (`RSysReachable` and `rsys_of_model` for an
-  extracted step): the machine run against a world that
-  interprets its commands, delivers its events, and may take adversary
-  steps (a crash, a delay) at any time; `sys_inv_of_step` is the induction
-  for the pair.
+* `World` and `SysReachable` (`RSysReachable` for an extracted step): the
+  machine run against a world that interprets its commands, delivers its
+  events, and may take adversary steps (a crash, a delay) at any time;
+  `sys_inv_of_step` is the induction for the pair, `rsys_inv_of_step` the
+  same for an extracted step that may fail, and `rsys_of_model` transfers
+  results from a total pure model.
 * `Discharged` and `discharged_of_inv`: in every reachable terminal
   configuration, nothing the machine acquired is still held.
 
@@ -171,6 +172,23 @@ inductive RSysReachable (m : RMachine S E C) (w : World E C W) (init : S × W �
       w.interpret v c v' → RSysReachable m w init (s', v')
   | adversary (s : S) (v v' : W) :
       RSysReachable m w init (s, v) → w.adversary v v' → RSysReachable m w init (s, v')
+
+/-- The induction for an extracted step and its world: the invariant must
+hold initially, survive every delivered step that the extracted function
+completes (`ok`) with its command's effect, and survive every adversary
+step. A failing step is not a transition, so no total model is needed;
+effects a host performs before failing belong in the world. -/
+theorem rsys_inv_of_step (m : RMachine S E C) (w : World E C W)
+    (init Inv : S × W → Prop) (h0 : ∀ x, init x → Inv x)
+    (hstep : ∀ s s' c v v' e, Inv (s, v) → w.deliver v e →
+      m.step s e = ok (s', c) → w.interpret v c v' → Inv (s', v'))
+    (hadv : ∀ s v v', Inv (s, v) → w.adversary v v' → Inv (s, v')) :
+    ∀ x, RSysReachable m w init x → Inv x := by
+  intro x h
+  induction h with
+  | init x hx => exact h0 x hx
+  | step s s' c v v' e _ hd hok hi ih => exact hstep s s' c v v' e ih hd hok hi
+  | adversary s v v' _ ha ih => exact hadv s v v' ih ha
 
 /-- An extracted step that never fails and agrees with a pure model
 reaches only the pure model's configurations, so everything proved about
