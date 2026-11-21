@@ -18,10 +18,13 @@ default = ["std"]
 # The ambient-authority wrappers (`Authority`, `SystemClock`, `Env`). Without
 # it the crate is `no_std` + `alloc`, for kernel crates.
 std = []
-fs = ["std", "dep:cap-std"]
+# Directory capabilities; bounded reads charge through the proved budget
+# arithmetic in `tauten-check-kernel`.
+fs = ["std", "dep:cap-std", "dep:tauten-check-kernel"]
 
 [dependencies]
 cap-std = { version = "4.0.3", optional = true }
+tauten-check-kernel = { workspace = true, optional = true }
 tauten-macros = { path = "../tauten-macros", version = "0.1.0" }
 
 [dev-dependencies]

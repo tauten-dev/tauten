@@ -1,5 +1,41 @@
 # Changelog
 
+## Unreleased (0.2.0)
+
+### Breaking
+
+- **`ReadDir` reads take a byte limit** (#64, RFC
+  `2026-11-21-bounded-capability-reads`). `ReadDir::read` and
+  `ReadDir::read_to_string` now require a `Limit<Bytes>` and return
+  `Result<_, ReadError>`. The unbounded 0.1 calls no longer compile, so a
+  `ReadDir` bounds how much a call can return as well as where it can read.
+
+  ```rust
+  // 0.1
+  let text = dir.read_to_string("app.toml")?;
+  // 0.2
+  use tauten::cap::{Bytes, Limit};
+  let text = dir.read_to_string("app.toml", Limit::<Bytes>::new(64 * 1024))?;
+  ```
+
+  A file of exactly the limit fits (a zero limit admits an empty file). One
+  byte more is `ReadError::TooLarge { limit }`, found by reading at most one
+  byte past the limit, and no prefix is returned. `ReadError` is
+  `#[non_exhaustive]` and converts into `std::io::Error` (too large becomes
+  `InvalidData`), so `?` still works in `io::Result` functions. Invalid UTF-8
+  within the limit is still `InvalidData`. Each chunk is charged through the
+  proved `tauten_check_kernel::budget::charge`. The IO adapter itself is
+  tested, not proved. The `fs` feature now depends on
+  `tauten-check-kernel`.
+
+### Added
+
+- `Env::only(names)` narrows an environment snapshot to the listed
+  variables without reading the process environment again. A removed name
+  cannot come back (#64).
+- The CI gate builds the API docs of every crate with rustdoc warnings
+  denied; the five existing warnings are fixed (#65).
+
 ## 0.1.0 (2026-11-21)
 
 Milestone 0.1.0: #54, #55, #58, #14 and #38. The publish driver (#13), the
