@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.0.5 (2026-11-21)
+
 - Inherit a dependency's claim (A7b, #48): `inherit =
   "crate@version:function"` in `proofs/claims.toml` reuses a claim the
   dependency ships in the `claims.json` next to its `Cargo.toml`

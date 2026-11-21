@@ -18,7 +18,7 @@ The roadmap reduces about sixty proposals (a durability plan, a survey of seven 
 | **Registry** | that nothing may be quietly removed or weakened | the baseline ratchet, theorems and mutants per claim, assumptions that may not grow |
 | **Effect row** | that a signature's capabilities match its declared effects | TAU-F001, later a declared label table |
 
-## 0.0.5 (next release)
+## 0.0.5 (released 2026-11-21)
 
 A proof loop an adopter can live with: a mutant verdict says exactly what
 broke, a small kernel edit re-proves only what it touched, and a
@@ -40,6 +40,11 @@ gate, the proofs gate and the scanner mutation gate green on the tagged
 commit, `proofs/claims.json` recorded on it; D2 measured on writfold (a
 one-function kernel edit re-proves in under 15 minutes, or its no-fit exit
 is recorded); STATUS.md and this file current.
+
+Released 2026-11-21 with every criterion met except the writfold D2
+measurement, which the owner deferred past the release (writfold's record
+does not yet carry inputs; it needs one full writfold run first). Measured on
+tauten instead: a one-function kernel edit re-proves in 89 s (docs/STATUS.md).
 
 Done before 0.0.5 (closed 2026-11-19/20): S1–S4, A1–A8, A11, A12, D3,
 T4–T7, #41, #44.

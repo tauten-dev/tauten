@@ -121,7 +121,7 @@ dependencies = [
 
 [[package]]
 name = "cargo-tauten"
-version = "0.0.4"
+version = "0.0.5"
 dependencies = [
  "anyhow",
  "cargo_metadata",
@@ -450,7 +450,7 @@ checksum = "876fef147edbcbddc8ac5cbbba92c7b86519e314e86638596c09673b2ed01e7f"
 
 [[package]]
 name = "tauten"
-version = "0.0.4"
+version = "0.0.5"
 dependencies = [
  "cap-std",
  "tauten",
@@ -460,7 +460,7 @@ dependencies = [
 
 [[package]]
 name = "tauten-check"
-version = "0.0.4"
+version = "0.0.5"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -475,11 +475,11 @@ dependencies = [
 
 [[package]]
 name = "tauten-check-kernel"
-version = "0.0.4"
+version = "0.0.5"
 
 [[package]]
 name = "tauten-macros"
-version = "0.0.4"
+version = "0.0.5"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -488,7 +488,7 @@ dependencies = [
 
 [[package]]
 name = "tauten-proof-instances"
-version = "0.0.4"
+version = "0.0.5"
 dependencies = [
  "tauten",
 ]

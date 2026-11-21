@@ -12,4 +12,4 @@ function = "step"
 lean = "tauten.publish.step"
 theorems = []
 mutants = []
-inherit = "tauten@0.0.4:step"
+inherit = "tauten@0.0.5:step"
