@@ -52,8 +52,13 @@ scripts/mutants --file crates/tauten-check/src/scan.rs \
 step "packages: every published crate packages and builds from its tarball"
 # What `cargo publish` verifies before uploading. Catches files cargo leaves
 # out of a package (a subdirectory with its own Cargo.toml is excluded),
-# which broke the v0.0.5 publish.
-cargo package --locked --workspace --exclude tauten-proof-instances --allow-dirty
+# which broke the v0.0.5 publish. A fresh target directory: cargo treats the
+# packaged crates as immutable registry crates, so a shared one reuses an
+# earlier build of the same version and verifies against stale sources.
+package_target=$(mktemp -d)
+cargo package --locked --workspace --exclude tauten-proof-instances --allow-dirty \
+  --target-dir "$package_target"
+rm -rf "$package_target"
 
 step "dependencies: licenses, advisories, sources"
 cargo deny --locked check
