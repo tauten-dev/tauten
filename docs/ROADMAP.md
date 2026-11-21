@@ -6,6 +6,8 @@ Designs behind items, and any new proposal that is costly to reverse or changes 
 
 Order within a milestone is by return on investment: projects helped × strength of the guarantee ÷ cost. Sizes are estimates in agent-days.
 
+**Next release:** [0.1.0 — open issues and pickup order](https://github.com/tauten-dev/tauten/milestone/2).
+
 ## Five primitives
 
 The roadmap reduces about sixty proposals (a durability plan, a survey of seven Rust projects, and a survey of safety mechanisms in other languages and the C++ safety-profile proposals) to five general primitives:
@@ -70,6 +72,17 @@ Done before 0.0.5 (closed 2026-11-19/20): S1–S4, A1–A8, A11, A12, D3,
 T4–T7, #41, #44.
 
 ## 0.1.0
+
+The [live milestone](https://github.com/tauten-dev/tauten/milestone/2) is the pickup list. Seven issues remained at triage on 2026-11-21:
+
+1. **Adoption fixes:** start with [#54](https://github.com/tauten-dev/tauten/issues/54) (`init --write` must preserve a valid manifest). [#55](https://github.com/tauten-dev/tauten/issues/55) (use Cargo's declared target roots in checks and tier proposals) can proceed independently.
+2. **Proofs and gate:** [#58](https://github.com/tauten-dev/tauten/issues/58) adds companion theorems for a durably absent target without changing published replacement claims. In parallel, [#14](https://github.com/tauten-dev/tauten/issues/14) covers shared proved helpers and [#35](https://github.com/tauten-dev/tauten/issues/35) covers the shared gate. The owner decides helper packaging and image access for the two adopters. If either adopter needs more than one day to migrate or keeps a fork, D1 ships the image only; do not claim verdict parity.
+3. **Driver:** [#13](https://github.com/tauten-dev/tauten/issues/13) follows #58 for first-write coverage. Driver conformance and single-crash simulation are tests, not a host-filesystem proof. Packaging the test support also needs the owner.
+4. **Release:** [#38](https://github.com/tauten-dev/tauten/issues/38) checks the site, README and rustdoc against what was delivered. The ordinary/scanner gate and full proofs must pass on the tag SHA; publication needs owner approval.
+
+Outside the release: [#60](https://github.com/tauten-dev/tauten/issues/60) (result/world induction convenience), [#61](https://github.com/tauten-dev/tauten/issues/61) (Writfold draft-inventory comparison) and [#62](https://github.com/tauten-dev/tauten/issues/62) (merge reconciliation with a real translation) are in [later](https://github.com/tauten-dev/tauten/milestone/4).
+
+Original discipline plan and estimates, including work already shipped:
 
 | Issue | ID | Item | Days | Depends on |
 |---|---|---|---|---|
