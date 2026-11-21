@@ -46,6 +46,11 @@ Everything below is trusted, not proved.
   one outcome per claim and records it with a fingerprint (change
   detection, not tamper protection) of the crate and `proofs/`. Commit
   `claims.json` and review changes to it like a baseline.
+- `cargo tauten proofs draft`: joins the translation's doc comments
+  (Rust item, source file), the audit's `SUBJECT`/`TOTAL`/`PREMISES` lines
+  and the `[[mutant]]` sites into a suggested patch. Tested, not proved,
+  and never evidence: the applied entries are judged by the gate like
+  hand-written ones.
 - `cargo tauten check`: finds the function around a finding by line span
   (`syn`) and compares fingerprints before the proved tauten decision
   subsumes a TAU-N001/TAU-P003 finding.

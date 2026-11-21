@@ -2,6 +2,7 @@
 
 mod baseline_file;
 mod clippy;
+mod draft;
 mod generated;
 mod init;
 mod obligations;
@@ -266,6 +267,23 @@ enum ProofsAction {
         #[arg(long, num_args = 1..)]
         mutants: Vec<String>,
     },
+    /// Print a reviewable patch to proofs/claims.toml for new or changed
+    /// functions, from the translation, a gate run up to the audit (no
+    /// mutants; `[gate] try` with none selected) and the declared mutants.
+    /// Writes nothing and grants no proof credit: apply the patch, commit,
+    /// and run `cargo tauten proofs`. Exit 0 means the draft succeeded,
+    /// never that a gate passed.
+    Draft {
+        /// Draft only this Cargo package (one of the packages of
+        /// `[gate] crates`); default: all of them.
+        #[arg(long = "crate")]
+        krate: Option<String>,
+        /// For custom gates: a JSON inventory (`version: 1`, `functions`,
+        /// `theorems`, `mutants`) instead of the template's audit subjects
+        /// and `[[mutant]]` sites. Every reference is checked.
+        #[arg(long, value_name = "PATH")]
+        inventory: Option<PathBuf>,
+    },
 }
 
 fn run(cli: Cli) -> Result<ExitCode> {
@@ -365,6 +383,9 @@ fn run(cli: Cli) -> Result<ExitCode> {
                 }
                 Some(ProofsAction::Try { theorems, mutants }) => {
                     proofs::try_run(&ws, &theorems, &mutants)
+                }
+                Some(ProofsAction::Draft { krate, inventory }) => {
+                    draft::run(&ws, krate.as_deref(), inventory.as_deref())
                 }
                 None => proofs::run(&ws, !no_write, live, level),
             }

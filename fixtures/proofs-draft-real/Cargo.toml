@@ -1,0 +1,18 @@
+# Regression fixture of `cargo tauten proofs draft` (#49) on a real
+# translation: the kernel crate of a `cargo tauten new demo49` scaffold, its
+# Aeneas output (proofs/Extracted/) and the TAUTEN-PROOFS lines of a real
+# gate run (proofs/recorded-gate.txt), which `[gate] try` replays. The
+# scaffold's `affordable` claim is removed; the draft must re-add it.
+# Tested by crates/cargo-tauten/tests/draft.rs.
+[workspace]
+resolver = "3"
+members = ["crates/demo49-kernel"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+# TAU-H001: release builds check integer overflow.
+[profile.release]
+overflow-checks = true

@@ -18,6 +18,28 @@
   leaves `proofs/claims.json` byte-identical (or absent), so the same command
   can be retried from the clean checkout. A gate that started and then failed
   (drift, build, audit, mutants) is recorded as before.
+- Draft claim entries (#49, RFC `2026-11-21-draft-claim-entries`):
+  `cargo tauten proofs draft [--crate <package>] [--inventory <file>]`
+  prints a unified diff to `proofs/claims.toml` for new or changed
+  functions, ready for `git apply` after review; empty stdout and exit 0
+  when there is nothing to draft. It runs `[gate] try` with no mutant
+  selected (tools, extract, drift, build, audit), joins each theorem to the
+  fully qualified extracted declaration the audit names as its subject
+  (never a short name; a loop's theorems join its function only through the
+  translation's `loop` header), and locates each `[[mutant]]` no claim lists
+  by its unique site. `total` and `subsumes` are suggested only for a
+  premise-free total theorem about the function itself, and `subsumes`
+  only on an unconditional claim. Existing claims are only extended in
+  place; comments, other entries and `[[amend]]` are kept byte for byte,
+  and a second draft is empty. Unknown packages, missing tools, a stale
+  translation, ambiguous or contradictory associations and layouts it
+  cannot edit refuse with no patch (exit 1). It writes no file, runs no
+  mutant and grants no proof credit; exit 0 is never a gate result. The
+  template's `Audit.lean` prints `SUBJECT <theorem> <function>` and
+  `gate.py` emits it as `{"theorem", "subject"}` (read only by the draft;
+  projects set up earlier copy both from `cargo tauten init --proofs` or use
+  `--inventory`, a version-1 JSON of functions, theorems and mutants checked
+  against the translation and the audit). Fixture `fixtures/proofs-draft`.
 
 - Publishing waits for the full proofs gate on the tag commit (#53):
   `release.yml` calls `proofs.yml` (extract, drift, Lean build and audit,
