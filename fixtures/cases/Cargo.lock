@@ -33,6 +33,10 @@ name = "acc-kernel-not-test"
 version = "0.0.0"
 
 [[package]]
+name = "acc-shared-test-module"
+version = "0.0.0"
+
+[[package]]
 name = "ambient-authority"
 version = "0.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -311,6 +315,10 @@ version = "0.0.0"
 
 [[package]]
 name = "rej-print"
+version = "0.0.0"
+
+[[package]]
+name = "rej-shared-test-allow"
 version = "0.0.0"
 
 [[package]]

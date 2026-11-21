@@ -536,20 +536,28 @@ impl Ctx<'_> {
             // see an attribute whose `cfg_attr` is off, so tauten reports
             // those `allow`s itself.
             if exception.allow && (exception.crate_level || exception.conditional) {
-                let written = if exception.conditional {
-                    format!("`cfg_attr(.., allow({lint}))`")
-                } else {
-                    format!("file-level `#![allow({lint})]`")
-                };
-                self.emit(
-                    "TAU-X001",
-                    Some(tier),
+                let message = if exception.conditional {
                     format!(
-                        "{written}: use `expect({lint}, reason = \"...\")`, \
+                        "`cfg_attr(.., allow({lint}))`: use `expect({lint}, reason = \"...\")`, \
                          or narrow it to the item that needs it"
-                    ),
-                    at,
-                );
+                    )
+                } else if file.is_crate_root {
+                    format!(
+                        "file-level `#![allow({lint})]`: use `expect({lint}, reason = \"...\")`, \
+                         or narrow it to the item that needs it"
+                    )
+                } else {
+                    // An inner `expect` in a module compiled into several
+                    // targets is unfulfilled wherever the lint does not fire
+                    // (#59), so name the form that works there.
+                    format!(
+                        "file-level `#![allow({lint})]`: use `expect({lint}, reason = \"...\")` \
+                         on the item that needs it; for a module compiled into several targets \
+                         (shared test helpers), put it on the `mod` declaration in each target \
+                         where the lint fires"
+                    )
+                };
+                self.emit("TAU-X001", Some(tier), message, at);
             }
             let rules: Vec<&Rule> = self
                 .profile
@@ -700,6 +708,44 @@ mod tests {
             };
             assert_eq!(Severity::decide(level, Severity::Error), reference);
         }
+    }
+
+    /// #59: a file-level `allow` is reported in a module file and at a
+    /// crate root alike; only in the module is the `mod`-declaration form
+    /// named, since an inner `expect` there fails in targets that use it all.
+    #[test]
+    fn a_shared_module_file_allow_names_the_mod_declaration_form() {
+        let allow = "//! Helpers.\n#![allow(dead_code, reason = \"shared\")]\n";
+        let mut c = member("c", "core");
+        c.sources.push(SourceFile {
+            path: "c/tests/support/mod.rs".into(),
+            text: allow.into(),
+            is_crate_root: false,
+            kind: SourceKind::Test,
+        });
+        c.sources.push(SourceFile {
+            path: "c/src/lib.rs".into(),
+            text: allow.into(),
+            is_crate_root: true,
+            kind: SourceKind::Src,
+        });
+        let found: Vec<(String, bool)> = run(vec![c])
+            .into_iter()
+            .filter(|d| d.id == "TAU-X001")
+            .map(|d| {
+                (
+                    d.file.unwrap_or_default(),
+                    d.message.contains("`mod` declaration"),
+                )
+            })
+            .collect();
+        assert_eq!(
+            found,
+            vec![
+                ("c/tests/support/mod.rs".to_owned(), true),
+                ("c/src/lib.rs".to_owned(), false),
+            ]
+        );
     }
 
     #[test]

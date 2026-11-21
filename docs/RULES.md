@@ -327,7 +327,7 @@ Reject fixtures: `rej-placeholder`
 
 `#[allow]` silently outlives the code it excused. `#[expect(lint, reason = "...")]` documents why and fails once the exception is no longer needed.
 
-**Fix:** Replace `#[allow(x)]` with `#[expect(x, reason = "why this is safe here")]` on the smallest item possible, or fix the code.
+**Fix:** Replace `#[allow(x)]` with `#[expect(x, reason = "why this is safe here")]` on the smallest item possible, or fix the code. A module compiled into several targets (helpers under `tests/` declared with `mod support;` by several test files) cannot carry an inner `#![expect]`: it is unfulfilled in every target where the lint does not fire. Put `#[expect(x, reason = "...")]` on the `mod` declaration in exactly the targets where it fires, or remove the sharing: one integration-test target per crate (`tests/it/main.rs` with the tests as modules), or a support crate used as a dev-dependency.
 
 **Decides:** Every lint exception is `#[expect]` with a reason.
 
@@ -335,7 +335,7 @@ Family: obligation. Sees: resolved. Complete: yes.
 
 **Does not see:** Code expanded from macros defined in other crates (clippy skips it). Inner attributes and `allow` inside `cfg_attr` are read by tauten itself, in `src/`, `tests/`, `benches/`, `examples/` and the build script.
 
-Reject fixtures: `rej-allow`, `rej-file-allow`, `rej-cfg-attr-allow`
+Reject fixtures: `rej-allow`, `rej-file-allow`, `rej-cfg-attr-allow`, `rej-shared-test-allow`, `acc-shared-test-module`
 
 Lints: `clippy::allow_attributes`, `clippy::allow_attributes_without_reason`, `unfulfilled_lint_expectations`
 

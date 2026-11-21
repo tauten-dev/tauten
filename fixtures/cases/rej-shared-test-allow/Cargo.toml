@@ -1,0 +1,13 @@
+[package]
+name = "rej-shared-test-allow"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[package.metadata.tauten]
+tier = "core"
+
+# #59: a reasoned file-level `#![allow(dead_code)]` in a shared test module
+# is still reported; it never fails once nothing needs it.
+[package.metadata.fixture]
+expect = ["TAU-X001"]

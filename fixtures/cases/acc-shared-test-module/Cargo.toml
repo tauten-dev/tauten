@@ -1,0 +1,14 @@
+[package]
+name = "acc-shared-test-module"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[package.metadata.tauten]
+tier = "core"
+
+# #59: a helper module shared by two test targets, one using all of it and
+# one a subset. The documented repair: a reasoned `#[expect(dead_code)]` on
+# the `mod` declaration in exactly the targets where something is unused.
+[package.metadata.fixture]
+expect = []

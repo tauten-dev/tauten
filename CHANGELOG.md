@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- TAU-X001 advice for modules shared by several targets (#59): an inner
+  `#![expect]` in a module compiled into several targets (helpers under
+  `tests/` declared with `mod support;` by several test files) is unfulfilled
+  wherever the lint does not fire, so the old advice could not work. In a
+  module file the finding now names the form that does: a reasoned
+  `#[expect]` on the `mod` declaration in each target where the lint fires.
+  The rule's repair text also names the structural repairs (one
+  integration-test target, or a dev-dependency support crate). New fixtures
+  `acc-shared-test-module` and `rej-shared-test-allow`. What is reported is
+  unchanged: a reasoned file-level `allow` is still TAU-X001.
+
 - TAU-N002 no longer promises a proof discharge (#57): its repair text said a
   recorded never-fails proof discharges a lossy cast, but only TAU-N001 and
   TAU-P003 are subsumable (a cast never fails, it changes the value). The text
