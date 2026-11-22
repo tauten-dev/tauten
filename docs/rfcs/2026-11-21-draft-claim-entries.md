@@ -68,3 +68,13 @@ A whole-file generator would overwrite reviewed obligations. Predicting failures
   stock template and a real gate. `--inventory` for custom gates is shipped
   but not yet exercised on a real adopter; the comparison is tracked as a
   follow-up issue and adopter reports feed it. Stays `partial` until then.
+- 2026-11-22: Writfold comparison (#61): **no fit**. tauten v0.1.0 (719d4e9)
+  against Writfold bb9d8fa on a disposable clone. A thin `[gate] try`
+  adapter ran Writfold's `gate.sh` up to the audit plus `Total.lean`; the
+  inventory was exported from the extraction headers, `Total.lean` and
+  `mutants.py`. 108 of the 160 shared claims matched exactly, with no
+  cross-assignments, and a second draft was empty. The first missing input
+  is the subject of `Delivery.fact_met_iff_ready`, whose triple is headed by
+  `Aeneas.Std.bind`. Writfold's native mutant inventory has no target item,
+  47 `total` choices depend on Writfold's name-suffix preference, and two
+  mutants serve several claims. Filed as #71–#74. Stays `partial`.
