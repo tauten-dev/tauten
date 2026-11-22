@@ -1107,3 +1107,36 @@ fn both_parents_must_conserve() {
     );
     assert!(!parents_conserved(&[]));
 }
+
+#[test]
+fn mutant_sites_need_one_site_each_and_unique_names() {
+    let toml = |extra: &str| {
+        ClaimsFile::parse(&format!("version = 2\n[gate]\ncommand = [\"x\"]\n{extra}"))
+            .expect("parse")
+    };
+    let entry = |name: &str, before: &str| {
+        format!(
+            "[[mutant]]\nname = \"{name}\"\nfile = \"a.rs\"\nbefore = \"{before}\"\nafter = \"z\"\n"
+        )
+    };
+    let read = |p: &str| (p == "a.rs").then(|| "x + y; y".to_owned());
+    assert!(
+        super::mutant_sites(&toml(""), &read).is_empty(),
+        "nothing to check"
+    );
+    assert!(super::mutant_sites(&toml(&entry("m", "x")), &read).is_empty());
+    let twice = super::mutant_sites(&toml(&entry("m", "y")), &read);
+    assert!(twice[0].contains("occurs 2 times"), "{twice:?}");
+    assert!(!super::mutant_sites(&toml(&entry("m", "q")), &read).is_empty());
+    let dup = super::mutant_sites(
+        &toml(&format!("{}{}", entry("m", "x"), entry("m", "x"))),
+        &read,
+    );
+    assert!(dup.iter().any(|p| p.contains("more than once")), "{dup:?}");
+    let missing = toml(&entry("m", "x").replace("a.rs", "b.rs"));
+    assert!(super::mutant_sites(&missing, &read)[0].contains("cannot read"));
+    assert!(
+        !super::mutant_sites(&toml(&entry("m", "z")), &read).is_empty(),
+        "before == after"
+    );
+}

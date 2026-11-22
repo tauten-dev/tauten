@@ -925,6 +925,81 @@ pub fn extraction(crates: &[String], report: &Report) -> (bool, Vec<(String, Ext
     (admitted, crates.iter().cloned().zip(seen).collect())
 }
 
+/// Whether every `[[mutant]]` can be applied (#81), before any gate runs:
+/// its name is unique, its file is readable through `read` (a path
+/// relative to the workspace), its `before` text occurs in it exactly once
+/// and differs from `after`. The decision is the proved
+/// [`kernel_control::admit`]: each entry is a control that must pass,
+/// observed once per occurrence of its site, so a missing site, a repeated
+/// one or a repeated name is never admitted. Returns the problems, empty
+/// when admitted; a file with no `[[mutant]]` (a custom gate defining its
+/// own) has nothing to check.
+#[must_use]
+pub fn mutant_sites(file: &ClaimsFile, read: &dyn Fn(&str) -> Option<String>) -> Vec<String> {
+    use kernel_control::{Control, Expect, Observation, Seen};
+    if file.mutant.is_empty() {
+        return Vec::new();
+    }
+    let mut names: Vec<&str> = Vec::new();
+    for m in &file.mutant {
+        if !names.contains(&m.name.as_str()) {
+            names.push(&m.name);
+        }
+    }
+    let id = |n: &str| names.iter().position(|m| *m == n).unwrap_or(usize::MAX);
+    let controls: Vec<Control> = (0..names.len())
+        .map(|id| Control {
+            id,
+            expect: Expect::Pass,
+        })
+        .collect();
+    let mut observed = Vec::new();
+    let mut problems = Vec::new();
+    let mut entries: BTreeMap<&str, usize> = BTreeMap::new();
+    for m in &file.mutant {
+        let n = entries.entry(&m.name).or_default();
+        *n = n.saturating_add(1);
+        if *n == 2 {
+            problems.push(format!("mutant `{}` is defined more than once", m.name));
+        }
+        let Some(text) = read(&m.file) else {
+            problems.push(format!("mutant `{}`: cannot read {}", m.name, m.file));
+            observed.push(Observation {
+                id: id(&m.name),
+                seen: Seen::FailOther,
+            });
+            continue;
+        };
+        if m.before == m.after || m.before.is_empty() {
+            problems.push(format!(
+                "mutant `{}`: `before` is empty or equals `after`",
+                m.name
+            ));
+            observed.push(Observation {
+                id: id(&m.name),
+                seen: Seen::FailOther,
+            });
+            continue;
+        }
+        let sites = text.matches(m.before.as_str()).count();
+        if sites != 1 {
+            problems.push(format!(
+                "mutant `{}`: its `before` text occurs {sites} times in {}, not once",
+                m.name, m.file
+            ));
+        }
+        observed.extend((0..sites).map(|_| Observation {
+            id: id(&m.name),
+            seen: Seen::Pass,
+        }));
+    }
+    let admitted = kernel_control::admit(&controls, &observed);
+    if !admitted && problems.is_empty() {
+        problems.push("the mutant inventory is not admitted".to_owned());
+    }
+    if admitted { Vec::new() } else { problems }
+}
+
 /// For `cargo tauten proofs try`: the mutants to run and the claims they
 /// bear on. Selected by theorem (every mutant of a claim that states one of
 /// `theorems`) and by name (`mutants`). Each affected claim is returned
@@ -1233,7 +1308,11 @@ impl Report {
     pub fn started(&self) -> bool {
         self.not_started.is_none()
             && self.events.iter().any(|event| match event {
-                Event::Stage { stage, status, .. } => stage != "tools" || status == "ok",
+                Event::Stage { stage, status, .. } => match stage.as_str() {
+                    "preflight" => false,
+                    "tools" => status == "ok",
+                    _ => true,
+                },
                 Event::Theorem { .. }
                 | Event::Total { .. }
                 | Event::Premises { .. }
@@ -1241,6 +1320,26 @@ impl Report {
                 | Event::Subject { .. }
                 | Event::Mutant { .. } => true,
             })
+    }
+
+    /// Why the gate refused before any proof stage (#81): a `preflight`
+    /// stage that did not pass, with its detail.
+    #[must_use]
+    pub fn preflight_refusal(&self) -> Option<String> {
+        self.events.iter().find_map(|event| {
+            if let Event::Stage {
+                stage,
+                status,
+                detail,
+                ..
+            } = event
+                && stage == "preflight"
+                && status != "ok"
+            {
+                return Some(detail.clone().unwrap_or_else(|| status.clone()));
+            }
+            None
+        })
     }
 
     /// The results the gate reported for `names`.

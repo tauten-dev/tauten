@@ -28,6 +28,7 @@ never read as a pass.
                                            # tools and extract stages only
     python3 proofs/gate.py --only-mutants A,B
                                            # every stage, only these mutants (partial)
+    python3 proofs/gate.py --preflight     # check every [[mutant]] site, nothing else
     python3 proofs/gate.py --extract-tar   # a fresh extraction as a tar on stdout
 """
 from pathlib import Path
@@ -319,9 +320,53 @@ def mutant(spec: dict, crates: list[str], theorems: set[str]) -> dict:
                 "direct": direct, "dependent": dependent}
 
 
+def preflight(config: dict) -> list[str]:
+    """Every [[mutant]] applies, checked before any tool runs (#81): a unique
+    name, a file in a [gate] crate, and a `before` text that occurs in it
+    exactly once and differs from `after`. All of them, also under
+    --only-mutants: no stage, Docker or Lean is needed."""
+    crates = config.get("gate", {}).get("crates", [])
+    problems: list[str] = []
+    seen: set[str] = set()
+    for spec in config.get("mutant", []):
+        name = spec["name"]
+        if name in seen:
+            problems.append(f"mutant `{name}` is defined more than once")
+        seen.add(name)
+        if not any(spec["file"].startswith(c.rstrip("/") + "/") for c in crates):
+            problems.append(f"mutant `{name}`: {spec['file']} is in no crate of [gate] crates")
+            continue
+        path = ROOT / spec["file"]
+        if not path.is_file():
+            problems.append(f"mutant `{name}`: cannot read {spec['file']}")
+            continue
+        if not spec["before"] or spec["before"] == spec["after"]:
+            problems.append(f"mutant `{name}`: `before` is empty or equals `after`")
+            continue
+        sites = path.read_text().count(spec["before"])
+        if sites != 1:
+            problems.append(f"mutant `{name}`: its `before` text occurs {sites} times in {spec['file']}, not once")
+    return problems
+
+
+def refuse_early(config: dict) -> bool:
+    """Report a failed preflight as the `preflight` stage: the run is refused
+    before any proof stage, so `cargo tauten proofs` keeps the record."""
+    problems = preflight(config)
+    for problem in problems:
+        print(problem, file=sys.stderr)
+    if problems:
+        emit(stage="preflight", status="fail", detail="; ".join(problems))
+        return True
+    emit(stage="preflight", status="ok")
+    return False
+
+
 def gate(only: set[str] | None = None) -> int:
     config = claims()
     crates = config.get("gate", {}).get("crates", [])
+    if refuse_early(config):
+        return 2
     missing = [tool for tool in TOOLS if shutil.which(tool) is None]
     if missing:
         emit(stage="tools", status="missing", detail=f"not on PATH: {', '.join(missing)}")
@@ -419,6 +464,8 @@ def extract_tar() -> int:
 def main(args: list[str]) -> int:
     if args == ["--extract-tar"]:
         return extract_tar()
+    if args == ["--preflight"]:
+        return 2 if refuse_early(claims()) else 0
     if args[:1] == ["--extract-only"]:
         rest = args[1:]
         if rest and (len(rest) != 2 or rest[0] != "--crate"):

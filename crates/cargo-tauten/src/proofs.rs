@@ -349,6 +349,12 @@ fn run_in(
         }
         (Level::Full, _, _) => None,
     };
+    if own && !sites_admitted(root, &file) {
+        if write {
+            eprintln!("tauten: not running the gate; {CLAIMS_JSON} is unchanged");
+        }
+        return Ok(ExitCode::FAILURE);
+    }
     let command = plan.as_ref().map_or(&file.gate.command, |p| &p.command);
     // Inherited claims need no gate run of their own.
     let mut report = if own {
@@ -356,6 +362,12 @@ fn run_in(
     } else {
         proofs::Report::default()
     };
+    if let Some(why) = report.preflight_refusal() {
+        eprintln!(
+            "tauten: the gate refused before any proof stage: {why}; {CLAIMS_JSON} is unchanged"
+        );
+        return Ok(ExitCode::FAILURE);
+    }
     // An attempt that never reached a proof stage is reported but never
     // recorded (#52): the committed record stays byte-identical, so a plain
     // retry finds a clean checkout once the tool is back.
@@ -764,8 +776,15 @@ pub fn try_run(ws: &Loaded, theorems: &[String], mutants: &[String]) -> Result<E
         );
     }
     command.push(selected.join(","));
+    if !sites_admitted(root, &file) {
+        return Ok(ExitCode::FAILURE);
+    }
     let started = std::time::Instant::now();
     let mut report = run_gate(root, &command)?;
+    if let Some(why) = report.preflight_refusal() {
+        eprintln!("tauten: the gate refused before any proof stage: {why}");
+        return Ok(ExitCode::FAILURE);
+    }
     report.expected_direct = proofs::expected_direct(&file);
     let mut all = true;
     for claim in &affected {
@@ -1098,6 +1117,19 @@ fn parents_conserve(root: &Path, file: &ClaimsFile, parents: &[String]) -> Resul
 /// parents, in order), and the resolved claims must still conserve both
 /// parents' obligations. A hand-written pending file is not promoted just
 /// because it parses.
+/// Whether every `[[mutant]]` of `file` applies to the bytes under `root`
+/// the gate will mutate ([`proofs::mutant_sites`]); prints each problem.
+/// All of them are checked, at every level: a reused kill of a mutant whose
+/// site is gone would be a result no full run could give.
+fn sites_admitted(root: &Path, file: &ClaimsFile) -> bool {
+    let read = |rel: &str| fs::read_to_string(root.join(rel)).ok();
+    let problems = proofs::mutant_sites(file, &read);
+    for p in &problems {
+        eprintln!("tauten: {p}");
+    }
+    problems.is_empty()
+}
+
 /// Why a result of `file` could not replace the committed record, as far
 /// as that is known without running the gate: an unexcused weakening
 /// (TAU-R002, reported line by line), or a pending merge record this run

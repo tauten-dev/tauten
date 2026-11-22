@@ -114,7 +114,12 @@ e(stage="mutants", status="ok")
             Command::new(env!("CARGO_BIN_EXE_cargo-tauten"))
                 .arg("tauten")
                 .args(args)
-                .arg("--live")
+                // `try` never records, so it has no --live.
+                .args(if args.get(1) == Some(&"try") {
+                    &[][..]
+                } else {
+                    &["--live"][..]
+                })
                 .arg("--manifest-path")
                 .arg(self.root.join("Cargo.toml"))
                 .output()
@@ -573,6 +578,87 @@ def main():
         assert!(String::from_utf8_lossy(&out.stderr).contains("snapshot of the merge commit"));
         assert!(p.ran().is_empty(), "the gate ran");
         assert_eq!(p.record(), pending);
+    }
+
+    /// #81: every `[[mutant]]` site is checked before the gate starts, at
+    /// every level, also for a mutant whose kill ship would reuse.
+    #[test]
+    fn a_vanished_mutant_site_is_refused_before_the_gate_runs() {
+        let p = recorded("site");
+        let before = p.record();
+        // A comment-only edit: the claim's inputs are unchanged, so ship
+        // would reuse `guard-dropped`'s kill, but its site is gone.
+        p.edit(
+            "sub-kernel/src/lib.rs",
+            "if a > u32::MAX - b { u32::MAX } else { a + b }",
+            "if a > u32::MAX - b { u32::MAX } else { b + a }",
+        );
+        for args in [
+            &["proofs"][..],
+            &["proofs", "--level", "ship"],
+            &["proofs", "try", "--mutants", "quadruple"],
+        ] {
+            let out = p.tauten(args);
+            let err = String::from_utf8_lossy(&out.stderr);
+            assert_eq!(out.status.code(), Some(1), "{args:?}: {err}");
+            assert!(
+                err.contains("mutant `guard-dropped`: its `before` text occurs 0 times"),
+                "{err}"
+            );
+            assert!(p.ran().is_empty(), "{args:?}: the gate ran");
+            assert_eq!(p.record(), before);
+        }
+    }
+
+    /// #81: a gate may refuse before any proof stage with a `preflight`
+    /// stage (custom gates defining their own mutants); the record is kept.
+    #[test]
+    fn a_gate_preflight_refusal_keeps_the_record() {
+        let p = recorded("gate-preflight");
+        let before = p.record();
+        p.edit(
+            "fake_gate.py",
+            "def e(**f): print(\"TAUTEN-PROOFS \" + json.dumps(f))\n",
+            "def e(**f): print(\"TAUTEN-PROOFS \" + json.dumps(f))\ne(stage=\"preflight\", status=\"fail\", detail=\"site of m gone\"); sys.exit(2)\n",
+        );
+        let out = p.tauten(&["proofs"]);
+        let err = String::from_utf8_lossy(&out.stderr);
+        assert_eq!(out.status.code(), Some(1), "{err}");
+        assert!(
+            err.contains("refused before any proof stage: site of m gone"),
+            "{err}"
+        );
+        assert_eq!(p.record(), before);
+    }
+
+    /// #81: the template gate's own preflight, without any tool.
+    #[test]
+    fn the_template_gate_preflights_without_tools() {
+        let p = Project::new("template-preflight");
+        let gate = Path::new(env!("CARGO_MANIFEST_DIR")).join("templates/proofs/gate.py");
+        fs::copy(&gate, p.path("proofs/gate.py")).expect("copy");
+        let run = || {
+            Command::new("python3")
+                .args(["proofs/gate.py", "--preflight"])
+                .current_dir(&p.root)
+                .output()
+                .expect("python3")
+        };
+        let ok = run();
+        assert_eq!(
+            ok.status.code(),
+            Some(0),
+            "{}",
+            String::from_utf8_lossy(&ok.stderr)
+        );
+        p.edit("sub-kernel/src/lib.rs", "values[0]", "values[0 + 0]");
+        let bad = run();
+        assert_eq!(bad.status.code(), Some(2));
+        let out = String::from_utf8_lossy(&bad.stdout);
+        assert!(
+            out.contains("\"stage\": \"preflight\"") && out.contains("second-value"),
+            "{out}"
+        );
     }
 
     /// Every claim's recorded inputs on the unchanged fixture, pinned: a
