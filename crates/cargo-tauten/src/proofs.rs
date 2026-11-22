@@ -84,7 +84,20 @@ struct Sources {
     extracted: BTreeMap<String, String>,
     lean: BTreeMap<String, String>,
     mutants: BTreeMap<String, String>,
+    monotone: BTreeSet<String>,
     toolchain: String,
+}
+
+impl Sources {
+    fn borrow(&self) -> proofs::inputs::Sources<'_> {
+        proofs::inputs::Sources {
+            extracted: &self.extracted,
+            lean: &self.lean,
+            mutants: &self.mutants,
+            monotone: &self.monotone,
+            toolchain: &self.toolchain,
+        }
+    }
 }
 
 fn read_sources(root: &Path, file: &ClaimsFile) -> Result<Sources> {
@@ -113,19 +126,40 @@ fn read_sources(root: &Path, file: &ClaimsFile) -> Result<Sources> {
         .map(|m| {
             (
                 m.name.clone(),
-                format!(
-                    "{}\n{}\n{}\n{}\n{:?}",
-                    m.name, m.file, m.before, m.after, m.direct
-                ),
+                // Length-prefixed fields: no two entries share a text.
+                [
+                    m.name.as_str(),
+                    m.file.as_str(),
+                    m.before.as_str(),
+                    m.after.as_str(),
+                    &format!("{:?}", m.direct),
+                ]
+                .iter()
+                .map(|f| format!("{}:{f}\n", f.len()))
+                .collect::<String>(),
             )
         })
+        .collect();
+    let monotone: BTreeSet<String> = file
+        .mutant
+        .iter()
+        .filter(|m| m.direct.is_empty())
+        .map(|m| m.name.clone())
         .collect();
     let python = proofs_dir.join("mutants.py");
     if python.is_file() {
         let text =
             fs::read_to_string(&python).with_context(|| format!("reading {}", python.display()))?;
+        // A name in both is bound to both definitions: which one the gate
+        // uses is its own business.
         for (name, def) in proofs::inputs::python_mutants(&text) {
-            mutants.entry(name).or_insert(def);
+            mutants
+                .entry(name)
+                .and_modify(|t| {
+                    t.push('\0');
+                    t.push_str(&def);
+                })
+                .or_insert(def);
         }
     }
     let mut toolchain = String::new();
@@ -147,6 +181,7 @@ fn read_sources(root: &Path, file: &ClaimsFile) -> Result<Sources> {
         extracted,
         lean,
         mutants,
+        monotone,
         toolchain,
     })
 }
@@ -273,20 +308,11 @@ fn run_in(
     file.check_assumptions(&assumptions)?;
     let before = fingerprints(ws, &file)?;
     let sources = read_sources(root, &file)?;
+    let index = proofs::inputs::Index::new(&sources.borrow());
     let inputs: Vec<BTreeMap<String, String>> = file
         .claim
         .iter()
-        .map(|claim| {
-            proofs::inputs::claim_inputs(
-                claim,
-                &proofs::inputs::Sources {
-                    extracted: &sources.extracted,
-                    lean: &sources.lean,
-                    mutants: &sources.mutants,
-                    toolchain: &sources.toolchain,
-                },
-            )
-        })
+        .map(|claim| proofs::inputs::claim_inputs(claim, &sources.borrow(), &index))
         .collect();
     let previous = committed_record(live_root)?;
     let own = file.claim.iter().any(|c| c.inherit.is_none());
@@ -327,9 +353,37 @@ fn run_in(
             "tauten: ship level: {} of {} claim(s) re-calibrated ({} mutant(s) run), {} reused",
             plan.stale,
             file.claim.len(),
-            plan.run,
+            plan.run.len(),
             file.claim.len().saturating_sub(plan.stale)
         );
+        // Which mutants ran and which were reused: for the reader, not a
+        // format (#83).
+        let names = |v: Vec<&str>| {
+            if v.is_empty() {
+                "none".to_owned()
+            } else {
+                v.join(", ")
+            }
+        };
+        eprintln!(
+            "tauten: ship level: run: {}",
+            names(plan.run.iter().map(String::as_str).collect())
+        );
+        eprintln!(
+            "tauten: ship level: reused: {}",
+            names(plan.carried.iter().map(|c| c.mutant.as_str()).collect())
+        );
+        for (claim, now) in file.claim.iter().zip(&inputs) {
+            for key in now
+                .keys()
+                .filter(|k| k.starts_with(proofs::inputs::UNBOUND))
+            {
+                eprintln!(
+                    "tauten: ship level: {} `{}` is never reused: {} ({})",
+                    claim.file, claim.function, key, now[key]
+                );
+            }
+        }
         report
             .events
             .extend(plan.carried.iter().map(proofs::MutantResult::event));
@@ -368,7 +422,7 @@ fn run_in(
             badge: proofs::badge(claim, outcome, true),
             detail,
             fingerprint,
-            inputs,
+            inputs: proofs::inputs::recordable(&inputs),
             mutant_results: report.mutant_results(&claim.mutants),
         });
     }
@@ -579,13 +633,30 @@ struct ShipPlan {
     /// Claims re-calibrated.
     stale: usize,
     /// Mutants run.
-    run: usize,
+    run: BTreeSet<String>,
 }
 
-/// A claim is re-calibrated unless it was recorded proved with inputs the
-/// proved `binding::fresh` finds unchanged ([`proofs::unchanged`]); every
-/// mutant of a re-calibrated claim runs, every other mutant's recorded
-/// result is reused.
+/// Inputs `of` (the whole claim's with `None`, else one mutant's).
+fn part(inputs: &BTreeMap<String, String>, of: Option<&str>) -> BTreeMap<String, String> {
+    inputs
+        .iter()
+        .filter(|(k, _)| proofs::inputs::mutant_of(k) == of)
+        .map(|(k, v)| (k.clone(), v.clone()))
+        .collect()
+}
+
+/// Whether the recorded inputs `recorded` still hold for `now`, decided by
+/// the proved `binding::fresh` ([`proofs::unchanged`]). A current input
+/// that is unbound never holds.
+fn holds(recorded: &BTreeMap<String, String>, now: &BTreeMap<String, String>) -> bool {
+    !now.keys().any(|k| k.starts_with(proofs::inputs::UNBOUND)) && proofs::unchanged(recorded, now)
+}
+
+/// A claim is re-calibrated unless it was recorded proved with its
+/// claim-wide inputs (translation reached, proof files, toolchain) still
+/// holding; then each of its mutants runs again only if its own inputs
+/// (definition, and the project's Lean files for an exact one) moved or no
+/// result was recorded. Every other mutant's recorded result is reused.
 fn ship_plan(
     file: &ClaimsFile,
     inputs: &[BTreeMap<String, String>],
@@ -593,34 +664,40 @@ fn ship_plan(
     try_: &[String],
 ) -> ShipPlan {
     let mut run: BTreeSet<String> = BTreeSet::new();
-    let mut fresh_records = Vec::new();
+    let mut reusable: Vec<&proofs::MutantResult> = Vec::new();
     let mut stale: usize = 0;
     for (claim, now) in file.claim.iter().zip(inputs) {
         let recorded = previous
             .claims
             .iter()
             .find(|r| r.claim.file == claim.file && r.claim.function == claim.function);
-        match recorded {
-            Some(r)
-                if r.outcome == Outcome::Proved
-                    && !r.inputs.is_empty()
-                    && r.claim == *claim
-                    && proofs::unchanged(&r.inputs, now) =>
-            {
-                fresh_records.push(r);
-            }
-            Some(_) | None => {
-                stale = stale.saturating_add(1);
-                run.extend(claim.mutants.iter().cloned());
+        let fresh = recorded.filter(|r| {
+            r.outcome == Outcome::Proved
+                && !r.inputs.is_empty()
+                && r.claim == *claim
+                && holds(&part(&r.inputs, None), &part(now, None))
+        });
+        let Some(r) = fresh else {
+            stale = stale.saturating_add(1);
+            run.extend(claim.mutants.iter().cloned());
+            continue;
+        };
+        for mutant in &claim.mutants {
+            let result = r.mutant_results.iter().find(|m| m.mutant == *mutant);
+            match result {
+                Some(result) if holds(&part(&r.inputs, Some(mutant)), &part(now, Some(mutant))) => {
+                    reusable.push(result);
+                }
+                _ => {
+                    run.insert(mutant.clone());
+                }
             }
         }
     }
     let mut carried: Vec<proofs::MutantResult> = Vec::new();
-    for r in fresh_records {
-        for result in &r.mutant_results {
-            if !run.contains(&result.mutant) && !carried.iter().any(|c| c.mutant == result.mutant) {
-                carried.push(result.clone());
-            }
+    for result in reusable {
+        if !run.contains(&result.mutant) && !carried.iter().any(|c| c.mutant == result.mutant) {
+            carried.push(result.clone());
         }
     }
     let mut command = try_.to_vec();
@@ -629,7 +706,7 @@ fn ship_plan(
         command,
         carried,
         stale,
-        run: run.len(),
+        run,
     }
 }
 

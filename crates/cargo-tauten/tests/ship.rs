@@ -224,15 +224,302 @@ e(stage="mutants", status="ok")
         assert_eq!(ship_agrees_with_full(&p), set(&[]));
     }
 
+    /// One proof file per claim, so each claim's proof files mention only
+    /// its own function (the fixture keeps every theorem in one file, which
+    /// mentions them all).
+    fn split_proofs(p: &Project) {
+        fs::remove_file(p.path("proofs/Proofs/SubKernel.lean")).expect("rm");
+        for (file, theorem, function) in [
+            ("Add", "add_capped_spec", "add_capped"),
+            ("First", "first_or_zero_spec", "first_or_zero"),
+            ("Double", "double_spec", "double"),
+            ("Latest", "latest_is_later_reading", "latest"),
+        ] {
+            p.write(
+                &format!("proofs/Proofs/{file}.lean"),
+                &format!(
+                    "import Extracted.SubKernel\nimport Proofs.TautenAssumption\nopen sub_kernel\nnamespace Proofs.SubKernel\ntheorem {theorem} : {function} = {function} := by\n  unfold {function}\n  rfl\nend Proofs.SubKernel\n"
+                ),
+            );
+        }
+        p.write(
+            "proofs/Proofs/Witness.lean",
+            "namespace Proofs.SubKernel\ntheorem constant_counter_is_monotone : True := trivial\nend Proofs.SubKernel\n",
+        );
+    }
+
+    /// Record a full run, with the proofs split per claim.
+    fn recorded(name: &str) -> Project {
+        let p = Project::new(name);
+        split_proofs(&p);
+        p.tauten(&["proofs"]);
+        p.ran();
+        p
+    }
+
     #[test]
     fn harness_reruns_only_the_claim_whose_extracted_function_changed() {
-        let p = Project::new("one-changed");
-        p.tauten(&["proofs"]);
+        let p = recorded("one-changed");
         p.edit(
             "proofs/Extracted/SubKernel.lean",
             "then ok 0#u32",
             "then ok 1#u32",
         );
+        assert_eq!(ship_agrees_with_full(&p), set(&["second-value"]));
+    }
+
+    /// The translation split in two files: `add_capped` in one calls a
+    /// helper declared in the other.
+    fn split_translation(p: &Project) {
+        let text = p.read("proofs/Extracted/SubKernel.lean");
+        let (head, _) = text.split_once("namespace sub_kernel").expect("namespace");
+        p.write(
+            "proofs/Extracted/SubKernel.lean",
+            &text.replace(
+                "  if a > i\n",
+                "  let c ← sub_kernel.helpers.cap i\n  if a > c\n",
+            ),
+        );
+        p.write(
+            "proofs/Extracted/SubKernel/Helpers.lean",
+            &format!(
+                "{head}namespace sub_kernel\n\ndef helpers.cap (x : Std.U32) : Result Std.U32 := do\n  ok x\n\nend sub_kernel\n"
+            ),
+        );
+    }
+
+    /// #79: a claim's inputs follow its function into every extracted file.
+    #[test]
+    fn a_callee_in_another_extracted_file_is_an_input() {
+        let p = Project::new("cross-file");
+        split_proofs(&p);
+        split_translation(&p);
+        p.tauten(&["proofs"]);
+        p.ran();
+        p.edit(
+            "proofs/Extracted/SubKernel/Helpers.lean",
+            "  ok x\n",
+            "  ok (x - 1#u32)\n",
+        );
+        assert_eq!(ship_agrees_with_full(&p), set(&["guard-dropped"]));
+    }
+
+    fn inputs_of(p: &Project) -> serde_json::Value {
+        let v: serde_json::Value = serde_json::from_str(&p.record()).expect("json");
+        v["claims"]
+            .as_array()
+            .expect("claims")
+            .iter()
+            .map(|c| {
+                (
+                    c["function"].as_str().unwrap_or("").to_owned(),
+                    c["inputs"].clone(),
+                )
+            })
+            .collect::<serde_json::Map<_, _>>()
+            .into()
+    }
+
+    /// #79: the same declaration kept in two files (a retained single-file
+    /// translation next to a split one) is one input, fingerprinted as in
+    /// one file; a differing copy is bound too.
+    #[test]
+    fn a_duplicated_declaration_is_one_input() {
+        let p = recorded("duplicate");
+        let single = inputs_of(&p);
+        let text = p.read("proofs/Extracted/SubKernel.lean");
+        p.write("proofs/Extracted/Aeneas/SubKernel.lean", &text);
+        p.tauten(&["proofs"]);
+        assert_eq!(inputs_of(&p), single, "identical copies change nothing");
+        p.ran();
+        p.write(
+            "proofs/Extracted/Aeneas/SubKernel.lean",
+            &text.replace("a * 2#u32", "a * 2#u32 + 0#u32"),
+        );
+        assert_eq!(ship_agrees_with_full(&p), set(&["quadruple"]));
+    }
+
+    fn drop_mutant_entry(p: &Project, name: &str) {
+        let text = p.read("proofs/claims.toml");
+        let at = text
+            .find(&format!("[[mutant]]\nname = \"{name}\""))
+            .expect("entry");
+        let end = text[at + 1..]
+            .find("[[mutant]]")
+            .map_or(text.len(), |n| at + 1 + n);
+        p.write(
+            "proofs/claims.toml",
+            &format!("{}{}", &text[..at], &text[end..]),
+        );
+    }
+
+    /// #80: a mutant whose definition is in neither `[[mutant]]` nor
+    /// `proofs/mutants.py` is run on every ship-level run.
+    #[test]
+    fn a_mutant_with_no_known_definition_is_never_reused() {
+        let p = Project::new("unknown-mutant");
+        split_proofs(&p);
+        drop_mutant_entry(&p, "stored-wins");
+        p.tauten(&["proofs"]);
+        p.ran();
+        assert!(
+            !p.record().contains("unbound:"),
+            "unbound inputs are never recorded"
+        );
+        let ship = p.tauten(&["proofs", "--level", "ship"]);
+        let err = String::from_utf8_lossy(&ship.stderr);
+        assert!(err.contains("unbound:mutant:stored-wins"), "{err}");
+        assert_eq!(p.ran(), vec![set(&["stored-wins"])]);
+        assert_eq!(ship_agrees_with_full(&p), set(&["stored-wins"]));
+    }
+
+    const MUTANTS_PY: &str = r#"from dataclasses import dataclass
+
+@dataclass(frozen=True)
+class Mutant:
+    name: str
+    fails: tuple
+
+T = "Proofs.SubKernel."
+LATEST = (T + "latest_is_later_reading",)
+
+MUTANTS = (
+    # latest: the stored value always wins
+    Mutant("stored-wins", "sub-kernel/src/lib.rs",
+           "if seen >= stored { seen } else { stored }", "stored",
+           LATEST),
+    Mutant("other", "sub-kernel/src/lib.rs", "a * 3", "a * 9", ()),
+)
+
+def main():
+    print("Mutant(\"fake\", in a string)")
+"#;
+
+    /// #80: a `proofs/mutants.py` entry is bound with everything outside
+    /// the entries (constants it uses, the runner); another entry, a
+    /// comment or a new entry is not part of it.
+    #[test]
+    fn a_python_mutant_is_bound_with_the_constants_it_uses() {
+        let p = Project::new("python-mutant");
+        split_proofs(&p);
+        drop_mutant_entry(&p, "stored-wins");
+        p.write("proofs/mutants.py", MUTANTS_PY);
+        p.tauten(&["proofs"]);
+        p.ran();
+        p.edit("proofs/mutants.py", "\"a * 9\"", "\"a * 8\"");
+        p.edit(
+            "proofs/mutants.py",
+            "    # latest:",
+            "    # new comment\n    # latest:",
+        );
+        p.edit(
+            "proofs/mutants.py",
+            "\n)\n\ndef",
+            "\n    Mutant(\"added\", \"x.rs\", \"a\", \"b\", ()),\n)\n\ndef",
+        );
+        assert_eq!(ship_agrees_with_full(&p), set(&[]));
+        p.edit("proofs/mutants.py", "LATEST = (T", "LATEST = (T + \"x\", T");
+        assert_eq!(ship_agrees_with_full(&p), set(&["stored-wins"]));
+    }
+
+    fn set_direct(p: &Project, name: &str, direct: &str) {
+        p.edit(
+            "proofs/claims.toml",
+            &format!("[[mutant]]\nname = \"{name}\"\n"),
+            &format!("[[mutant]]\nname = \"{name}\"\ndirect = [{direct}]\n"),
+        );
+    }
+
+    fn kills(p: &Project, json: &str) {
+        p.write("proofs/kills.json", json);
+    }
+
+    /// Gap A: a mutant with an exact `direct` set is killed only if no other
+    /// declaration fails directly, so an edit to any Lean file of the
+    /// project, even one no claim of it mentions, re-runs it; a mutant
+    /// without `direct` is not affected.
+    #[test]
+    fn an_exact_mutant_is_bound_to_every_lean_file() {
+        let p = Project::new("exact");
+        split_proofs(&p);
+        set_direct(&p, "guard-dropped", "\"Proofs.SubKernel.add_capped_spec\"");
+        kills(
+            &p,
+            r#"{"guard-dropped": {"status": "killed", "broken": ["Proofs.SubKernel.add_capped_spec"], "direct": ["Proofs.SubKernel.add_capped_spec"]}}"#,
+        );
+        p.tauten(&["proofs"]);
+        p.ran();
+        // A new theorem elsewhere also fails directly under the mutant.
+        p.write(
+            "proofs/Proofs/Elsewhere.lean",
+            "namespace Proofs.Elsewhere\ntheorem other : True := trivial\nend Proofs.Elsewhere\n",
+        );
+        kills(
+            &p,
+            r#"{"guard-dropped": {"status": "killed", "broken": ["Proofs.SubKernel.add_capped_spec", "Proofs.Elsewhere.other"], "direct": ["Proofs.SubKernel.add_capped_spec", "Proofs.Elsewhere.other"]}}"#,
+        );
+        assert_eq!(ship_agrees_with_full(&p), set(&["guard-dropped"]));
+    }
+
+    /// Gap B: a theorem may unfold any extracted declaration its file
+    /// mentions, not only those its function reaches.
+    #[test]
+    fn a_declaration_a_proof_file_mentions_is_an_input() {
+        let p = Project::new("mentioned");
+        split_proofs(&p);
+        p.edit("proofs/Proofs/Latest.lean", "  rfl\n", "  simp [triple]\n");
+        p.tauten(&["proofs"]);
+        p.ran();
+        p.edit(
+            "proofs/Extracted/SubKernel.lean",
+            "a * 3#u32",
+            "a * 3#u32 + 0#u32",
+        );
+        assert_eq!(ship_agrees_with_full(&p), set(&["stored-wins"]));
+    }
+
+    /// #79: a claim whose function names no extracted declaration, or a
+    /// translation with nested namespaces, is never reused.
+    #[test]
+    fn incomplete_binding_is_never_reused() {
+        let p = recorded("unresolved");
+        p.edit(
+            "proofs/claims.toml",
+            "lean = \"sub_kernel.double\"",
+            "lean = \"sub_kernel.doubled\"",
+        );
+        p.tauten(&["proofs"]);
+        p.ran();
+        assert_eq!(ship_agrees_with_full(&p), set(&["quadruple"]));
+
+        let p = recorded("nested");
+        p.edit(
+            "proofs/Extracted/SubKernel.lean",
+            "def triple",
+            "namespace inner\ndef t := 0\nend inner\ndef triple",
+        );
+        p.tauten(&["proofs"]);
+        p.ran();
+        assert_eq!(ship_agrees_with_full(&p), set(&ALL));
+    }
+
+    /// #79: Lean module-system imports are followed.
+    #[test]
+    fn module_system_imports_are_followed() {
+        let p = Project::new("public-import");
+        split_proofs(&p);
+        p.write(
+            "proofs/Proofs/Lemma.lean",
+            "theorem helper_lemma : True := trivial\n",
+        );
+        p.edit(
+            "proofs/Proofs/First.lean",
+            "import Proofs.TautenAssumption\n",
+            "import Proofs.TautenAssumption\npublic import Proofs.Lemma\n",
+        );
+        p.tauten(&["proofs"]);
+        p.ran();
+        p.edit("proofs/Proofs/Lemma.lean", "trivial", "by trivial");
         assert_eq!(ship_agrees_with_full(&p), set(&["second-value"]));
     }
 
