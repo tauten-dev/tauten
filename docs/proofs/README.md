@@ -2,7 +2,9 @@
 
 Lean 4 theorems about the decision code of the checker, stated over the
 Charon/Aeneas translation of the shipped Rust. Plan: `docs/PROOF-PLAN.md`.
-P0 (toolchain probe): `docs/proofs/probe.md`. This page covers P1, P2,
+P0 (toolchain probe): `docs/proofs/probe.md`. Reusing only the Lean
+module `Tauten.Machine` in another project, pinned by commit and checksum:
+`docs/ADOPTING.md`, "Lean module only". This page covers P1, P2,
 P3 (the macros' generated code, for listed instances), P4 (rule-table
 well-formedness) and P5 (the proof tier for users' kernel crates,
 subsumption of arithmetic and indexing lints, badge data).

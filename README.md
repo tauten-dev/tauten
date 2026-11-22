@@ -66,6 +66,11 @@ see; only a rule that misses nothing among the inputs it sees is called
 enforced, and a heuristic never blocks (`docs/RULES.md`). The full table, including what Rust **cannot** enforce, is in
 [docs/MAPPING.md](docs/MAPPING.md).
 
+Three ways to adopt it, each complete on its own: an advisory trial that
+changes nothing in the repository, an opt-in CI check against a reviewed
+baseline, or one Lean module reused without the CLI:
+[docs/ADOPTING.md](docs/ADOPTING.md).
+
 ## Proofs
 
 tauten's own decisions (tier order, severity, lint exceptions, the

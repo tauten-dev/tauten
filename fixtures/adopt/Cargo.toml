@@ -1,0 +1,5 @@
+# The adoption routes of docs/ADOPTING.md on a workspace with no tiers, no
+# baseline and no overflow-checks setting (crates/cargo-tauten/tests/adopting.rs).
+[workspace]
+resolver = "3"
+members = ["crates/parse", "crates/app"]
