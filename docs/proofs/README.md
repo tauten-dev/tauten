@@ -328,9 +328,9 @@ without `total`, and a function claimed twice.
 
 Runs `[gate] command` from the workspace root, passes its output through to
 stderr, and reads the lines that start with `TAUTEN-PROOFS ` followed by
-JSON: stages (`{"stage": "drift", "status": "ok"}`; stages `tools`,
-`extract`, `drift`, `build`, `audit`, `mutants`; status `ok`, `fail` or,
-for tools, `missing`), audited theorems (`{"theorem": …, "status": "ok"}`),
+JSON: stages (`{"stage": "drift", "status": "ok"}`; stages `preflight`,
+`tools`, `extract`, `drift`, `build`, `audit`, `mutants`; status `ok`,
+`fail` or, for tools, `missing`), audited theorems (`{"theorem": …, "status": "ok"}`),
 total theorems (`{"total": …, "function": …}`) and mutants
 (`{"mutant": …, "status": "killed", "broken": [theorems]}`). It prints one
 JSON line per claim (the claim's fields plus `outcome`, `detail` and
@@ -349,6 +349,15 @@ and exits 0 only if every claim is proved. The outcome
 
 A missing line is never read as a pass: every stage up to `audit` must be
 reported `ok`, every theorem audited, every mutant reported killed.
+
+Before the gate starts, a run that records refuses what it could not
+record anyway (#77): an unexcused weakening (TAU-R002) or a pending merge
+record it may not replace. Every `[[mutant]]` must also apply (#81): a
+unique name and a `before` text occurring exactly once in its file and
+differing from `after`, decided by the proved `control::admit`. A gate
+whose mutants are defined elsewhere refuses the same way by reporting a
+`preflight` stage that is not `ok` before any other: that run never counts
+as started, and the record is kept byte-identical.
 
 ### Lint subsumption, bound to a fresh proof
 

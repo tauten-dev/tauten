@@ -1,5 +1,41 @@
 # Changelog
 
+## Unreleased (0.2.1)
+
+Milestone 0.2.1: when proof results may be reused (#79, #80, #83) and
+early refusals (#77, #81).
+
+### Changed
+
+- **Ship-level reuse is bound to the whole translation and to complete
+  definitions** (#79, #80). A claim's inputs follow its function across
+  every file under `proofs/Extracted/`, and also bind the extracted
+  instances, every extracted declaration its proof files mention, and Lean
+  module-system imports. A `proofs/mutants.py` mutant is bound to its whole
+  entry plus the rest of the file. A mutant whose kill requires that nothing
+  else fails is bound to every Lean file. Incomplete binding (unknown
+  mutant, unresolved function, nested namespaces) is never reused. Staleness
+  of a mutant's own inputs is decided per mutant. **The first ship run after
+  upgrading re-runs every mutant once**; recorded translation and proof
+  fingerprints are unchanged.
+- **Refused before the gate starts** (#77, #81): an unexcused weakening
+  (TAU-R002), a pending merge record the run may not replace, and a
+  `[[mutant]]` whose site does not occur exactly once. The record is left
+  byte-identical and no gate process starts. A gate can refuse the same way
+  by reporting a `preflight` stage; the template `gate.py` does, and
+  `gate.py --preflight` runs only that check.
+- Ship prints which mutants it ran and which it reused.
+
+### Fixed
+
+- An inert `[workspace.package].version` bump is pinned to keep every kill
+  and subsumption (#75; regression test, no behaviour change).
+
+### Documentation
+
+- What a ship-level run binds and what it does not, and when it re-runs
+  everything once (#78).
+
 ## 0.2.0 (2026-11-21)
 
 Milestone 0.2: #65, #64 and #60 (release issue #70). #61, #62, #66 and #68

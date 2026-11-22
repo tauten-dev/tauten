@@ -76,9 +76,10 @@ Three checks are easy to confuse; each answers a different question.
   finding comes back until the gate records again.
 - **A ship-level record reuses mutant kills.** `cargo tauten proofs --level
   ship` runs extract, drift, build and audit on every claim, but re-runs
-  only the mutants of claims whose recorded inputs changed; the other kills
-  come from the previous record. `--level full` re-runs every mutant. The
-  record says which level produced it.
+  only the mutants whose recorded inputs changed; the other kills come from
+  the previous record, and stderr lists which mutants ran and which were
+  reused. `--level full` re-runs every mutant. The record does not say which
+  level produced it (#85); run full before a release you tag.
 - **Direct and dependent failures differ.** A mutant can break a theorem
   directly (its own proof fails) or only through a lemma it uses (the
   failed lemma becomes `sorryAx`). The gate reports both lists. A
@@ -94,6 +95,45 @@ Three checks are easy to confuse; each answers a different question.
 A claim's badge (`proved`, or `proved-under` named assumptions) and its
 outcome are separate fields. `proved-under` is conditional: it holds only
 where those assumptions hold.
+
+## What a ship-level run binds
+
+A recorded kill is reused only while all of its inputs are unchanged:
+
+- the extracted declarations its function reaches, followed across every
+  file under `Extracted/` (one file, Aeneas `-split-files` or a per-module
+  split are the same; a declaration kept in two files is bound to both
+  texts), the extracted instances, and every extracted declaration that a
+  bound proof file mentions;
+- the Lean files declaring its theorems and the local files they import
+  (`import`, `public import`, `meta import`, `import all`);
+- the mutant's definition: its `[[mutant]]` entry, or its
+  `Mutant("name", ...)` call in `proofs/mutants.py` together with the rest
+  of that file (constants it uses, the runner), but not the other entries;
+- for a mutant whose kill requires that nothing else fails (a `direct`
+  set, or any mutant a custom gate defines), every Lean file of the
+  project, so any proof edit re-runs it;
+- `proofs/lean-toolchain`, `proofs/lake-manifest.json`,
+  `proofs/lakefile.toml`, the Rust toolchain file and the `[gate]` table.
+
+It is never reused when binding is incomplete: a claim whose `lean` names no
+extracted declaration, a translation with nested namespaces, or a mutant
+whose definition is in neither place. Stderr names each such input.
+
+Not bound: the gate scripts (`gate.py`, `extract.sh`, `container.sh`,
+`run.sh`), the proofs image pin and `PROOFS_IMAGE`, and files
+`proofs/mutants.py` imports. After changing any of them, run
+`--level full` once.
+
+Each of these changes re-runs mutants once, though the proofs are the same:
+
+- **Upgrading tauten when its binding changes.** 0.2.1 adds inputs, so the
+  first ship run after upgrading is effectively full.
+- **Adding or changing `[gate] try`**, or any other `[gate]` key: commit it
+  before the first record you want to reuse, or budget one full run.
+- **A failed recording run** overwrites `claims.json`; restore the committed
+  one (`git checkout proofs/claims.json`) before retrying, or the next ship
+  run has nothing to reuse.
 
 ## Iterating on one proof
 

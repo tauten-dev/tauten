@@ -132,6 +132,9 @@ tarball in a fresh target directory.
 
 ## Known gaps
 
+- Ship-level reuse does not bind the gate scripts, the proofs image pin or
+  files `proofs/mutants.py` imports; after changing them, run full (#78).
+  The record does not say which level produced it (#85).
 - The capability rule is discipline, not confinement (see MAPPING.md).
 - The kernel's arithmetic and indexing rules duplicate what an Aeneas proof
   already establishes (dry-run report). P5 subsumes them only for functions
