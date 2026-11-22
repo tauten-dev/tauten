@@ -41,18 +41,18 @@ dependencies = [
 
 [[package]]
 name = "tauten"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "tauten-macros",
 ]
 
 [[package]]
 name = "tauten-check-kernel"
-version = "0.1.0"
+version = "0.2.0"
 
 [[package]]
 name = "tauten-macros"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "proc-macro2",
  "quote",

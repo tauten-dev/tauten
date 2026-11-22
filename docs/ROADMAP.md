@@ -6,7 +6,7 @@ Designs behind items, and any new proposal that is costly to reverse or changes 
 
 Order within a milestone is by return on investment: projects helped × strength of the guarantee ÷ cost. Sizes are estimates in agent-days.
 
-**Next release:** [0.2 — adoption without replacing the adopter's gate](#02). [Live pickup order and issues](https://github.com/tauten-dev/tauten/milestone/3).
+**Released:** 0.2.0 (2026-11-22): #65, #64, #60; #61 closed as no fit (#71–#74); #66, #62 carry forward. [Live pickup order and issues](https://github.com/tauten-dev/tauten/milestone/3).
 
 ## Five primitives
 

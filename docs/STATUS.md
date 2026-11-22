@@ -1,11 +1,25 @@
 # Status
 
-Updated 2026-11-21. Name final: tauten; license MIT; code at github.com/tauten-dev/tauten (public). Every line says how far an item got:
+Updated 2026-11-22. Name final: tauten; license MIT; code at github.com/tauten-dev/tauten (public). Every line says how far an item got:
 **specified → implemented → exercised**. "Exercised" means it ran against
 real input in this repository, and the evidence is named. Versions 0.0.1
-0.0.2, 0.0.3, 0.0.4, 0.0.5, 0.0.6 and 0.1.0 are on crates.io; the site is at tauten.dev. Benchmark: no
+0.0.2, 0.0.3, 0.0.4, 0.0.5, 0.0.6, 0.1.0 and 0.2.0 are on crates.io; the site is at tauten.dev. Benchmark: no
 defect-reduction benefit established (ceiling; held-out run stopped by its
 go/no-go rule; audited findings were not defects).
+
+## 0.2.0 (2026-11-22)
+
+Milestone 0.2 core items closed: #65, #64, #60, plus #61 (no fit recorded)
+and #68 (site part live). Exercised: the full proof gate on 91699a2 proved
+62 of 62 claims (3 under named assumptions) and calibrated 109 mutants
+(5278 s); `rsys_inv_of_step` and the `MachineWorld` miniature build and pass
+the axiom audit; bounded `ReadDir` reads are tested on a real directory and
+on chunked, interrupted and failing readers (exact limit, one over, at most
+one probe byte past the limit, `u64::MAX`, IO error after a prefix, UTF-8),
+and the 0.1 calls fail to compile (doctests). The Writfold inventory
+comparison (#61) matched 108 of 160 shared claims and is recorded as no fit
+(#71–#74). Not exercised: `rsys_inv_of_step` in an adopter proof (#69);
+bounded reads in an adopter crate.
 
 ## 0.1.0 (2026-11-21)
 
