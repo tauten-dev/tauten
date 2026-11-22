@@ -523,6 +523,58 @@ def main():
         assert_eq!(ship_agrees_with_full(&p), set(&["second-value"]));
     }
 
+    /// #77: a result that could not be recorded is refused before the gate
+    /// starts, with the record untouched; a run that records nothing warns.
+    #[test]
+    fn a_known_weakening_is_refused_before_the_gate_runs() {
+        let p = recorded("weakened");
+        let before = p.record();
+        p.edit(
+            "proofs/claims.toml",
+            r#"mutants = ["guard-dropped"]"#,
+            r#"mutants = ["guard-weakened"]"#,
+        );
+        for level in ["full", "ship"] {
+            let out = p.tauten(&["proofs", "--level", level]);
+            let err = String::from_utf8_lossy(&out.stderr);
+            assert_eq!(out.status.code(), Some(1), "{level}: {err}");
+            assert!(
+                err.contains("TAU-R002") && err.contains("not running the gate"),
+                "{err}"
+            );
+            assert!(p.ran().is_empty(), "{level}: the gate ran");
+            assert_eq!(p.record(), before);
+        }
+        let dry = p.tauten(&["proofs", "--no-write"]);
+        assert!(String::from_utf8_lossy(&dry.stderr).contains("could not be recorded"));
+        assert_eq!(p.ran().len(), 1, "--no-write still runs the gate");
+        assert_eq!(p.record(), before);
+        // Amended, it runs and records.
+        let text = p.read("proofs/claims.toml");
+        p.write(
+            "proofs/claims.toml",
+            &format!("{text}\n[[amend]]\nfile = \"sub-kernel/src/lib.rs\"\nfunction = \"add_capped\"\nkind = \"mutant\"\nname = \"guard-dropped\"\nreason = \"replaced\"\n"),
+        );
+        p.tauten(&["proofs"]);
+        assert_eq!(p.ran().len(), 1);
+        assert_ne!(p.record(), before);
+    }
+
+    /// #77: a pending merge record is replaced only by a gate on a snapshot
+    /// of the merge commit: on the live tree that is known before the run.
+    #[test]
+    fn a_pending_record_is_not_replaced_from_the_live_tree() {
+        let p = recorded("pending");
+        let pending =
+            r#"{"version": 2, "state": "pending-merge", "parents": ["a", "b"], "registry": []}"#;
+        p.restore_record(pending);
+        let out = p.tauten(&["proofs"]);
+        assert_eq!(out.status.code(), Some(1));
+        assert!(String::from_utf8_lossy(&out.stderr).contains("snapshot of the merge commit"));
+        assert!(p.ran().is_empty(), "the gate ran");
+        assert_eq!(p.record(), pending);
+    }
+
     /// Every claim's recorded inputs on the unchanged fixture, pinned: a
     /// change here recalibrates every adopter once, so it must be deliberate
     /// (`TAUTEN_BLESS=1` rewrites the golden file).

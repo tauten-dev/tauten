@@ -315,6 +315,20 @@ fn run_in(
         .map(|claim| proofs::inputs::claim_inputs(claim, &sources.borrow(), &index))
         .collect();
     let previous = committed_record(live_root)?;
+    // What would refuse the record is known before the gate starts (#77):
+    // refuse now instead of after a full run. A run that records nothing
+    // only warns.
+    if let Some(committed) = &previous
+        && let Some(why) = recording_refused(live_root, &file, committed, commit.as_deref())?
+    {
+        if write {
+            eprintln!(
+                "tauten: not running the gate: its result could not be recorded: {why}; {CLAIMS_JSON} is unchanged"
+            );
+            return Ok(ExitCode::FAILURE);
+        }
+        eprintln!("tauten: warning: this result could not be recorded: {why}");
+    }
     let own = file.claim.iter().any(|c| c.inherit.is_none());
     let reusable = previous.as_ref().and_then(RecordFile::result);
     let plan = match (level, reusable, &file.gate.try_) {
@@ -448,26 +462,17 @@ fn run_in(
         }
         return Ok(ExitCode::FAILURE);
     }
+    // Again after the run: the record may have changed while the gate ran.
     if write && let Some(committed) = committed_record(live_root)? {
-        let found = proofs::conservation_of(&file, &committed.declared());
-        if !found.weakened.is_empty() {
-            report_weakened(&found, "");
-            eprintln!("tauten: not recording {CLAIMS_JSON}: a recorded claim would be weakened");
+        if let Some(why) = recording_refused(live_root, &file, &committed, commit.as_deref())? {
+            eprintln!("tauten: not recording {CLAIMS_JSON}: {why}");
             return Ok(ExitCode::FAILURE);
         }
-        if let RecordFile::Pending(pending) = &committed {
-            if let Some(why) = promotion_refused(live_root, &file, pending, commit.as_deref())? {
-                eprintln!(
-                    "tauten: not recording {CLAIMS_JSON}: {why}; the pending merge record is kept"
-                );
-                return Ok(ExitCode::FAILURE);
-            }
-            if !proofs::records_pass(&records) {
-                eprintln!(
-                    "tauten: not recording {CLAIMS_JSON}: only a gate that proves every claim replaces a pending merge record"
-                );
-                return Ok(ExitCode::FAILURE);
-            }
+        if matches!(committed, RecordFile::Pending(_)) && !proofs::records_pass(&records) {
+            eprintln!(
+                "tauten: not recording {CLAIMS_JSON}: only a gate that proves every claim replaces a pending merge record"
+            );
+            return Ok(ExitCode::FAILURE);
         }
     }
     if records.is_empty() {
@@ -1093,6 +1098,29 @@ fn parents_conserve(root: &Path, file: &ClaimsFile, parents: &[String]) -> Resul
 /// parents, in order), and the resolved claims must still conserve both
 /// parents' obligations. A hand-written pending file is not promoted just
 /// because it parses.
+/// Why a result of `file` could not replace the committed record, as far
+/// as that is known without running the gate: an unexcused weakening
+/// (TAU-R002, reported line by line), or a pending merge record this run
+/// may not replace. Whether every claim passes is known only after it.
+fn recording_refused(
+    root: &Path,
+    file: &ClaimsFile,
+    committed: &RecordFile,
+    commit: Option<&str>,
+) -> Result<Option<String>> {
+    let found = proofs::conservation_of(file, &committed.declared());
+    if !found.weakened.is_empty() {
+        report_weakened(&found, "");
+        return Ok(Some("a recorded claim would be weakened".to_owned()));
+    }
+    if let RecordFile::Pending(pending) = committed
+        && let Some(why) = promotion_refused(root, file, pending, commit)?
+    {
+        return Ok(Some(format!("{why}; the pending merge record is kept")));
+    }
+    Ok(None)
+}
+
 fn promotion_refused(
     root: &Path,
     file: &ClaimsFile,
