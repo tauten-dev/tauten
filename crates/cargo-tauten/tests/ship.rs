@@ -661,6 +661,44 @@ def main():
         );
     }
 
+    fn subsumed(p: &Project) -> String {
+        let out = Command::new(env!("CARGO_BIN_EXE_cargo-tauten"))
+            .args(["tauten", "check", "--manifest-path"])
+            .arg(p.root.join("Cargo.toml"))
+            .output()
+            .expect("check");
+        let text = String::from_utf8_lossy(&out.stdout).into_owned();
+        text.lines()
+            .find(|l| l.contains("subsumed by proofs"))
+            .unwrap_or("none subsumed")
+            .trim()
+            .to_owned()
+    }
+
+    /// #75: an inert `[workspace.package].version` bump (the kernel crate
+    /// inherits it) keeps check's subsumptions and ship's kills; a changed
+    /// tool pin is material and re-runs what full would.
+    #[test]
+    fn an_inert_version_bump_keeps_every_kill() {
+        let p = recorded("version");
+        let credit = subsumed(&p);
+        assert!(credit.contains("subsumed by proofs"), "{credit}");
+        p.edit("Cargo.toml", "version = \"0.0.0\"", "version = \"0.0.1\"");
+        assert_eq!(subsumed(&p), credit, "check keeps the same subsumptions");
+        assert_eq!(ship_agrees_with_full(&p), set(&[]), "ship re-runs nothing");
+
+        let pin = p.read("proofs/lean-toolchain");
+        p.write(
+            "proofs/lean-toolchain",
+            &format!("{}-changed\n", pin.trim()),
+        );
+        assert_eq!(
+            ship_agrees_with_full(&p),
+            set(&ALL),
+            "a tool pin is material"
+        );
+    }
+
     /// Every claim's recorded inputs on the unchanged fixture, pinned: a
     /// change here recalibrates every adopter once, so it must be deliberate
     /// (`TAUTEN_BLESS=1` rewrites the golden file).
