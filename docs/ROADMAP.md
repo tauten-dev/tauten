@@ -6,7 +6,24 @@ Designs behind items, and any new proposal that is costly to reverse or changes 
 
 Order within a milestone is by return on investment: projects helped × strength of the guarantee ÷ cost. Sizes are estimates in agent-days.
 
-**Released:** 0.2.0 (2026-11-22): #65, #64, #60; #61 closed as no fit (#71–#74); #66, #62 carry forward. [Live pickup order and issues](https://github.com/tauten-dev/tauten/milestone/3).
+**Released:** [0.2.0](https://github.com/tauten-dev/tauten/issues/70#issuecomment-7074180614). Bounded reads, result/world induction and the rustdoc gate shipped; onboarding (#66/#68) is complete. The custom-inventory comparison (#61) closed as **no fit**, not parity. The real merge exercise (#62) is still open.
+
+## 0.2.1 (next)
+
+[Live pickup order](https://github.com/tauten-dev/tauten/milestone/7) · [release checklist and blockers](https://github.com/tauten-dev/tauten/issues/83).
+
+**Make ship-level proof reuse trustworthy before making it faster.** Writfold now
+[builds a split translation](https://github.com/writfold-dev/writfold/commit/3b49ee6f8edbf1c2b2b31da0881fe840e77ce4be)
+but keeps an unbuilt single file for Tauten’s dependency scan. It also
+[spent 5,779 seconds recalibrating before a known registry weakening was refused](https://github.com/writfold-dev/writfold/blob/010420beb1174a610754a555429fa1da8adc143b/docs/rfcs/2026-11-22-release-speed.md#L96-L105).
+Neither problem requires adopting a common gate.
+
+1. **Start with [#79](https://github.com/tauten-dev/tauten/issues/79), then [#80](https://github.com/tauten-dev/tauten/issues/80).** A caller’s inputs must include callees in other extracted files. A mutant name does not identify an unread definition. Where a binding cannot be established, rerun rather than carry an old kill. Compare ship and full on the same changed commit, starting with an established record; keep an unaffected claim as the reuse control.
+2. **Independently, [#77](https://github.com/tauten-dev/tauten/issues/77) and [#81](https://github.com/tauten-dev/tauten/issues/81).** Check the existing TAU-R002 conservation rule before launching a recording gate; keep the final write guard. Check stock textual mutant sites before extraction. Passing either preflight is not proof evidence.
+3. **[#75](https://github.com/tauten-dev/tauten/issues/75) and [#78](https://github.com/tauten-dev/tauten/issues/78).** Exercise an inert version bump separately for check-time subsumption and ship-time mutant selection. Document the cost of adding `[gate] try`; do not assume two arbitrary runners are interchangeable.
+4. **[#83](https://github.com/tauten-dev/tauten/issues/83) closes the patch.** Compare claims, badges, assumptions and exact mutant witnesses, not just totals. The ordinary gate and full proofs remain mandatory on the exact tag commit; owner approval precedes tagging. No new public command or record format is in scope.
+
+**Only stretch:** [#62](https://github.com/tauten-dev/tauten/issues/62), real two-parent reconciliation. A pending merge has **no** reusable parent verdict, so it cannot exercise #79. Carry it forward rather than hold the tag. No adopter timing, pin change or migration gates 0.2.1.
 
 ## Five primitives
 
@@ -139,9 +156,11 @@ The [later milestone](https://github.com/tauten-dev/tauten/milestone/4) keeps th
 | [#19](https://github.com/tauten-dev/tauten/issues/19) Extensible effect rows | Bring an adopter-owned capability/label the fixed table cannot express. Try one generated table before a new configuration language. |
 | [#20](https://github.com/tauten-dev/tauten/issues/20) Stale results / replay | Map two existing guards; if their delivery semantics differ, try the smaller `once` kernel. Explorer-dependent acceptance waits for #17. |
 | [#22](https://github.com/tauten-dev/tauten/issues/22) Record invariants | Start with one actual cross-field validator and a private checked constructor. Justify a macro by what that cannot do ergonomically; don't call arbitrary predicates proved. |
-| [#23](https://github.com/tauten-dev/tauten/issues/23) Claim ledger | Try rendering an existing audited record first: [Writfold's assurance page](https://github.com/writfold-dev/writfold/issues/51) needs accurate coverage; [Gripsack's ledger](https://github.com/gripsack-dev/gripsack/issues/313) waits for protocol proofs. Neither request by itself warrants new verdicts or a second inventory. |
-| [#35](https://github.com/tauten-dev/tauten/issues/35) Shared-gate fit | Reopen when an adopter asks to delete its fork. The exact direct-failure fixture already shipped in #39. |
-| [#69](https://github.com/tauten-dev/tauten/issues/69) `rsys_inv_of_step` adopter trial | After #60 ships; adopter-side evidence. |
+| [#23](https://github.com/tauten-dev/tauten/issues/23) Claim ledger | Compare a rendering of an existing reviewed record to [Writfold’s published assurance map](https://github.com/writfold-dev/writfold/blob/010420beb1174a610754a555429fa1da8adc143b/docs/guide/assurance.md). [Gripsack’s ledger](https://github.com/gripsack-dev/gripsack/issues/313) still depends on protocol evidence. Rendering does not require a new inventory or verdict. |
+| [#35](https://github.com/tauten-dev/tauten/issues/35) Shared-gate fit | Schedule only when an adopter asks to delete its fork. Writfold now has recorded inputs; that is not a two-adopter comparison. The exact direct-failure fixture shipped in #39. |
+| [#69](https://github.com/tauten-dev/tauten/issues/69) `rsys_inv_of_step` adopter trial | #60 shipped. Await a real adopter proof using a pin that contains the lemma, or a documented no-fit; no downstream pin change is required. |
+| [#71](https://github.com/tauten-dev/tauten/issues/71)–[#74](https://github.com/tauten-dev/tauten/issues/74) Custom inventory | Four distinct authoring gaps, not four failed proofs. If an adopter asks to retry [the 108/160 comparison](https://github.com/tauten-dev/tauten/issues/61#issuecomment-7071276444), start with #73’s missing checked subject. Keep total selection (#71), shared mutants (#72) and source-site-to-item mapping (#74) distinct. |
+| [#76](https://github.com/tauten-dev/tauten/issues/76), [#82](https://github.com/tauten-dev/tauten/issues/82) Mutant cost | After #79, measure selective Lake rebuilds and exact verdicts before designing a cache. CPU allocation is a separate scheduling question. Changed-claim-first full runs stay parked in #30 pending a measured feedback delay after preflight. |
 | [#24](https://github.com/tauten-dev/tauten/issues/24) Spans and edit maps | Show a second caller with matching units and a translatable dependency; start with `bind_span` in the existing kernel, not a new crate. |
 | [#25](https://github.com/tauten-dev/tauten/issues/25) Schema locks | Start from 0.1's version-admission function. Require a versioned decoder with a real unmet shape-drift need before adding a macro and lockfile. |
 | [#26](https://github.com/tauten-dev/tauten/issues/26) Process capabilities | Wait for the `proc` label (#19) and an actual attenuation use; `classify` alone need not grow into a supervisor. |

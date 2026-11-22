@@ -59,9 +59,12 @@ merged its adoption (156 of 156 claims proved).
 D2 measured on tauten (2026-11-20; full gate 3577 s on 6d5012d): an edit to
 Rust code outside the translation ran `--level ship` in 64 s with 0 mutants
 (58 claims reused); renaming a local in the kernel's `compiler::passes`
-re-calibrated exactly that claim (1 mutant, killed) in 89 s. The writfold
-measurement needs a first full writfold run that records inputs; the owner
-released 0.0.5 without it (2026-11-21), to be measured after release.
+re-calibrated exactly that claim (1 mutant, killed) in 89 s. The owner
+released 0.0.5 without a corresponding Writfold measurement. Writfold now
+has [a record with named inputs](https://github.com/writfold-dev/writfold/blob/010420beb1174a610754a555429fa1da8adc143b/proofs/claims.json);
+its [first ship run](https://github.com/writfold-dev/writfold/blob/010420beb1174a610754a555429fa1da8adc143b/docs/rfcs/2026-11-22-release-speed.md#L96-L105)
+changed the gate configuration and recalibrated every claim. That is not
+the one-function-edit measurement.
 
 Published 2026-11-21 by `release.yml` from tag `v0.0.5` on 0fb7651. The first
 tag (c167c36) failed `cargo publish` verification before uploading anything:
@@ -144,11 +147,14 @@ tarball in a fresh target directory.
   subsumption even when every caller is proved total.
 - tauten trusts the project's gate output, including its total-shape check;
   it does not re-check the Lean theorems itself.
-- Any edit under a claimed crate or `proofs/` stales every claim of that
-  crate (writfold: a 1.5 h re-run). The workspace manifest (without its
-  `version` lines) and the toolchain pin count too, since 2026-11-19.
-- Mutant counting differs: writfold's gate counts only direct proof
-  failures, tauten's also counts theorems that depend on a broken one.
+- Check-time subsumption uses a crate-level fingerprint. Ship-level
+  mutant reuse is a separate decision over each claim’s named inputs.
+  [#79](https://github.com/tauten-dev/tauten/issues/79) tracks missing
+  cross-file dependencies; [#80](https://github.com/tauten-dev/tauten/issues/80)
+  tracks unbound mutant definitions. Where coverage is in doubt, use full.
+- Since [#39](https://github.com/tauten-dev/tauten/issues/39), the stock gate
+  can require exact direct failures (including audited helpers) separately
+  from affected claims. That is not measured parity with both adopters’ native gates.
 - S002 (placeholder comments) is a heuristic.
 - The benchmark hits a ceiling. Three calibration rounds without the
   profile (200 trials, Sonnet 5.5 and Haiku 5.5, 7 tasks on 3 hosts, hidden
