@@ -1,0 +1,30 @@
+{
+  "add_capped": {
+    "lean:add_capped": "fnv1a64:69611dd8025351d5",
+    "mutant:guard-dropped": "fnv1a64:e24b3e34f08b840f",
+    "proof:Proofs/SubKernel.lean": "fnv1a64:77f2773dfd8986e2",
+    "proof:Proofs/TautenAssumption.lean": "fnv1a64:6c34f1f9c158c1de",
+    "toolchain": "fnv1a64:9ec49b7ab3b721a5"
+  },
+  "double": {
+    "lean:double": "fnv1a64:51ef0f4e2ff812fd",
+    "mutant:quadruple": "fnv1a64:239a949a177b4e83",
+    "proof:Proofs/SubKernel.lean": "fnv1a64:77f2773dfd8986e2",
+    "proof:Proofs/TautenAssumption.lean": "fnv1a64:6c34f1f9c158c1de",
+    "toolchain": "fnv1a64:9ec49b7ab3b721a5"
+  },
+  "first_or_zero": {
+    "lean:first_or_zero": "fnv1a64:504dab4adacd474e",
+    "mutant:second-value": "fnv1a64:49f0b93d458dccc3",
+    "proof:Proofs/SubKernel.lean": "fnv1a64:77f2773dfd8986e2",
+    "proof:Proofs/TautenAssumption.lean": "fnv1a64:6c34f1f9c158c1de",
+    "toolchain": "fnv1a64:9ec49b7ab3b721a5"
+  },
+  "latest": {
+    "lean:latest": "fnv1a64:4b4004d2bd2e4738",
+    "mutant:stored-wins": "fnv1a64:3f6938c0e74f3bcd",
+    "proof:Proofs/SubKernel.lean": "fnv1a64:77f2773dfd8986e2",
+    "proof:Proofs/TautenAssumption.lean": "fnv1a64:6c34f1f9c158c1de",
+    "toolchain": "fnv1a64:9ec49b7ab3b721a5"
+  }
+}
