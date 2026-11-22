@@ -45,8 +45,9 @@ PROOFS = ROOT / "proofs"
 KERNEL = ROOT / "crates" / "tauten-check-kernel"
 INSTANCES = ROOT / "crates" / "tauten-proof-instances"
 MACROS = ROOT / "crates" / "tauten-macros"
-# The crates the instance crate reaches through `path` dependencies.
-INSTANCE_TREE = ("tauten-proof-instances", "tauten", "tauten-macros")
+# The instance crate and what its translation loads (tauten names the kernel
+# as an optional path dependency, so cargo needs its manifest).
+INSTANCE_TREE = ("tauten-proof-instances", "tauten", "tauten-macros", "tauten-check-kernel")
 
 
 @dataclass(frozen=True)

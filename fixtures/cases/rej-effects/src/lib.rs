@@ -1,6 +1,6 @@
 //! Effects that do not match signatures.
 
-use tauten::cap::ReadDir;
+use tauten::cap::{Bytes, Limit, ReadDir};
 use tauten::effects;
 
 /// Claims to write, but only holds a read-only directory.
@@ -10,7 +10,7 @@ use tauten::effects;
 /// When the file cannot be read.
 #[effects(fs_read, fs_write, fail)]
 pub fn load(config: &ReadDir) -> Result<String, std::io::Error> {
-    config.read_to_string("app.toml")
+    Ok(config.read_to_string("app.toml", Limit::<Bytes>::new(4096))?)
 }
 
 /// Declares nothing.
