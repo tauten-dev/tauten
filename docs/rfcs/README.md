@@ -131,3 +131,6 @@ Rows are in creation order.
 | [2026-11-21-publish-absent-target](2026-11-21-publish-absent-target.md) | Companion theorems for atomic publish to an absent target ([#58](https://github.com/tauten-dev/tauten/issues/58)) | accepted | complete |
 | [2026-11-21-bounded-capability-reads](2026-11-21-bounded-capability-reads.md) | Require an explicit byte limit on `ReadDir` and attenuate an `Env` snapshot ([#64](https://github.com/tauten-dev/tauten/issues/64)) | accepted | not-started |
 | [2026-11-21-result-world-induction](2026-11-21-result-world-induction.md) | One invariant lemma for result-returning machines and worlds, `rsys_inv_of_step` ([#60](https://github.com/tauten-dev/tauten/issues/60)) | accepted | not-started |
+
+| [2026-11-27-executable-property-playground](2026-11-27-executable-property-playground.md) | Proptest-based executable testing experiment ([#103](https://github.com/tauten-dev/tauten/issues/103)) | draft | in-progress |
+| [2026-11-27-scenario-environments-and-replay](2026-11-27-scenario-environments-and-replay.md) | Fresh environments, failure classification and concrete replay ([#104](https://github.com/tauten-dev/tauten/issues/104)) | draft | not-started |
