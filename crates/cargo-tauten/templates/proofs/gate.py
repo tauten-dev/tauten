@@ -36,6 +36,7 @@ import json
 import os
 import re
 import shutil
+import signal
 import subprocess
 import sys
 import tarfile
@@ -59,8 +60,62 @@ def log(text: str) -> None:
 
 
 def run(command: list[str], cwd: Path, env: dict[str, str] | None = None) -> subprocess.CompletedProcess:
-    return subprocess.run(command, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                          text=True, timeout=3600, env={**os.environ, **(env or {})})
+    # Its own session: a timeout kills the command and everything it
+    # started (lake's lean processes, cargo's rustc), not the child alone.
+    with subprocess.Popen(command, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                          text=True, env={**os.environ, **(env or {})},
+                          start_new_session=True) as process:
+        try:
+            output, _ = process.communicate(timeout=3600)
+        except subprocess.TimeoutExpired:
+            os.killpg(process.pid, signal.SIGKILL)
+            process.wait()
+            raise
+    return subprocess.CompletedProcess(command, process.returncode, output)
+
+
+def allocated_cpus() -> int:
+    """The CPUs this process may use: its affinity, cut down to the cgroup's
+    CPU quota when there is one. `os.cpu_count()` counts every host CPU
+    under a quota (`docker run --cpus`, compose `cpus`)."""
+    cpus = len(os.sched_getaffinity(0))
+    try:
+        quota, period = Path("/sys/fs/cgroup/cpu.max").read_text().split()
+        if quota != "max":
+            cpus = min(cpus, -(-int(quota) // int(period)))
+    except (OSError, ValueError):
+        pass
+    return max(1, cpus)
+
+
+def budget(cpus: int, jobs: str | None, threads: str | None) -> tuple[int, int, int]:
+    """(Lean threads of a build that runs alone, mutant jobs, Lean threads
+    per mutant build), with jobs x threads <= cpus (#82). The settings
+    (TAUTEN_MUTANT_JOBS, LEAN_NUM_THREADS) are honoured up to the budget; a
+    shortage lowers the parallelism, never the mutant set. One build gains
+    little beyond four threads, so the rest of the budget runs mutants side
+    by side."""
+    def whole(text: str | None) -> int | None:
+        return int(text) if text and re.fullmatch(r"[1-9][0-9]*", text) else None
+    wanted_jobs, wanted_threads = whole(jobs), whole(threads)
+    alone = min(wanted_threads or cpus, cpus)
+    if wanted_threads is None:
+        wanted_threads = min(4, cpus) if wanted_jobs is None else cpus // min(wanted_jobs, cpus)
+    wanted_threads = min(wanted_threads, cpus)
+    most = cpus // wanted_threads
+    return alone, (most if wanted_jobs is None else min(wanted_jobs, most)), wanted_threads
+
+
+def plan() -> tuple[int, int]:
+    """Size this run to its allocation: every `lake build` from here on
+    runs alone with the whole budget. Returns (mutant jobs, Lean threads per
+    mutant build) for the mutant stage."""
+    cpus = allocated_cpus()
+    alone, jobs, threads = budget(cpus, os.environ.get("TAUTEN_MUTANT_JOBS"),
+                                  os.environ.get("LEAN_NUM_THREADS"))
+    os.environ["LEAN_NUM_THREADS"] = str(alone)
+    log(f"budget: {cpus} CPU(s); mutants: {jobs} job(s) x {threads} Lean thread(s)")
+    return jobs, threads
 
 
 def claims() -> dict:
@@ -125,6 +180,7 @@ def extract_only(only: str | None) -> int:
         emit(stage="tools", status="missing", detail=f"not on PATH: {', '.join(missing)}")
         return 3
     emit(stage="tools", status="ok")
+    plan()
     failed = 0
     for crate in crates:
         log(f"extract: {crate}")
@@ -200,6 +256,17 @@ def same_tree(a: Path, b: Path) -> list[str]:
 
 
 ERROR = re.compile(r"^error:\s*(?P<file>[^\s:]+\.lean):(?P<line>\d+):(?P<col>\d+):", re.M)
+CUT_SHORT = re.compile(r"^error: Lean exited with code (?!1$)\d+$", re.M)
+
+
+def cut_short(returncode: int, output: str) -> bool:
+    """Whether a failed `lake build` ended early instead of failing its
+    proofs. Lean and lake exit with 1 when a proof fails; any other status
+    (137: killed, for one by the container's memory limit) means the errors
+    reported are not the whole set, so the build is not a calibration."""
+    return returncode != 1 or CUT_SHORT.search(output) is not None
+
+
 DECLARATION = re.compile(
     r"^(?:@\[[^\]]*\]\s*)?(?:private\s+|protected\s+)?(?:theorem|lemma|def|abbrev|instance)\s+(?P<name>[^\s:(]+)",
     re.M)
@@ -305,6 +372,10 @@ def mutant(spec: dict, crates: list[str], theorems: set[str]) -> dict:
         build = run(["lake", "build", "Proofs"], project)
         if build.returncode == 0:
             return {"status": "survived", "broken": []}
+        if cut_short(build.returncode, build.stdout):
+            print(build.stdout, file=sys.stderr)
+            return {"status": "error", "detail": f"the build was cut short (lake exited with "
+                    f"{build.returncode}); raise TAUTEN_PROOFS_MEMORY or lower TAUTEN_MUTANT_JOBS"}
         failures, elsewhere = failing(build.stdout, project)
         dependents = set(SORRY_DEPENDENT.findall(build.stdout))
         broken = sorted((failures | dependents) & theorems)
@@ -372,6 +443,7 @@ def gate(only: set[str] | None = None) -> int:
         emit(stage="tools", status="missing", detail=f"not on PATH: {', '.join(missing)}")
         return 3
     emit(stage="tools", status="ok")
+    jobs, threads = plan()
 
     log(f"extract: {', '.join(crates)}")
     fresh = Path(tempfile.mkdtemp(prefix="gate-extract-"))
@@ -433,13 +505,11 @@ def gate(only: set[str] | None = None) -> int:
         log(f"mutant {spec['name']}")
         return mutant(spec, crates, named)
 
-    if only is None:
-        results = [one(spec) for spec in specs]
-    else:
-        # `--only-mutants` (cargo tauten proofs try): in parallel.
-        from concurrent.futures import ThreadPoolExecutor
-        with ThreadPoolExecutor(max_workers=max(1, min(len(specs), (os.cpu_count() or 2) // 2))) as pool:
-            results = list(pool.map(one, specs))
+    # Every mutant runs, `jobs` at a time; results keep the manifest's order.
+    os.environ["LEAN_NUM_THREADS"] = str(threads)
+    from concurrent.futures import ThreadPoolExecutor
+    with ThreadPoolExecutor(max_workers=jobs) as pool:
+        results = list(pool.map(one, specs))
     for spec, result in zip(specs, results):
         if result["status"] != "killed":
             survivors += 1

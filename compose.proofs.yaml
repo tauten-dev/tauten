@@ -15,6 +15,21 @@ services:
     platform: linux/amd64
     pull_policy: missing
     init: true
+    # Bounded: the gate sizes its own concurrency from this allocation
+    # (mutant jobs x Lean threads <= CPUs), so it never depends on how many
+    # CPUs the host has. No swap: a build that outgrows the memory limit is
+    # killed and reported as a failure, where swapping would stall the whole
+    # host. Docker refuses `cpus` above the daemon's CPU count; proofs/run.sh
+    # cuts the default down to it.
+    cpus: ${TAUTEN_PROOFS_CPUS:-8}
+    mem_limit: ${TAUTEN_PROOFS_MEMORY:-12g}
+    memswap_limit: ${TAUTEN_PROOFS_MEMORY:-12g}
+    pids_limit: 4096
+    # Passed through only when set on the host; both are honoured up to
+    # the CPU allocation.
+    environment:
+      - TAUTEN_MUTANT_JOBS
+      - LEAN_NUM_THREADS
     # Network stays on: in a fresh container Charon builds its full-MIR
     # sysroot (`miri setup`), which fetches crates from crates.io. The
     # kernel itself has no dependencies; the instance crate's macros need

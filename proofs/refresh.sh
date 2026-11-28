@@ -8,7 +8,7 @@ set -eu
 cd "$(dirname "$0")/.."
 fresh="$(mktemp)"
 trap 'rm -f "$fresh"' EXIT
-docker compose -f compose.proofs.yaml run --rm -T proofs \
+sh proofs/run.sh \
     sh /repo/proofs/container.sh sh -c \
     'sh proofs/extract-all.sh /tmp/fresh >&2 && tar -C /tmp/fresh -cf - .' \
     > "$fresh"

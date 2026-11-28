@@ -73,4 +73,6 @@ jobs:
           docker logout ghcr.io
           df -h /
       - name: Proofs gate (extract, drift, lake build, axiom audit, mutants)
-        run: time docker compose -f compose.proofs.yaml run --rm proofs
+        run: |
+          export TAUTEN_PROOFS_CPUS="$(nproc)"
+          time docker compose -f compose.proofs.yaml run --rm proofs

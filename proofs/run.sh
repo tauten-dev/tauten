@@ -16,4 +16,12 @@ docker info >/dev/null 2>&1 || missing "the docker daemon is not reachable"
 docker compose version >/dev/null 2>&1 || missing "docker compose is not available"
 docker image inspect "$image" >/dev/null 2>&1 \
     || missing "the proofs image $image is not present; pull it first (about 20 GB)"
+# The container's CPU allowance (compose `cpus`). Docker refuses one above
+# the daemon's CPU count, so the default of 8 is cut down to it.
+if [ -z "${TAUTEN_PROOFS_CPUS:-}" ]; then
+    host_cpus="$(docker info --format '{''{.NCPU}}' 2>/dev/null)"
+    case "$host_cpus" in '' | *[!0-9]* | 0*) host_cpus=1 ;; esac
+    TAUTEN_PROOFS_CPUS=$(( host_cpus < 8 ? host_cpus : 8 ))
+    export TAUTEN_PROOFS_CPUS
+fi
 exec docker compose -f compose.proofs.yaml run --rm -T proofs "$@"
