@@ -18,7 +18,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:c58779bfd1e97060",
+      "fingerprint": "fnv1a64:8614f61d25071e54",
       "inputs": {
         "lean:tiers.Tier": "fnv1a64:53087a40e6ca99b4",
         "lean:tiers.rank": "fnv1a64:c38e3761a3f05342",
@@ -71,7 +71,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:c58779bfd1e97060",
+      "fingerprint": "fnv1a64:8614f61d25071e54",
       "inputs": {
         "lean:tiers.Tier": "fnv1a64:53087a40e6ca99b4",
         "lean:tiers.may_depend_on": "fnv1a64:65ce64445e3a06f1",
@@ -85,16 +85,6 @@
       },
       "mutant_results": [
         {
-          "mutant": "same-tier-refused",
-          "status": "killed",
-          "broken": [
-            "Tauten.Kernel.kernel_depends_only_on_kernel",
-            "Tauten.Kernel.may_depend_on_refl",
-            "Tauten.Kernel.may_depend_on_spec",
-            "Tauten.Kernel.may_depend_on_total"
-          ]
-        },
-        {
           "mutant": "one-step-outward",
           "status": "killed",
           "broken": [
@@ -102,6 +92,16 @@
             "Tauten.Kernel.may_depend_on_antisymm",
             "Tauten.Kernel.may_depend_on_spec",
             "Tauten.Kernel.may_depend_on_trans"
+          ]
+        },
+        {
+          "mutant": "same-tier-refused",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.kernel_depends_only_on_kernel",
+            "Tauten.Kernel.may_depend_on_refl",
+            "Tauten.Kernel.may_depend_on_spec",
+            "Tauten.Kernel.may_depend_on_total"
           ]
         },
         {
@@ -139,7 +139,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:c58779bfd1e97060",
+      "fingerprint": "fnv1a64:8614f61d25071e54",
       "inputs": {
         "lean:severity.Level": "fnv1a64:7ced964c9470c680",
         "lean:severity.is_blocking": "fnv1a64:efab3c370008275b",
@@ -175,7 +175,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:c58779bfd1e97060",
+      "fingerprint": "fnv1a64:8614f61d25071e54",
       "inputs": {
         "lean:severity.Level": "fnv1a64:7ced964c9470c680",
         "lean:severity.Severity": "fnv1a64:f48fd026309c9331",
@@ -221,7 +221,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:c58779bfd1e97060",
+      "fingerprint": "fnv1a64:8614f61d25071e54",
       "inputs": {
         "lean:exception.permitted": "fnv1a64:b2f17637245bc2d7",
         "lean:severity.Level": "fnv1a64:7ced964c9470c680",
@@ -272,7 +272,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:c58779bfd1e97060",
+      "fingerprint": "fnv1a64:8614f61d25071e54",
       "inputs": {
         "lean:exception.Excuse": "fnv1a64:6cd5bc494218d3ca",
         "lean:exception.excuse": "fnv1a64:3c31183737f414f2",
@@ -339,7 +339,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:c58779bfd1e97060",
+      "fingerprint": "fnv1a64:8614f61d25071e54",
       "inputs": {
         "lean:exception.Covered": "fnv1a64:6256def05c33b893",
         "lean:exception.Excuse": "fnv1a64:6cd5bc494218d3ca",
@@ -394,7 +394,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:c58779bfd1e97060",
+      "fingerprint": "fnv1a64:8614f61d25071e54",
       "inputs": {
         "lean:exception.Covered": "fnv1a64:6256def05c33b893",
         "lean:exception.Excuse": "fnv1a64:6cd5bc494218d3ca",
@@ -461,7 +461,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:c58779bfd1e97060",
+      "fingerprint": "fnv1a64:8614f61d25071e54",
       "inputs": {
         "lean:exception.Setting": "fnv1a64:d6e6a79d3cf0ecd4",
         "lean:exception.loosens": "fnv1a64:ea888ccc2332fd08",
@@ -526,7 +526,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:c58779bfd1e97060",
+      "fingerprint": "fnv1a64:8614f61d25071e54",
       "inputs": {
         "lean:ratchet.Finding": "fnv1a64:139b49fafdac8820",
         "lean:ratchet.apply": "fnv1a64:a286ee6709f5237f",
@@ -647,7 +647,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:c58779bfd1e97060",
+      "fingerprint": "fnv1a64:8614f61d25071e54",
       "inputs": {
         "lean:ratchet.count_at": "fnv1a64:ea37c22ffa1db03b",
         "lean:ratchet.stale": "fnv1a64:8242ff5513b287bf",
@@ -760,7 +760,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:c58779bfd1e97060",
+      "fingerprint": "fnv1a64:8614f61d25071e54",
       "inputs": {
         "lean:ratchet.Finding": "fnv1a64:139b49fafdac8820",
         "lean:ratchet.add_error": "fnv1a64:024a48d6bd496f1f",
@@ -807,7 +807,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:c58779bfd1e97060",
+      "fingerprint": "fnv1a64:8614f61d25071e54",
       "inputs": {
         "lean:ratchet.Entry": "fnv1a64:e25af805b313068f",
         "lean:ratchet.count_at": "fnv1a64:ea37c22ffa1db03b",
@@ -832,16 +832,6 @@
           ]
         },
         {
-          "mutant": "equal-is-growth",
-          "status": "killed",
-          "broken": [
-            "Tauten.Kernel.increase_example",
-            "Tauten.Kernel.increases_flags",
-            "Tauten.Kernel.increases_none_iff",
-            "Tauten.Kernel.regenerated_baseline_never_grows"
-          ]
-        },
-        {
           "mutant": "missing-key-accepts-one",
           "status": "killed",
           "broken": [
@@ -851,6 +841,16 @@
             "Tauten.Kernel.ratchet_example",
             "Tauten.Kernel.ratchet_passes_iff",
             "Tauten.Kernel.ratchet_stale_iff",
+            "Tauten.Kernel.regenerated_baseline_never_grows"
+          ]
+        },
+        {
+          "mutant": "equal-is-growth",
+          "status": "killed",
+          "broken": [
+            "Tauten.Kernel.increase_example",
+            "Tauten.Kernel.increases_flags",
+            "Tauten.Kernel.increases_none_iff",
             "Tauten.Kernel.regenerated_baseline_never_grows"
           ]
         }
@@ -876,7 +876,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:c58779bfd1e97060",
+      "fingerprint": "fnv1a64:8614f61d25071e54",
       "inputs": {
         "lean:table.Invalid": "fnv1a64:813b4d30c23a02ca",
         "lean:table.absent": "fnv1a64:f0f57ef6fdf41f9e",
@@ -906,7 +906,7 @@
       },
       "mutant_results": [
         {
-          "mutant": "duplicate-ids-accepted",
+          "mutant": "duplicate-lints-accepted",
           "status": "killed",
           "broken": [
             "Tauten.Kernel.validate_examples",
@@ -914,7 +914,7 @@
           ]
         },
         {
-          "mutant": "duplicate-lints-accepted",
+          "mutant": "duplicate-ids-accepted",
           "status": "killed",
           "broken": [
             "Tauten.Kernel.validate_examples",
@@ -968,7 +968,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:c58779bfd1e97060",
+      "fingerprint": "fnv1a64:8614f61d25071e54",
       "inputs": {
         "lean:subsume.Finding": "fnv1a64:74ab1027ef0373f8",
         "lean:subsume.subsumes": "fnv1a64:c6dad2197f5b34a7",
@@ -1032,7 +1032,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:c58779bfd1e97060",
+      "fingerprint": "fnv1a64:8614f61d25071e54",
       "inputs": {
         "lean:effects.Row": "fnv1a64:9e5110f75fc06247",
         "lean:effects.Source": "fnv1a64:750c520b04825fec",
@@ -1092,7 +1092,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:c58779bfd1e97060",
+      "fingerprint": "fnv1a64:8614f61d25071e54",
       "inputs": {
         "lean:effects.Row": "fnv1a64:9e5110f75fc06247",
         "lean:effects.missing": "fnv1a64:52f170f3140f6baf",
@@ -1134,7 +1134,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:c58779bfd1e97060",
+      "fingerprint": "fnv1a64:8614f61d25071e54",
       "inputs": {
         "lean:effects.Row": "fnv1a64:9e5110f75fc06247",
         "lean:effects.extra": "fnv1a64:10a7109af951ea02",
@@ -1180,7 +1180,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:c58779bfd1e97060",
+      "fingerprint": "fnv1a64:8614f61d25071e54",
       "inputs": {
         "lean:effects.Row": "fnv1a64:9e5110f75fc06247",
         "lean:effects.agrees": "fnv1a64:88b48fabe093169b",
@@ -1241,7 +1241,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:c58779bfd1e97060",
+      "fingerprint": "fnv1a64:8614f61d25071e54",
       "inputs": {
         "lean:effects.Row": "fnv1a64:9e5110f75fc06247",
         "lean:effects.Verdict": "fnv1a64:7106ce8032b32ba0",
@@ -1298,7 +1298,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:c58779bfd1e97060",
+      "fingerprint": "fnv1a64:8614f61d25071e54",
       "inputs": {
         "lean:outcome.Facts": "fnv1a64:2ca27bb2ed8b7f45",
         "lean:outcome.Outcome": "fnv1a64:7bc6bdb4bda38b48",
@@ -1361,7 +1361,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:c58779bfd1e97060",
+      "fingerprint": "fnv1a64:8614f61d25071e54",
       "inputs": {
         "lean:span.consider": "fnv1a64:1faf81d7fddee09b",
         "lean:span.covers": "fnv1a64:c876e64678308752",
@@ -1432,7 +1432,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:e5c5e6ef7bba84b2",
+      "fingerprint": "fnv1a64:5b66cc0105669164",
       "inputs": {
         "lean:refined.__tauten_percent.Percent": "fnv1a64:54a1807425470fda",
         "lean:refined.__tauten_percent.Percent.try_new": "fnv1a64:a6897baa1a6e8159",
@@ -1520,7 +1520,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:e5c5e6ef7bba84b2",
+      "fingerprint": "fnv1a64:5b66cc0105669164",
       "inputs": {
         "lean:refined.__tauten_port.Port": "fnv1a64:8e80ce710ed0461e",
         "lean:refined.__tauten_port.Port.try_new": "fnv1a64:f6fecdf4605f02ec",
@@ -1608,7 +1608,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:e5c5e6ef7bba84b2",
+      "fingerprint": "fnv1a64:5b66cc0105669164",
       "inputs": {
         "lean:refined.__tauten_offset.Offset": "fnv1a64:5a326687630fe204",
         "lean:refined.__tauten_offset.Offset.try_new": "fnv1a64:2b4bd85b5616e074",
@@ -1696,7 +1696,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:e5c5e6ef7bba84b2",
+      "fingerprint": "fnv1a64:5b66cc0105669164",
       "inputs": {
         "lean:refined.__tauten_count.Count": "fnv1a64:034ec399bde8f40b",
         "lean:refined.__tauten_count.Count.try_new": "fnv1a64:bb192e699cc186bf",
@@ -1784,7 +1784,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:e5c5e6ef7bba84b2",
+      "fingerprint": "fnv1a64:5b66cc0105669164",
       "inputs": {
         "lean:contracts.OpError": "fnv1a64:8f5997720f293e86",
         "lean:contracts.OpError.Insts.CoreConvertFromContractViolation": "fnv1a64:9501a6c9c8b0074f",
@@ -1963,7 +1963,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:e5c5e6ef7bba84b2",
+      "fingerprint": "fnv1a64:5b66cc0105669164",
       "inputs": {
         "lean:contracts.OpError": "fnv1a64:8f5997720f293e86",
         "lean:contracts.OpError.Insts.CoreConvertFromContractViolation": "fnv1a64:9501a6c9c8b0074f",
@@ -2153,7 +2153,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:e5c5e6ef7bba84b2",
+      "fingerprint": "fnv1a64:5b66cc0105669164",
       "inputs": {
         "lean:contracts.OpError": "fnv1a64:8f5997720f293e86",
         "lean:contracts.OpError.Insts.CoreConvertFromContractViolation": "fnv1a64:9501a6c9c8b0074f",
@@ -2327,7 +2327,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:e5c5e6ef7bba84b2",
+      "fingerprint": "fnv1a64:5b66cc0105669164",
       "inputs": {
         "lean:contracts.OpError": "fnv1a64:8f5997720f293e86",
         "lean:contracts.OpError.Insts.CoreConvertFromContractViolation": "fnv1a64:9501a6c9c8b0074f",
@@ -2451,7 +2451,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:c58779bfd1e97060",
+      "fingerprint": "fnv1a64:8614f61d25071e54",
       "inputs": {
         "lean:control.Control": "fnv1a64:772148c0216491b3",
         "lean:control.Expect": "fnv1a64:d70096eae1969035",
@@ -2568,7 +2568,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:c58779bfd1e97060",
+      "fingerprint": "fnv1a64:8614f61d25071e54",
       "inputs": {
         "lean:control.Expect": "fnv1a64:d70096eae1969035",
         "lean:control.Seen": "fnv1a64:158ab1bc923175b9",
@@ -2621,7 +2621,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:c58779bfd1e97060",
+      "fingerprint": "fnv1a64:8614f61d25071e54",
       "inputs": {
         "lean:control.member": "fnv1a64:65485cfd8063f4d4",
         "lean:control.member_loop": "fnv1a64:5229829739e63747",
@@ -2661,7 +2661,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:c58779bfd1e97060",
+      "fingerprint": "fnv1a64:8614f61d25071e54",
       "inputs": {
         "lean:control.Control": "fnv1a64:772148c0216491b3",
         "lean:control.Expect": "fnv1a64:d70096eae1969035",
@@ -2729,7 +2729,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:c58779bfd1e97060",
+      "fingerprint": "fnv1a64:8614f61d25071e54",
       "inputs": {
         "lean:binding.Binding": "fnv1a64:2a91811d3cca45b4",
         "lean:binding.agrees": "fnv1a64:335aa303de0fd004",
@@ -2833,7 +2833,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:c58779bfd1e97060",
+      "fingerprint": "fnv1a64:8614f61d25071e54",
       "inputs": {
         "lean:binding.same_bytes": "fnv1a64:c4964ef56a050900",
         "lean:binding.same_bytes_loop": "fnv1a64:145f0c6c42de34a9",
@@ -2889,7 +2889,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:c58779bfd1e97060",
+      "fingerprint": "fnv1a64:8614f61d25071e54",
       "inputs": {
         "lean:binding.contains_bytes": "fnv1a64:bf8d9afc88a6f975",
         "lean:binding.contains_bytes_loop": "fnv1a64:9d1bfb58b25f4a86",
@@ -2931,7 +2931,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:c58779bfd1e97060",
+      "fingerprint": "fnv1a64:8614f61d25071e54",
       "inputs": {
         "lean:budget.charge": "fnv1a64:efa0cf9c88138100",
         "mutant:charge-saturates": "fnv1a64:39ebc6fce6dbe1bf",
@@ -2964,7 +2964,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:c58779bfd1e97060",
+      "fingerprint": "fnv1a64:8614f61d25071e54",
       "inputs": {
         "lean:budget.charge_repeated": "fnv1a64:ab4686316d8649ad",
         "mutant:repeat-charged-once": "fnv1a64:c2e023b973705e3e",
@@ -3000,7 +3000,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:c58779bfd1e97060",
+      "fingerprint": "fnv1a64:8614f61d25071e54",
       "inputs": {
         "lean:version.Admission": "fnv1a64:7e83b9b04853e6c5",
         "lean:version.admit": "fnv1a64:203dab9a06e0f442",
@@ -3053,7 +3053,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:c58779bfd1e97060",
+      "fingerprint": "fnv1a64:8614f61d25071e54",
       "inputs": {
         "lean:badge.Badge": "fnv1a64:c9e59517420c5e9b",
         "lean:badge.Method": "fnv1a64:fe310cca8171e7ac",
@@ -3126,7 +3126,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:c58779bfd1e97060",
+      "fingerprint": "fnv1a64:8614f61d25071e54",
       "inputs": {
         "lean:control.member": "fnv1a64:65485cfd8063f4d4",
         "lean:control.member_loop": "fnv1a64:5229829739e63747",
@@ -3199,7 +3199,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:c58779bfd1e97060",
+      "fingerprint": "fnv1a64:8614f61d25071e54",
       "inputs": {
         "lean:registry.Entry": "fnv1a64:afc8e2c870c3a9d6",
         "lean:registry.kept": "fnv1a64:914d19e15565724f",
@@ -3259,7 +3259,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:c58779bfd1e97060",
+      "fingerprint": "fnv1a64:8614f61d25071e54",
       "inputs": {
         "lean:assumption.assumptions_ok": "fnv1a64:32f6090ac0e2c70b",
         "lean:control.member": "fnv1a64:65485cfd8063f4d4",
@@ -3333,7 +3333,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:c58779bfd1e97060",
+      "fingerprint": "fnv1a64:8614f61d25071e54",
       "inputs": {
         "lean:manifest.Fact": "fnv1a64:0b6cdeed3410cd78",
         "lean:manifest.hardening": "fnv1a64:f3abf31255873c75",
@@ -3381,7 +3381,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:c58779bfd1e97060",
+      "fingerprint": "fnv1a64:8614f61d25071e54",
       "inputs": {
         "lean:rule.finding_severity": "fnv1a64:ab0da7ae4fdd2809",
         "lean:severity.Level": "fnv1a64:7ced964c9470c680",
@@ -3423,7 +3423,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:c58779bfd1e97060",
+      "fingerprint": "fnv1a64:8614f61d25071e54",
       "inputs": {
         "lean:rule.Input": "fnv1a64:62e84c13fbd46f1a",
         "lean:rule.clean": "fnv1a64:d082e917c3e0d595",
@@ -3462,7 +3462,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:c58779bfd1e97060",
+      "fingerprint": "fnv1a64:8614f61d25071e54",
       "inputs": {
         "lean:rule.RuleFacts": "fnv1a64:66b54b1fe6565def",
         "lean:rule.fixtures_ok": "fnv1a64:7fdfeb0385744851",
@@ -3509,7 +3509,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:e5c5e6ef7bba84b2",
+      "fingerprint": "fnv1a64:5b66cc0105669164",
       "inputs": {
         "lean:machines.publish_step": "fnv1a64:85cfeb6d5ebcf03b",
         "lean:tauten.publish.Command": "fnv1a64:a1b2e70b5a9ea7f4",
@@ -3618,7 +3618,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:c58779bfd1e97060",
+      "fingerprint": "fnv1a64:8614f61d25071e54",
       "inputs": {
         "lean:layout.Declared": "fnv1a64:d6d7def83ac30b00",
         "lean:layout.t001": "fnv1a64:7d1a9b6b2841c6e4",
@@ -3656,7 +3656,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:c58779bfd1e97060",
+      "fingerprint": "fnv1a64:8614f61d25071e54",
       "inputs": {
         "lean:control.member": "fnv1a64:65485cfd8063f4d4",
         "lean:control.member_loop": "fnv1a64:5229829739e63747",
@@ -3699,7 +3699,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:c58779bfd1e97060",
+      "fingerprint": "fnv1a64:8614f61d25071e54",
       "inputs": {
         "lean:layout.NoStd": "fnv1a64:267885b5ec022ab2",
         "lean:layout.k003": "fnv1a64:3387bff42125a9ff",
@@ -3748,7 +3748,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:c58779bfd1e97060",
+      "fingerprint": "fnv1a64:8614f61d25071e54",
       "inputs": {
         "lean:compiler.MsgLevel": "fnv1a64:6104d3501e88745f",
         "lean:compiler.kept": "fnv1a64:885f5d3a939a58e2",
@@ -3794,7 +3794,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:c58779bfd1e97060",
+      "fingerprint": "fnv1a64:8614f61d25071e54",
       "inputs": {
         "lean:compiler.applies": "fnv1a64:bbbb4af082bda505",
         "lean:severity.Level": "fnv1a64:7ced964c9470c680",
@@ -3833,7 +3833,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:c58779bfd1e97060",
+      "fingerprint": "fnv1a64:8614f61d25071e54",
       "inputs": {
         "lean:compiler.passes": "fnv1a64:f90f779656e98f64",
         "lean:compiler.passes_loop": "fnv1a64:b8a19b137a80eda3",
@@ -3887,7 +3887,7 @@
       ],
       "outcome": "proved",
       "badge": "proved-under",
-      "fingerprint": "fnv1a64:2531a2e9755c408b",
+      "fingerprint": "fnv1a64:ceab2b9a5aa79925",
       "inputs": {
         "lean:tauten.publish.Command": "fnv1a64:a1b2e70b5a9ea7f4",
         "lean:tauten.publish.Event": "fnv1a64:ce476b788bc7634d",
@@ -4011,7 +4011,7 @@
       ],
       "outcome": "proved",
       "badge": "proved-under",
-      "fingerprint": "fnv1a64:2531a2e9755c408b",
+      "fingerprint": "fnv1a64:ceab2b9a5aa79925",
       "inputs": {
         "lean:tauten.publish.Phase": "fnv1a64:215496e080bfee67",
         "lean:tauten.publish.durable": "fnv1a64:bc1a089ebffc99a8",
@@ -4108,7 +4108,7 @@
       "witness": "Tauten.Durable.posix_satisfies",
       "outcome": "proved",
       "badge": "proved-under",
-      "fingerprint": "fnv1a64:2531a2e9755c408b",
+      "fingerprint": "fnv1a64:ceab2b9a5aa79925",
       "inputs": {
         "lean:tauten.publish.Command": "fnv1a64:a1b2e70b5a9ea7f4",
         "lean:tauten.publish.Event": "fnv1a64:ce476b788bc7634d",
@@ -4149,7 +4149,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:e5c5e6ef7bba84b2",
+      "fingerprint": "fnv1a64:5b66cc0105669164",
       "inputs": {
         "lean:stamped.Counter": "fnv1a64:dba680b33d83a609",
         "lean:stamped.Counter.Insts.TautenOriginVersioned": "fnv1a64:3e434e24aa4f6285",
@@ -4165,7 +4165,7 @@
         "lean:tauten.origin.Stamped": "fnv1a64:0e62b7d058beb4ef",
         "lean:tauten.origin.Stamped.verify": "fnv1a64:0aad9b7c77577770",
         "lean:tauten.origin.Versioned": "fnv1a64:e96ac8d557342a88",
-        "mutant:stale-accepted": "fnv1a64:920799709805c2bc",
+        "mutant:stale-accepted": "fnv1a64:b5db6b48f5980cf7",
         "mutant:stamp-ignored": "fnv1a64:1bb9038dd01bd825",
         "proof:Tauten/Stamped.lean": "fnv1a64:99d7b645540d4ada",
         "toolchain": "fnv1a64:5b6ce949a7a318dc"
@@ -4207,7 +4207,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:c58779bfd1e97060",
+      "fingerprint": "fnv1a64:8614f61d25071e54",
       "inputs": {
         "lean:layer.may_use": "fnv1a64:b6cba5e7b7776d27",
         "mutant:layer-strict": "fnv1a64:3e77ebb103a8546c",
@@ -4244,7 +4244,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:c58779bfd1e97060",
+      "fingerprint": "fnv1a64:8614f61d25071e54",
       "inputs": {
         "lean:layer.Layer": "fnv1a64:faa7aee45c2cc31f",
         "lean:layer.finding": "fnv1a64:7e5c1105796a1fdd",
@@ -4290,7 +4290,7 @@
       ],
       "outcome": "proved",
       "badge": "proved",
-      "fingerprint": "fnv1a64:c58779bfd1e97060",
+      "fingerprint": "fnv1a64:8614f61d25071e54",
       "inputs": {
         "lean:badge.Badge": "fnv1a64:c9e59517420c5e9b",
         "lean:badge.inherit": "fnv1a64:ce468e61adad4a57",
@@ -4322,5 +4322,5 @@
       ]
     }
   ],
-  "commit": "91699a2d3894db4e7f62f130e7d7d04ecff42617"
+  "commit": "01ec04206e744eac65909c691371130cf07f1f33"
 }
