@@ -30,7 +30,7 @@
       ],
       "outcome": "proved",
       "badge": "proved-under",
-      "fingerprint": "fnv1a64:2531a2e9755c408b"
+      "fingerprint": "fnv1a64:ceab2b9a5aa79925"
     },
     {
       "crate": "tauten",
@@ -64,7 +64,7 @@
       ],
       "outcome": "proved",
       "badge": "proved-under",
-      "fingerprint": "fnv1a64:2531a2e9755c408b"
+      "fingerprint": "fnv1a64:ceab2b9a5aa79925"
     },
     {
       "crate": "tauten",
@@ -86,8 +86,8 @@
       "witness": "Tauten.Durable.posix_satisfies",
       "outcome": "proved",
       "badge": "proved-under",
-      "fingerprint": "fnv1a64:2531a2e9755c408b"
+      "fingerprint": "fnv1a64:ceab2b9a5aa79925"
     }
   ],
-  "commit": "91699a2d3894db4e7f62f130e7d7d04ecff42617"
+  "commit": "430fbd2f9d42ea139d57a448d8dd2213cc2aa56b"
 }
