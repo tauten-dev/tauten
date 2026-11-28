@@ -1,8 +1,8 @@
 ---
 rfc: "2026-11-28-bounded-build-resources"
 title: "Bounded resources for the proof gate"
-status: draft
-implementation: not-started
+status: accepted
+implementation: in-progress
 authors:
   - fable
 created: 2026-11-28
@@ -444,6 +444,13 @@ swap=8GB
   the appendix was applied to copies of the scripts and exercised as listed
   under "Evidence and tests"; nothing is implemented in the repository and
   there is no owner decision.
+- 2026-11-28: accepted by the owner, who asked for the proposal to be landed
+  before milestone work. The unresolved questions take the RFC's defaults
+  (8 CPUs, 12 GiB, the full gate runs mutants side by side within the
+  budget, the names as written) until the owner revisits them. The appendix
+  patch is applied as is; #82 stays open until the qualification pair
+  (`TAUTEN_MUTANT_JOBS=1` and the default budget at one commit) shows equal
+  records.
 
 ## Appendix: proposed patch
 

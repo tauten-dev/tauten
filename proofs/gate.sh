@@ -25,6 +25,43 @@ for tool in charon aeneas lake python3; do
 done
 report tools ok
 
+# The CPU budget (#82). `nproc` is this process's affinity; under a CPU
+# quota (`docker run --cpus`, compose `cpus`) it still counts every host
+# CPU, so the cgroup's quota cuts it down. Mutant jobs x Lean threads stay
+# within the budget: TAUTEN_MUTANT_JOBS and LEAN_NUM_THREADS are honoured
+# up to it, and a shortage lowers the parallelism, never the mutant set.
+# One build gains little beyond four threads (docs/proofs/README.md), so
+# the rest of the budget runs mutants side by side.
+cpus="$(nproc)"
+if [ -r /sys/fs/cgroup/cpu.max ]; then
+    read -r quota period < /sys/fs/cgroup/cpu.max
+    if [ "$quota" != max ]; then
+        limit=$(( (quota + period - 1) / period ))
+        [ "$limit" -ge "$cpus" ] || cpus="$limit"
+    fi
+fi
+[ "$cpus" -ge 1 ] || cpus=1
+whole() { case "$1" in '' | *[!0-9]* | 0*) return 1 ;; esac; }
+jobs="${TAUTEN_MUTANT_JOBS:-}"
+threads="${LEAN_NUM_THREADS:-}"
+whole "$jobs" || jobs=""
+whole "$threads" || threads=""
+# A build that runs alone (the theorems, the extract-only check) takes the
+# whole budget, or LEAN_NUM_THREADS when that is lower.
+alone="${threads:-$cpus}"
+[ "$alone" -le "$cpus" ] || alone="$cpus"
+if [ -z "$threads" ] && [ -z "$jobs" ]; then
+    threads=$(( cpus < 4 ? cpus : 4 ))
+elif [ -z "$threads" ]; then
+    [ "$jobs" -le "$cpus" ] || jobs="$cpus"
+    threads=$(( cpus / jobs ))
+fi
+[ "$threads" -le "$cpus" ] || threads="$cpus"
+most=$(( cpus / threads ))
+if [ -z "$jobs" ] || [ "$jobs" -gt "$most" ]; then jobs="$most"; fi
+stamp "budget: $cpus CPU(s); mutants: $jobs job(s) x $threads Lean thread(s)"
+export LEAN_NUM_THREADS="$alone"
+
 stage=extract
 stamp "extract: charon $(charon version) / aeneas $(aeneas -version)"
 sh proofs/extract-all.sh /tmp/gate-extract
@@ -70,15 +107,19 @@ if [ "${1:-}" = "--only-mutants" ] && [ -z "${2:-}" ]; then
     # reuses the recorded kills.
     stamp "mutant calibration: none selected"
 elif [ "${1:-}" = "--only-mutants" ]; then
-    # `cargo tauten proofs try` and the ship level: only the named mutants,
-    # in parallel.
+    # `cargo tauten proofs try` and the ship level: only the named mutants.
     stamp "mutant calibration (partial: ${2:-})"
-    TAUTEN_MUTANT_JOBS="${TAUTEN_MUTANT_JOBS:-$(( $(nproc) / 2 > 0 ? $(nproc) / 2 : 1 ))}" \
+    TAUTEN_MUTANT_JOBS="$jobs" LEAN_NUM_THREADS="$threads" \
         python3 proofs/mutants.py $(printf '%s' "${2:-}" | tr ',' ' ')
 else
     stamp "mutant calibration"
-    python3 proofs/mutants.py
+    TAUTEN_MUTANT_JOBS="$jobs" LEAN_NUM_THREADS="$threads" python3 proofs/mutants.py
 fi
 report mutants ok
 
+# What the run used, from the container's cgroup (absent outside one).
+if [ -r /sys/fs/cgroup/cpu.stat ] && [ -r /sys/fs/cgroup/memory.peak ] && [ -r /sys/fs/cgroup/pids.peak ]; then
+    used="$(awk '$1 == "usage_usec" { print int($2 / 1000000) }' /sys/fs/cgroup/cpu.stat)"
+    stamp "used: ${used}s CPU, $(( $(cat /sys/fs/cgroup/memory.peak) / 1048576 )) MiB memory peak, $(cat /sys/fs/cgroup/pids.peak) tasks peak"
+fi
 stamp "proofs gate: OK"

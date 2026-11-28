@@ -36,6 +36,7 @@ import json
 import os
 import re
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -749,6 +750,17 @@ run_cmd do
         logInfo m!"SORRY_DEPENDENT {entry.1}"
 """
 ERROR = re.compile(r"^error:\s*(?P<file>[^\s:]+\.lean):(?P<line>\d+):(?P<col>\d+):", re.M)
+CUT_SHORT = re.compile(r"^error: Lean exited with code (?!1$)\d+$", re.M)
+
+
+def cut_short(returncode: int, output: str) -> bool:
+    """Whether a failed `lake build` ended early instead of failing its
+    proofs. Lean and lake exit with 1 when a proof fails; any other status
+    (137: killed, for one by the container's memory limit) means the errors
+    reported are not the whole set, so the build is not a calibration."""
+    return returncode != 1 or CUT_SHORT.search(output) is not None
+
+
 DECLARATION = re.compile(r"^(?:@\[[^\]]*\]\s*)?(?:private\s+|protected\s+)?(?:theorem|lemma|def|abbrev|instance)\s+(?P<name>[^\s:(]+)", re.M)
 NAMESPACE = re.compile(r"^namespace\s+(?P<name>\S+)", re.M)
 
@@ -799,8 +811,18 @@ def failing_theorems(output: str, project: Path) -> tuple[set[str], list[str]]:
 
 
 def run(command: list[str], cwd: Path, env: dict[str, str] | None = None) -> subprocess.CompletedProcess:
-    return subprocess.run(command, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                          text=True, timeout=1800, env={**os.environ, **(env or {})})
+    # Its own session: a timeout kills the command and everything it
+    # started (lake's lean processes, cargo's rustc), not the child alone.
+    with subprocess.Popen(command, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                          text=True, env={**os.environ, **(env or {})},
+                          start_new_session=True) as process:
+        try:
+            output, _ = process.communicate(timeout=1800)
+        except subprocess.TimeoutExpired:
+            os.killpg(process.pid, signal.SIGKILL)
+            process.wait()
+            raise
+    return subprocess.CompletedProcess(command, process.returncode, output)
 
 
 def mutate(source: Path, mutant: Mutant) -> None:
@@ -880,6 +902,12 @@ def calibrate(mutant: Mutant, scratch: Path) -> None:
     build = run(["lake", "build"], project)
     if build.returncode == 0:
         raise SystemExit(f"FAIL {mutant.name}: the proofs still build against the mutated code")
+    if cut_short(build.returncode, build.stdout):
+        # Neither `killed` nor `survived` can be read off it.
+        print(build.stdout)
+        raise SystemExit(f"FAIL {mutant.name}: the build was cut short "
+                         f"(lake exited with {build.returncode}); raise TAUTEN_PROOFS_MEMORY "
+                         "or lower TAUTEN_MUTANT_JOBS")
     failures, unattributed = failing_theorems(build.stdout, project)
     if mutant.audit is not None:
         # Only the audit may fail, with the expected text, and no claim may break.
