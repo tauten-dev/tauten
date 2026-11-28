@@ -2,11 +2,11 @@
 rfc: "2026-11-21-bounded-capability-reads"
 title: "Require a byte limit when reading through ReadDir"
 status: accepted
-implementation: not-started
+implementation: complete
 authors:
   - astra
 created: 2026-11-21
-updated: 2026-11-21
+updated: 2026-11-22
 issue: https://github.com/tauten-dev/tauten/issues/64
 milestone: "0.2"
 supersedes: []
@@ -53,3 +53,4 @@ An additive `read_bounded` keeps callers compiling but cannot give the advertise
 
 - 2026-11-21: drafted for #64; the existing roadmap names the capability, but not the boundary cases or migration contract. No implementation or acceptance implied.
 - 2026-11-21: **accepted** with amendments (the owner delegated 0.2 grooming decisions to the executing agent after a Fable review): `#[non_exhaustive]` `ReadError` with `From<ReadError> for io::Error`, the optional kernel dependency and its publish-order consequence, and a `compile_fail` doctest for the removed call.
+- 2026-11-22: [#64 landed and was exercised](https://github.com/tauten-dev/tauten/issues/64#issuecomment-7073222881); the [0.2.0 release](https://github.com/tauten-dev/tauten/issues/70#issuecomment-7074180614) includes the API, compile-fail coverage and migration note. The IO adapter is tested, not proved.

@@ -2,11 +2,11 @@
 rfc: "2026-11-21-result-world-induction"
 title: "Prove a world invariant directly over successful extracted steps"
 status: accepted
-implementation: not-started
+implementation: partial
 authors:
   - astra
 created: 2026-11-21
-updated: 2026-11-21
+updated: 2026-11-22
 issue: https://github.com/tauten-dev/tauten/issues/60
 milestone: "0.2"
 supersedes: []
@@ -54,3 +54,4 @@ For 0.2, ship the additive theorem: it is the missing fourth corner beside `inv_
 
 - 2026-11-21: drafted for [#60](https://github.com/tauten-dev/tauten/issues/60), following the concrete proof-only use in [Gripsack #366](https://github.com/gripsack-dev/gripsack/issues/366). Owner decision pending.
 - 2026-11-21: **accepted, amended** (the owner delegated 0.2 grooming decisions to the executing agent after a Fable review): decide for the lemma instead of comparing first; keep the direct-induction miniature as the documented alternative; the lemma joins the `Audit.lean` axiom audit and the existing template parity test. The adopter trial is a follow-up ([#69](https://github.com/tauten-dev/tauten/issues/69)); `implementation` becomes `partial` after landing, `complete` once an adopter reports.
+- 2026-11-22: [#60 shipped the audited lemma, miniature and matching template](https://github.com/tauten-dev/tauten/issues/60#issuecomment-7073223071) in 0.2.0. [#69](https://github.com/tauten-dev/tauten/issues/69) remains open for adopter evidence; the miniature is not that evidence.
